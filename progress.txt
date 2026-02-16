@@ -1,0 +1,35 @@
+# PawLogix — Progress Tracker
+# Update this file after completing every feature.
+
+## COMPLETED:
+- Phase 1.1 — Project Initialization (Expo SDK 54, all deps installed)
+- Phase 1.2 — Design System Foundation (colors, spacing, UI components)
+- Phase 1.3 — Navigation Shell (4-tab layout, file-based routing)
+- Phase 2.1 — Supabase Setup + Anonymous Auth (lib/supabase.ts, auth-context.tsx)
+- Phase 2.2 — Onboarding Screens (3-screen swiper, AsyncStorage flag)
+- Phase 2.3 — Splash Screen (teal branding in app.json)
+- Phase 2.4 — Auth Screens (signup, login, forgot-password with react-hook-form + zod)
+- Phase 3.1-3.4 — Pet Profiles (create, list with FlashList, detail view, breed picker)
+- Phase 4.1-4.6 — Record Scanning (camera/upload, image preview, type selector, processing screen, detail view with AI interpretation)
+- Phase 5.1 — Edge Function: pl-interpret-record (Claude API vision)
+- Phase 5.2 — AI Chat Screen (FlashList chat, Edge Function pl-health-chat)
+- Phase 5.3 — Records Tab + Dashboard Integration (real data, pull-to-refresh)
+- Phase 6.2 — Settings Screen (account management, notifications, export, delete)
+- Database — SQL migration with all tables, RLS, triggers, indexes
+
+## IN PROGRESS:
+- Phase 6.1 — Health Trends Charts (victory-native)
+- Phase 6.4 — Polish Pass (remaining skeleton screens, haptic feedback)
+
+## NEXT:
+- Phase 6.5 — Final QA + EAS Build
+
+## KNOWN BUGS:
+(none yet — needs testing)
+
+## NOTES:
+- This is a FREE BETA. No paywalls or payment logic.
+- Killer feature: AI Record Interpreter (scan vet records → plain English interpretation)
+- All tables use pl_ prefix (multi-tenant Supabase project)
+- .env needs real SUPABASE_ANON_KEY before running
+- Edge Functions need ANTHROPIC_API_KEY secret before deploying

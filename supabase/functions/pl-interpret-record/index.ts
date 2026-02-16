@@ -1,0 +1,187 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { record_id, image_urls, pet_species, pet_breed, record_type } = await req.json();
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+
+    if (!anthropicKey) {
+      throw new Error('ANTHROPIC_API_KEY not configured');
+    }
+
+    // Update status to processing
+    await supabase
+      .from('pl_health_records')
+      .update({ processing_status: 'processing' })
+      .eq('id', record_id);
+
+    // Download images and convert to base64
+    const imageContents = [];
+    for (const imagePath of image_urls) {
+      const { data: imageData, error: downloadError } = await supabase.storage
+        .from('pl-record-images')
+        .download(imagePath);
+
+      if (downloadError) throw downloadError;
+
+      const buffer = await imageData.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const ext = imagePath.split('.').pop()?.toLowerCase() || 'jpeg';
+      const mediaType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+      imageContents.push({
+        type: 'image',
+        source: { type: 'base64', media_type: mediaType, data: base64 },
+      });
+    }
+
+    const systemPrompt = `You are a veterinary record interpreter for pet owners. You receive scanned veterinary documents and your job is to:
+1. Extract ALL text and data from the document image(s)
+2. Organize the information into clear sections
+3. Translate every medical term, abbreviation, and lab value into plain English
+4. For lab values, indicate if they are within normal range for the species and breed
+5. Flag any values outside normal range with severity: "info" (minor/FYI), "watch" (monitor this), or "urgent" (discuss with vet soon)
+6. Extract numeric values (weight, lab values) into structured data for trend tracking
+7. Extract vaccination dates and medication schedules
+8. Write a "Summary for Pet Parent" in warm, reassuring but honest language
+9. Suggest 2-4 specific questions the owner could ask their vet
+
+CRITICAL RULES:
+- NEVER diagnose conditions. Only interpret what the document says.
+- ALWAYS recommend consulting the veterinarian for medical decisions.
+- Use warm, empowering language — not clinical or scary.
+- If you cannot read part of the document, say so clearly.
+- Species: ${pet_species}, Breed: ${pet_breed}, Record Type: ${record_type}
+
+Respond ONLY with valid JSON matching this exact schema:
+{
+  "summary": "Plain English summary paragraph for the pet parent",
+  "interpreted_sections": [
+    { "title": "Section Name", "plain_english_content": "Explanation..." }
+  ],
+  "flagged_items": [
+    { "item": "Item name", "value": "measured value", "normal_range": "expected range", "severity": "info|watch|urgent", "explanation": "What this means..." }
+  ],
+  "extracted_values": {
+    "weight_kg": null,
+    "lab_values": {},
+    "vaccines": [],
+    "medications": []
+  },
+  "suggested_vet_questions": ["Question 1", "Question 2"]
+}`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 4000,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              ...imageContents,
+              { type: 'text', text: 'Please interpret this veterinary record.' },
+            ],
+          },
+        ],
+      }),
+    });
+
+    const aiData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(aiData.error?.message || 'AI API request failed');
+    }
+
+    const responseText = aiData.content[0].text;
+    let interpretation;
+    try {
+      interpretation = JSON.parse(responseText);
+    } catch {
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        interpretation = JSON.parse(jsonMatch[1].trim());
+      } else {
+        throw new Error('Failed to parse AI response as JSON');
+      }
+    }
+
+    const flaggedCount = interpretation.flagged_items?.length ?? 0;
+    const hasUrgent = interpretation.flagged_items?.some(
+      (item: any) => item.severity === 'urgent'
+    ) ?? false;
+
+    // Update record with interpretation
+    await supabase
+      .from('pl_health_records')
+      .update({
+        interpretation,
+        raw_text_extracted: responseText,
+        processing_status: 'completed',
+        flagged_items_count: flaggedCount,
+        has_urgent_flags: hasUrgent,
+      })
+      .eq('id', record_id);
+
+    return new Response(JSON.stringify({ success: true, interpretation }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (error: any) {
+    console.error('Interpretation error:', error);
+
+    // Try to update record as failed
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+      const body = await req.clone().json().catch(() => ({}));
+      if (body.record_id) {
+        await supabase
+          .from('pl_health_records')
+          .update({
+            processing_status: 'failed',
+            processing_error: error.message,
+          })
+          .eq('id', body.record_id);
+      }
+    } catch {}
+
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
