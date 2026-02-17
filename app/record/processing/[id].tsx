@@ -12,6 +12,50 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
+const PROGRESS_STEPS = [
+  'Reading your document...',
+  'Interpreting results...',
+  'Preparing your summary...',
+];
+
+function ProgressSteps() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStepIndex((prev) => (prev + 1) % PROGRESS_STEPS.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <View className="mt-6 gap-2">
+      {PROGRESS_STEPS.map((step, index) => (
+        <View key={index} className="flex-row items-center gap-2">
+          <View
+            className={`w-2 h-2 rounded-full ${
+              index === stepIndex
+                ? 'bg-primary'
+                : index < stepIndex
+                  ? 'bg-primary/40'
+                  : 'bg-border'
+            }`}
+          />
+          <Text
+            className={`text-sm ${
+              index === stepIndex
+                ? 'text-text-primary font-medium'
+                : 'text-text-secondary'
+            }`}
+          >
+            {step}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export default function RecordProcessingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -152,6 +196,7 @@ export default function RecordProcessingScreen() {
           <Text className="text-base text-text-secondary mt-2 text-center">
             This usually takes 10-30 seconds
           </Text>
+          <ProgressSteps />
         </>
       )}
     </SafeAreaView>

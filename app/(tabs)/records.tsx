@@ -103,9 +103,16 @@ export default function RecordsScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background px-4 pt-4">
         <Text className="text-3xl font-bold text-text-primary mb-6">Records</Text>
-        <Skeleton height={80} className="mb-3 w-full" />
-        <Skeleton height={80} className="mb-3 w-full" />
-        <Skeleton height={80} className="w-full" />
+        {[0, 1, 2].map((i) => (
+          <View key={i} className="bg-surface rounded-xl border border-border p-4 mb-3 flex-row items-center gap-3">
+            <Skeleton width={40} height={40} className="rounded-lg" />
+            <View className="flex-1 gap-2">
+              <Skeleton height={16} className="w-3/4" />
+              <Skeleton height={12} className="w-1/2" />
+            </View>
+            <Skeleton width={60} height={24} className="rounded-full" />
+          </View>
+        ))}
       </SafeAreaView>
     );
   }
@@ -147,7 +154,7 @@ export default function RecordsScreen() {
 
       <Pressable
         onPress={() => router.push('/record/scan')}
-        className="absolute bottom-24 right-5 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        className="absolute bottom-28 right-5 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
         style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
       >
         <Ionicons name="scan" size={24} color="#FFFFFF" />

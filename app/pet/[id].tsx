@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +74,62 @@ export default function PetDetailScreen() {
     );
   };
 
+  const updatePhoto = async () => {
+    if (!pet) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    try {
+      const uri = result.assets[0].uri;
+      const filePath = `${pet.user_id}/${pet.id}.jpg`;
+
+      // Upload using FormData — most reliable method in React Native
+      const formData = new FormData();
+      formData.append('', {
+        uri,
+        name: `${pet.id}.jpg`,
+        type: 'image/jpeg',
+      } as any);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+
+      const uploadRes = await fetch(
+        `${supabaseUrl}/storage/v1/object/pl-pet-photos/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-upsert': 'true',
+          },
+          body: formData,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const errBody = await uploadRes.text();
+        throw new Error(`Upload failed: ${errBody}`);
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('pl-pet-photos')
+        .getPublicUrl(filePath);
+
+      await supabase.from('pl_pets').update({ photo_url: urlData.publicUrl }).eq('id', pet.id);
+      setPet({ ...pet, photo_url: urlData.publicUrl });
+      await refreshPets();
+    } catch (error: any) {
+      console.error('Photo update error:', error);
+      Alert.alert('Error', error.message || 'Failed to update photo.');
+    }
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background px-4 pt-4">
@@ -118,17 +175,20 @@ export default function PetDetailScreen() {
         {/* Pet Info Card */}
         <Card className="mb-5">
           <View className="items-center">
-            {pet.photo_url ? (
-              <Image
-                source={{ uri: pet.photo_url }}
-                style={{ width: 96, height: 96, borderRadius: 48 }}
-                className="mb-3"
-              />
-            ) : (
-              <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center mb-3">
-                <Ionicons name="paw" size={40} color="#0D7377" />
-              </View>
-            )}
+            <Pressable onPress={updatePhoto}>
+              {pet.photo_url ? (
+                <Image
+                  source={{ uri: pet.photo_url }}
+                  style={{ width: 96, height: 96, borderRadius: 48 }}
+                  className="mb-3"
+                />
+              ) : (
+                <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center mb-3">
+                  <Ionicons name="camera-outline" size={36} color="#0D7377" />
+                  <Text className="text-[10px] text-primary mt-0.5">Add Photo</Text>
+                </View>
+              )}
+            </Pressable>
             <Text className="text-2xl font-bold text-text-primary">{pet.name}</Text>
             <Text className="text-base text-text-secondary mt-1">
               {pet.breed ?? pet.species} {pet.date_of_birth ? `· ${calculateAge(pet.date_of_birth)}` : ''}
@@ -156,7 +216,7 @@ export default function PetDetailScreen() {
         {records.length === 0 ? (
           <Card className="mb-5">
             <View className="items-center py-6">
-              <Ionicons name="document-text-outline" size={40} color="#D1D5DB" />
+              <Ionicons name="document-text-outline" size={40} color="rgba(13, 115, 119, 0.2)" />
               <Text className="text-sm text-text-secondary mt-2 text-center">
                 No records yet. Scan your first vet record!
               </Text>

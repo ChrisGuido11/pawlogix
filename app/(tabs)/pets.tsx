@@ -1,4 +1,5 @@
-import { View, Text, Pressable } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
@@ -10,6 +11,19 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { calculateAge } from '@/lib/utils';
 import type { PetProfile } from '@/types';
+
+function PetCardSkeleton() {
+  return (
+    <View className="bg-surface rounded-xl border border-border p-4 mb-3 flex-row items-center gap-3">
+      <Skeleton width={56} height={56} className="rounded-full" />
+      <View className="flex-1 gap-2">
+        <Skeleton height={18} className="w-2/3" />
+        <Skeleton height={14} className="w-1/2" />
+      </View>
+      <Skeleton width={20} height={20} className="rounded" />
+    </View>
+  );
+}
 
 function PetCard({ pet, onPress }: { pet: PetProfile; onPress: () => void }) {
   return (
@@ -44,15 +58,22 @@ function PetCard({ pet, onPress }: { pet: PetProfile; onPress: () => void }) {
 
 export default function PetsScreen() {
   const router = useRouter();
-  const { pets, isLoading } = usePets();
+  const { pets, isLoading, refreshPets } = usePets();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshPets();
+    setRefreshing(false);
+  }, [refreshPets]);
 
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background px-4 pt-4">
         <Text className="text-3xl font-bold text-text-primary mb-6">My Pets</Text>
-        <Skeleton height={80} className="mb-3 w-full" />
-        <Skeleton height={80} className="mb-3 w-full" />
-        <Skeleton height={80} className="w-full" />
+        <PetCardSkeleton />
+        <PetCardSkeleton />
+        <PetCardSkeleton />
       </SafeAreaView>
     );
   }
@@ -80,13 +101,16 @@ export default function PetsScreen() {
               />
             )}
             keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0D7377" />
+            }
           />
         )}
       </View>
 
       <Pressable
         onPress={() => router.push('/pet/create')}
-        className="absolute bottom-24 right-5 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
+        className="absolute bottom-28 right-5 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
         style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
       >
         <Ionicons name="add" size={28} color="#FFFFFF" />

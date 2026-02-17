@@ -16,6 +16,7 @@ import { usePets } from '@/lib/pet-context';
 import { supabase } from '@/lib/supabase';
 import { getBreedsBySpecies } from '@/constants/breeds';
 import { toast } from '@/lib/toast';
+import * as Crypto from 'expo-crypto';
 
 const petSchema = z.object({
   name: z.string().min(1, 'Pet name is required'),
@@ -63,16 +64,35 @@ export default function PetCreateScreen() {
   const uploadPhoto = async (petId: string): Promise<string | null> => {
     if (!photoUri || !user) return null;
     try {
-      const response = await fetch(photoUri);
-      const blob = await response.blob();
-      const fileExt = photoUri.split('.').pop() || 'jpg';
-      const filePath = `${user.id}/${petId}.${fileExt}`;
+      const filePath = `${user.id}/${petId}.jpg`;
 
-      const { error } = await supabase.storage
-        .from('pl-pet-photos')
-        .upload(filePath, blob, { contentType: `image/${fileExt}`, upsert: true });
+      const formData = new FormData();
+      formData.append('', {
+        uri: photoUri,
+        name: `${petId}.jpg`,
+        type: 'image/jpeg',
+      } as any);
 
-      if (error) throw error;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+
+      const uploadRes = await fetch(
+        `${supabaseUrl}/storage/v1/object/pl-pet-photos/${filePath}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-upsert': 'true',
+          },
+          body: formData,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const errBody = await uploadRes.text();
+        throw new Error(`Upload failed: ${errBody}`);
+      }
 
       const { data: urlData } = supabase.storage
         .from('pl-pet-photos')
@@ -89,7 +109,7 @@ export default function PetCreateScreen() {
     if (!user) return;
     setIsSubmitting(true);
     try {
-      const petId = crypto.randomUUID();
+      const petId = Crypto.randomUUID();
       const photoUrl = await uploadPhoto(petId);
 
       const { error } = await supabase.from('pl_pets').insert({
@@ -136,16 +156,23 @@ export default function PetCreateScreen() {
           </Text>
 
           {/* Photo Picker */}
-          <Pressable onPress={pickImage} className="self-center mb-6">
+          <Pressable onPress={pickImage} className="self-center mb-6 items-center">
             {photoUri ? (
-              <Image
-                source={{ uri: photoUri }}
-                style={{ width: 96, height: 96, borderRadius: 48 }}
-              />
+              <View>
+                <Image
+                  source={{ uri: photoUri }}
+                  style={{ width: 120, height: 120, borderRadius: 60 }}
+                />
+                <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary items-center justify-center border-2 border-white">
+                  <Ionicons name="camera" size={14} color="#FFFFFF" />
+                </View>
+              </View>
             ) : (
-              <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center border-2 border-dashed border-primary/30">
-                <Ionicons name="camera-outline" size={32} color="#0D7377" />
-                <Text className="text-xs text-primary mt-1">Add Photo</Text>
+              <View className="items-center">
+                <View className="w-[120px] h-[120px] rounded-full bg-primary/10 items-center justify-center border-2 border-dashed border-primary/30">
+                  <Ionicons name="camera-outline" size={36} color="#0D7377" />
+                </View>
+                <Text className="text-sm text-text-secondary mt-2">Tap to add photo</Text>
               </View>
             )}
           </Pressable>

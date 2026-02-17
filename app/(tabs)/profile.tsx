@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { writeAsStringAsync, documentDirectory } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth-context';
@@ -24,9 +25,16 @@ function SettingsRow({
   trailing?: React.ReactNode;
   destructive?: boolean;
 }) {
+  const handlePress = onPress
+    ? () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }
+    : undefined;
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       className="flex-row items-center gap-3 py-3.5"
       style={({ pressed }) => ({ opacity: pressed && onPress ? 0.7 : 1 })}
     >
@@ -247,7 +255,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Notifications */}
-        <Text className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2 mt-2">
+        <Text className="text-xs font-semibold text-text-secondary mb-2 mt-2">
           Notifications
         </Text>
         <Card className="mb-5">
@@ -279,7 +287,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Legal */}
-        <Text className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
+        <Text className="text-xs font-semibold text-text-secondary mb-2">
           Legal
         </Text>
         <Card className="mb-5">
@@ -303,7 +311,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Data */}
-        <Text className="text-sm font-medium text-text-secondary uppercase tracking-wider mb-2">
+        <Text className="text-xs font-semibold text-text-secondary mb-2">
           Data
         </Text>
         <Card className="mb-5">

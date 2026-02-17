@@ -168,32 +168,39 @@ export default function RecordDetailScreen() {
                 <Text className="text-lg font-semibold text-text-primary mb-3">
                   Detailed Breakdown
                 </Text>
-                {interpretation.interpreted_sections.map((section, index) => (
-                  <Card key={index} className="mb-2">
-                    <Pressable
-                      onPress={() => toggleSection(index)}
-                      className="flex-row items-center justify-between"
-                    >
-                      <Text className="text-base font-medium text-text-primary flex-1">
-                        {section.title}
-                      </Text>
-                      <Ionicons
-                        name={
-                          expandedSections.has(index)
-                            ? 'chevron-up'
-                            : 'chevron-down'
-                        }
-                        size={20}
-                        color="#64748B"
-                      />
-                    </Pressable>
-                    {expandedSections.has(index) && (
-                      <Text className="text-base text-text-primary mt-3 leading-6">
-                        {section.plain_english_content}
-                      </Text>
-                    )}
-                  </Card>
-                ))}
+                {interpretation.interpreted_sections.map((section, index) => {
+                  const isExpanded = expandedSections.has(index);
+                  return (
+                    <Card key={index} className={`mb-2 ${isExpanded ? 'bg-surface' : ''}`}>
+                      <Pressable
+                        onPress={() => toggleSection(index)}
+                        className="flex-row items-center justify-between"
+                      >
+                        <Text className="text-base font-medium text-text-primary flex-1 mr-2">
+                          {section.title}
+                        </Text>
+                        <Ionicons
+                          name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                          size={24}
+                          color="#64748B"
+                        />
+                      </Pressable>
+                      {!isExpanded && section.plain_english_content && (
+                        <Text
+                          className="text-sm text-text-secondary mt-2"
+                          numberOfLines={1}
+                        >
+                          {section.plain_english_content}
+                        </Text>
+                      )}
+                      {isExpanded && (
+                        <Text className="text-base text-text-primary mt-3 leading-6">
+                          {section.plain_english_content}
+                        </Text>
+                      )}
+                    </Card>
+                  );
+                })}
               </View>
             )}
 

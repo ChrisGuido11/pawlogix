@@ -5,6 +5,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { Card } from '@/components/ui/card';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +22,53 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   created_at: string;
+}
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function SendButton({ enabled, onPress }: { enabled: boolean; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const prevEnabled = useRef(false);
+
+  useEffect(() => {
+    if (enabled && !prevEnabled.current) {
+      scale.value = withSpring(1, { damping: 12, stiffness: 200 });
+    }
+    prevEnabled.current = enabled;
+  }, [enabled]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = () => {
+    if (enabled) {
+      scale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+    }
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 12, stiffness: 200 });
+  };
+
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={!enabled}
+      style={animStyle}
+      className={`w-11 h-11 rounded-full items-center justify-center ${
+        enabled ? 'bg-primary' : 'bg-disabled'
+      }`}
+    >
+      <Ionicons
+        name="send"
+        size={18}
+        color={enabled ? '#FFFFFF' : '#64748B'}
+      />
+    </AnimatedPressable>
+  );
 }
 
 export default function RecordChatScreen() {
@@ -208,7 +260,7 @@ export default function RecordChatScreen() {
             </View>
           ) : messages.length === 0 ? (
             <View className="flex-1 items-center justify-center">
-              <Ionicons name="chatbubbles-outline" size={48} color="#D1D5DB" />
+              <Ionicons name="chatbubbles-outline" size={48} color="rgba(13, 115, 119, 0.2)" />
               <Text className="text-base text-text-secondary mt-3 text-center">
                 Ask any question about this record
               </Text>
@@ -242,19 +294,10 @@ export default function RecordChatScreen() {
               multiline
               editable={!isSending}
             />
-            <Pressable
+            <SendButton
+              enabled={!!input.trim() && !isSending}
               onPress={sendMessage}
-              disabled={!input.trim() || isSending}
-              className={`w-11 h-11 rounded-full items-center justify-center ${
-                input.trim() && !isSending ? 'bg-primary' : 'bg-disabled'
-              }`}
-            >
-              <Ionicons
-                name="send"
-                size={18}
-                color={input.trim() && !isSending ? '#FFFFFF' : '#64748B'}
-              />
-            </Pressable>
+            />
           </View>
         </View>
       </KeyboardAvoidingView>

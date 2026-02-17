@@ -61,7 +61,18 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0D7377" />
         }
       >
-        <Text className="text-3xl font-bold text-text-primary mb-6">PawLogix</Text>
+        <View className="flex-row items-center gap-2 mb-1">
+          <Ionicons name="paw" size={28} color="#0D7377" />
+          <Text className="text-3xl font-bold text-text-primary">PawLogix</Text>
+        </View>
+        <Text className="text-base text-text-secondary mb-5">
+          {new Date().getHours() < 12
+            ? 'Good morning'
+            : new Date().getHours() < 18
+              ? 'Good afternoon'
+              : 'Good evening'}
+          {activePet ? ` — how's ${activePet.name}?` : ''}
+        </Text>
 
         {activePet ? (
           <>
@@ -114,7 +125,7 @@ export default function HomeScreen() {
             ) : recentRecords.length === 0 ? (
               <Card className="mb-5">
                 <View className="items-center py-6">
-                  <Ionicons name="document-text-outline" size={40} color="#D1D5DB" />
+                  <Ionicons name="document-text-outline" size={40} color="rgba(13, 115, 119, 0.2)" />
                   <Text className="text-sm text-text-secondary mt-2 text-center">
                     Scan your first record to get started
                   </Text>

@@ -35,7 +35,14 @@ function RootLayoutNav() {
     SplashScreen.hideAsync();
 
     if (needsOnboarding && segments[0] !== 'onboarding') {
-      router.replace('/onboarding');
+      // Re-check AsyncStorage in case onboarding was just completed
+      AsyncStorage.getItem(ONBOARDING_KEY).then((completed) => {
+        if (completed) {
+          setNeedsOnboarding(false);
+        } else {
+          router.replace('/onboarding');
+        }
+      });
     }
   }, [isLoading, onboardingChecked, needsOnboarding, segments]);
 

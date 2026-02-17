@@ -4,6 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 
 const ONBOARDING_KEY = 'pawlogix_onboarding_complete';
@@ -25,6 +30,36 @@ const slides = [
     subtitle: "See trends, get reminders, and be your pet's best advocate.",
   },
 ];
+
+function PageIndicator({ activeIndex }: { activeIndex: number }) {
+  return (
+    <View className="flex-row items-center justify-center gap-2 mb-6">
+      {slides.map((_, index) => {
+        const animWidth = useSharedValue(index === 0 ? 24 : 8);
+        const animOpacity = useSharedValue(index === 0 ? 1 : 0.4);
+
+        // Update animations when activeIndex changes
+        animWidth.value = withTiming(index === activeIndex ? 24 : 8, { duration: 300 });
+        animOpacity.value = withTiming(index === activeIndex ? 1 : 0.4, { duration: 300 });
+
+        const dotStyle = useAnimatedStyle(() => ({
+          width: animWidth.value,
+          opacity: animOpacity.value,
+        }));
+
+        return (
+          <Animated.View
+            key={index}
+            style={dotStyle}
+            className={`h-2 rounded-full ${
+              index === activeIndex ? 'bg-primary' : 'bg-border'
+            }`}
+          />
+        );
+      })}
+    </View>
+  );
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -49,11 +84,15 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {activeIndex < 2 && (
-        <Pressable onPress={skipToEnd} className="absolute top-16 right-6 z-10">
-          <Text className="text-base text-text-secondary">Skip</Text>
-        </Pressable>
-      )}
+      <View className="flex-row justify-end px-6 pt-2 pb-4">
+        {activeIndex < 2 ? (
+          <Pressable onPress={skipToEnd} hitSlop={12}>
+            <Text className="text-base text-text-secondary">Skip</Text>
+          </Pressable>
+        ) : (
+          <View className="h-6" />
+        )}
+      </View>
 
       <ScrollView
         ref={scrollRef}
@@ -67,15 +106,15 @@ export default function OnboardingScreen() {
           <View
             key={index}
             style={{ width }}
-            className="flex-1 items-center justify-center px-10"
+            className="flex-1 items-center pt-16 px-10"
           >
-            <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center mb-8">
-              <Ionicons name={slide.icon} size={48} color="#0D7377" />
+            <View className="w-32 h-32 rounded-full bg-primary/10 items-center justify-center mb-10">
+              <Ionicons name={slide.icon} size={64} color="#0D7377" />
             </View>
             <Text className="text-2xl font-bold text-text-primary text-center mb-3">
               {slide.title}
             </Text>
-            <Text className="text-base text-text-secondary text-center leading-6">
+            <Text className="text-base text-text-secondary text-center leading-6 max-w-[300px]">
               {slide.subtitle}
             </Text>
           </View>
@@ -83,17 +122,7 @@ export default function OnboardingScreen() {
       </ScrollView>
 
       <View className="px-8 pb-8">
-        {/* Page indicators */}
-        <View className="flex-row items-center justify-center gap-2 mb-6">
-          {slides.map((_, index) => (
-            <View
-              key={index}
-              className={`h-2 rounded-full ${
-                index === activeIndex ? 'w-6 bg-primary' : 'w-2 bg-border'
-              }`}
-            />
-          ))}
-        </View>
+        <PageIndicator activeIndex={activeIndex} />
 
         {activeIndex === 2 ? (
           <Button title="Get Started" onPress={completeOnboarding} />

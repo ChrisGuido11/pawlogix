@@ -12,6 +12,7 @@ import { useAuth } from '@/lib/auth-context';
 import { usePets } from '@/lib/pet-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
+import * as Crypto from 'expo-crypto';
 
 const RECORD_TYPES = [
   { key: 'lab_results', label: 'Lab Results', icon: 'flask-outline' },
@@ -99,7 +100,7 @@ export default function RecordScanScreen() {
     if (!user || images.length === 0 || !selectedPetId) return;
     setIsSubmitting(true);
     try {
-      const recordId = crypto.randomUUID();
+      const recordId = Crypto.randomUUID();
       const imageUrls = await uploadImages(recordId);
 
       const { error } = await supabase.from('pl_health_records').insert({
