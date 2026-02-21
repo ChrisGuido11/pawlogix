@@ -4,28 +4,37 @@ export const Spacing = {
   xs: 4,
   sm: 8,
   md: 12,
-  base: 16,
-  lg: 20,
-  xl: 24,
-  '2xl': 32,
-  '3xl': 48,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  '3xl': 32,
+  '4xl': 40,
+  '5xl': 48,
+  '6xl': 64,
 } as const;
 
+// Rounded everywhere — Duolingo style
 export const BorderRadius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  full: 9999,
+  // Semantic aliases
   card: 16,
   button: 12,
-  pill: 24,
+  pill: 9999,
   input: 12,
-  full: 9999,
 } as const;
 
 export const Shadows = {
   sm: Platform.select({
     ios: {
-      shadowColor: '#1A1A2E',
+      shadowColor: '#1C1917',
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
-      shadowRadius: 4,
+      shadowRadius: 3,
     },
     android: {
       elevation: 1,
@@ -34,10 +43,10 @@ export const Shadows = {
   }),
   md: Platform.select({
     ios: {
-      shadowColor: '#1A1A2E',
+      shadowColor: '#1C1917',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.08,
-      shadowRadius: 12,
+      shadowRadius: 8,
     },
     android: {
       elevation: 3,
@@ -46,10 +55,10 @@ export const Shadows = {
   }),
   lg: Platform.select({
     ios: {
-      shadowColor: '#1A1A2E',
+      shadowColor: '#1C1917',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 20,
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
     },
     android: {
       elevation: 6,
@@ -58,34 +67,62 @@ export const Shadows = {
   }),
   xl: Platform.select({
     ios: {
-      shadowColor: '#1A1A2E',
+      shadowColor: '#1C1917',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.12,
-      shadowRadius: 28,
+      shadowOpacity: 0.14,
+      shadowRadius: 24,
     },
     android: {
       elevation: 10,
     },
     default: {},
   }),
-  glow: Platform.select({
+  // Duolingo-style "pressed" bottom border effect for buttons
+  button: Platform.select({
     ios: {
-      shadowColor: '#0D7377',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
+      shadowColor: '#D94E2A',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 1,
+      shadowRadius: 0,
     },
     android: {
       elevation: 4,
     },
     default: {},
   }),
+  // Coral glow for primary CTA elements
+  glow: Platform.select({
+    ios: {
+      shadowColor: '#FF6B42',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+    },
+    android: {
+      elevation: 6,
+    },
+    default: {},
+  }),
+  // Gold glow for achievements/gamification
   warmGlow: Platform.select({
     ios: {
-      shadowColor: '#F5A623',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
+      shadowColor: '#FFB830',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.35,
       shadowRadius: 12,
+    },
+    android: {
+      elevation: 5,
+    },
+    default: {},
+  }),
+  // Teal glow for health/trust elements
+  coolGlow: Platform.select({
+    ios: {
+      shadowColor: '#2BBBC3',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.3,
+      shadowRadius: 10,
     },
     android: {
       elevation: 4,

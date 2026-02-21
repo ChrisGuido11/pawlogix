@@ -4,82 +4,198 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   withRepeat,
+  withDelay,
+  withSpring,
 } from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
-import { GradientBackground } from '@/components/ui/gradient-background';
-import { Colors, Gradients } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
 
 const ONBOARDING_KEY = 'pawlogix_onboarding_complete';
 
 const slides = [
   {
-    icon: 'scan-outline' as const,
-    accent1: 'camera-outline' as const,
-    accent2: 'document-text-outline' as const,
-    title: 'Scan any vet record',
-    subtitle: "Take a photo or upload a document — we'll do the rest.",
+    title: 'Understand Your\nPet\u2019s Health',
+    subtitle: 'Keep all your pet\u2019s medical records in one place and finally understand what they mean.',
+    mainIcon: 'paw' as const,
+    mainColor: Colors.primary,
+    mainBg: Colors.primary50,
+    ringColor: Colors.primary200,
+    accents: [
+      { icon: 'heart' as const, color: Colors.error, bg: Colors.errorLight, x: -20, y: -10, size: 44, delay: 0 },
+      { icon: 'shield-checkmark' as const, color: Colors.success, bg: Colors.successLight, x: 130, y: 20, size: 40, delay: 300 },
+      { icon: 'sparkles' as const, color: Colors.secondary, bg: Colors.secondary50, x: 110, y: 130, size: 36, delay: 600 },
+      { icon: 'pulse' as const, color: Colors.primary400, bg: Colors.primary100, x: -10, y: 120, size: 32, delay: 150 },
+    ],
   },
   {
-    icon: 'sparkles-outline' as const,
-    accent1: 'flask-outline' as const,
-    accent2: 'chatbubble-outline' as const,
-    title: 'AI translates the medical jargon',
-    subtitle: 'Complex lab values and medical terms explained in plain English.',
+    title: 'Scan Any\nVet Record',
+    subtitle: 'Take a photo of lab results, prescriptions, or vaccine records \u2014 we\u2019ll handle the rest.',
+    mainIcon: 'scan' as const,
+    mainColor: Colors.secondary,
+    mainBg: Colors.secondary50,
+    ringColor: Colors.secondary200,
+    accents: [
+      { icon: 'camera' as const, color: Colors.primary, bg: Colors.primary50, x: -15, y: 0, size: 42, delay: 0 },
+      { icon: 'document-text' as const, color: Colors.primary600, bg: Colors.primary100, x: 135, y: 10, size: 38, delay: 250 },
+      { icon: 'sparkles' as const, color: Colors.secondary, bg: Colors.secondary50, x: 120, y: 135, size: 34, delay: 500 },
+      { icon: 'checkmark-circle' as const, color: Colors.success, bg: Colors.successLight, x: -5, y: 125, size: 36, delay: 400 },
+    ],
   },
   {
-    icon: 'trending-up-outline' as const,
-    accent1: 'heart-outline' as const,
-    accent2: 'shield-checkmark-outline' as const,
-    title: "Track your pet's health over time",
-    subtitle: "See trends, get reminders, and be your pet's best advocate.",
+    title: 'Get Clear Answers,\nNot Jargon',
+    subtitle: 'AI translates complex medical terms into plain English you can actually understand.',
+    mainIcon: 'chatbubbles' as const,
+    mainColor: Colors.primary,
+    mainBg: Colors.primary50,
+    ringColor: Colors.primary200,
+    accents: [
+      { icon: 'bulb' as const, color: Colors.secondary, bg: Colors.secondary50, x: -18, y: -5, size: 44, delay: 0 },
+      { icon: 'flask' as const, color: Colors.primary400, bg: Colors.primary100, x: 132, y: 15, size: 38, delay: 200 },
+      { icon: 'happy' as const, color: Colors.success, bg: Colors.successLight, x: 115, y: 130, size: 40, delay: 450 },
+      { icon: 'medical' as const, color: Colors.error, bg: Colors.errorLight, x: -8, y: 118, size: 34, delay: 350 },
+    ],
   },
 ];
 
-function FloatingIcon({ icon, offsetX, offsetY, delay = 0 }: {
+function FloatingAccent({
+  icon,
+  color,
+  bg,
+  x,
+  y,
+  size,
+  delay,
+}: {
   icon: keyof typeof Ionicons.glyphMap;
-  offsetX: number;
-  offsetY: number;
-  delay?: number;
+  color: string;
+  bg: string;
+  x: number;
+  y: number;
+  size: number;
+  delay: number;
 }) {
   const translateY = useSharedValue(0);
+  const scale = useSharedValue(0);
 
   useEffect(() => {
+    scale.value = withDelay(delay, withSpring(1, { damping: 14, stiffness: 100 }));
     setTimeout(() => {
       translateY.value = withRepeat(
-        withTiming(10, { duration: 2200 }),
+        withTiming(8, { duration: 2000 + delay }),
         -1,
         true
       );
-    }, delay);
+    }, delay + 300);
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value }, { scale: scale.value }],
   }));
 
   return (
     <Animated.View
-      style={[animStyle, { position: 'absolute', left: offsetX, top: offsetY }]}
+      style={[
+        animStyle,
+        Shadows.md,
+        {
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+      ]}
     >
-      <Ionicons name={icon} size={22} color={Colors.secondary} />
+      <Ionicons name={icon} size={size * 0.45} color={color} />
     </Animated.View>
+  );
+}
+
+function SlideIllustration({
+  slide,
+}: {
+  slide: (typeof slides)[0];
+}) {
+  const mainScale = useSharedValue(0);
+  const ringScale = useSharedValue(0);
+  const ringOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    mainScale.value = withSpring(1, { damping: 12, stiffness: 100 });
+    ringScale.value = withDelay(150, withSpring(1, { damping: 16, stiffness: 80 }));
+    ringOpacity.value = withDelay(150, withTiming(1, { duration: 400 }));
+  }, []);
+
+  const mainStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: mainScale.value }],
+  }));
+
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
+    opacity: ringOpacity.value,
+  }));
+
+  return (
+    <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
+      {/* Outer ring */}
+      <Animated.View
+        style={[
+          ringStyle,
+          {
+            position: 'absolute',
+            width: 160,
+            height: 160,
+            borderRadius: 80,
+            borderWidth: 2,
+            borderColor: slide.ringColor,
+            borderStyle: 'dashed',
+          },
+        ]}
+      />
+
+      {/* Main icon circle */}
+      <Animated.View
+        style={[
+          mainStyle,
+          Shadows.lg,
+          {
+            width: 110,
+            height: 110,
+            borderRadius: 55,
+            backgroundColor: slide.mainBg,
+            alignItems: 'center',
+            justifyContent: 'center',
+          },
+        ]}
+      >
+        <Ionicons name={slide.mainIcon} size={52} color={slide.mainColor} />
+      </Animated.View>
+
+      {/* Floating accents */}
+      {slide.accents.map((accent, i) => (
+        <FloatingAccent key={i} {...accent} />
+      ))}
+    </View>
   );
 }
 
 function Dot({ index, activeIndex }: { index: number; activeIndex: number }) {
   const animWidth = useSharedValue(index === 0 ? 28 : 8);
-  const animOpacity = useSharedValue(index === 0 ? 1 : 0.4);
+  const animOpacity = useSharedValue(index === 0 ? 1 : 0.3);
 
   useEffect(() => {
     animWidth.value = withTiming(index === activeIndex ? 28 : 8, { duration: 300 });
-    animOpacity.value = withTiming(index === activeIndex ? 1 : 0.4, { duration: 300 });
+    animOpacity.value = withTiming(index === activeIndex ? 1 : 0.3, { duration: 300 });
   }, [activeIndex]);
 
   const dotStyle = useAnimatedStyle(() => ({
@@ -89,27 +205,21 @@ function Dot({ index, activeIndex }: { index: number; activeIndex: number }) {
 
   return (
     <Animated.View
-      style={dotStyle}
-      className={`h-2 rounded-full ${
-        index === activeIndex ? 'bg-primary' : 'bg-primary-200'
-      }`}
+      style={[
+        dotStyle,
+        {
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: index === activeIndex ? Colors.primary : Colors.primary200,
+        },
+      ]}
     />
-  );
-}
-
-function PageIndicator({ activeIndex }: { activeIndex: number }) {
-  return (
-    <View className="flex-row items-center justify-center gap-2 mb-6">
-      {slides.map((_, index) => (
-        <Dot key={index} index={index} activeIndex={activeIndex} />
-      ))}
-    </View>
   );
 }
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -128,86 +238,96 @@ export default function OnboardingScreen() {
     scrollRef.current?.scrollTo({ x: width * 2, animated: true });
   };
 
+  // 60/40 split
+  const illustrationHeight = height * 0.52;
+
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <View className="flex-row justify-end px-6 pt-2 pb-4">
-            {activeIndex < 2 ? (
-              <Pressable onPress={skipToEnd} hitSlop={12}>
-                <Text className="text-base text-text-secondary">Skip</Text>
-              </Pressable>
-            ) : (
-              <View className="h-6" />
-            )}
-          </View>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Skip button — top right */}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 }}>
+          {activeIndex < 2 ? (
+            <Pressable onPress={skipToEnd} hitSlop={12}>
+              <Text style={{ fontSize: 16, color: Colors.textSecondary }}>Skip</Text>
+            </Pressable>
+          ) : (
+            <View style={{ height: 22 }} />
+          )}
+        </View>
 
-          <ScrollView
-            ref={scrollRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={handleScroll}
-            className="flex-1"
-          >
-            {slides.map((slide, index) => (
+        {/* Horizontal paging */}
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleScroll}
+          style={{ flex: 1 }}
+        >
+          {slides.map((slide, index) => (
+            <View key={index} style={{ width, flex: 1 }}>
+              {/* Top 60%: Illustration area */}
               <View
-                key={index}
-                style={{ width }}
-                className="flex-1 items-center pt-16 px-10"
+                style={{
+                  height: illustrationHeight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                {/* Composed illustration */}
-                <View style={{ width: 120, height: 120, position: 'relative' }}>
-                  <LinearGradient
-                    colors={[...Gradients.primaryCta]}
-                    style={[
-                      Shadows.lg,
-                      {
-                        width: 80,
-                        height: 80,
-                        borderRadius: 40,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        position: 'absolute',
-                        left: 20,
-                        top: 20,
-                      },
-                    ]}
-                  >
-                    <Ionicons name={slide.icon} size={40} color="#FFFFFF" />
-                  </LinearGradient>
-                  <FloatingIcon icon={slide.accent1} offsetX={-8} offsetY={0} delay={0} />
-                  <FloatingIcon icon={slide.accent2} offsetX={95} offsetY={15} delay={400} />
-                </View>
+                <SlideIllustration slide={slide} />
+              </View>
 
+              {/* Bottom 40%: Text content */}
+              <View style={{ flex: 1, paddingHorizontal: 32 }}>
                 <Text
-                  style={{ fontSize: 28, fontWeight: '700', color: Colors.textPrimary }}
-                  className="text-center mb-3 mt-10"
+                  style={{
+                    fontSize: 28,
+                    fontWeight: '700',
+                    color: Colors.textPrimary,
+                    textAlign: 'center',
+                    lineHeight: 36,
+                    marginBottom: 12,
+                  }}
                 >
                   {slide.title}
                 </Text>
-                <Text className="text-base text-text-secondary text-center leading-6 max-w-[300px]">
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: Colors.textSecondary,
+                    textAlign: 'center',
+                    lineHeight: 24,
+                    maxWidth: 300,
+                    alignSelf: 'center',
+                  }}
+                >
                   {slide.subtitle}
                 </Text>
               </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Bottom: Dots + CTA */}
+        <View style={{ paddingHorizontal: 32, paddingBottom: 32 }}>
+          {/* Dot indicators */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+            {slides.map((_, index) => (
+              <Dot key={index} index={index} activeIndex={activeIndex} />
             ))}
-          </ScrollView>
-
-          <View className="px-8 pb-8">
-            <PageIndicator activeIndex={activeIndex} />
-
-            {activeIndex === 2 ? (
-              <Button title="Get Started" onPress={completeOnboarding} />
-            ) : (
-              <Button
-                title="Next"
-                onPress={() => scrollRef.current?.scrollTo({ x: width * (activeIndex + 1), animated: true })}
-                variant="secondary"
-              />
-            )}
           </View>
-        </SafeAreaView>
-      </GradientBackground>
+
+          {activeIndex === 2 ? (
+            <Button title="Get Started" onPress={completeOnboarding} icon="paw" />
+          ) : (
+            <Button
+              title="Next"
+              onPress={() => scrollRef.current?.scrollTo({ x: width * (activeIndex + 1), animated: true })}
+              variant="secondary"
+            />
+          )}
+        </View>
+      </SafeAreaView>
     </View>
   );
 }

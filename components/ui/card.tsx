@@ -1,8 +1,8 @@
-import { View, Pressable, Platform } from 'react-native';
+import { View, Pressable } from 'react-native';
 import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { usePressAnimation } from '@/hooks/usePressAnimation';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, BorderRadius } from '@/constants/spacing';
 
 interface CardProps {
   children: React.ReactNode;
@@ -34,7 +34,7 @@ export function Card({
         : Shadows.md;
 
   const bgClass = variant === 'subtle' ? 'bg-surface-muted' : 'bg-surface';
-  const baseStyles = `${bgClass} rounded-2xl p-4`;
+  const baseStyles = `${bgClass} rounded-xl p-4`;
 
   if (onPress) {
     const handlePress = () => {

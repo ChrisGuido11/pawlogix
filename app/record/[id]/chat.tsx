@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -17,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
-import { Colors, Gradients } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
 import type { RecordChat, HealthRecord } from '@/types';
 
@@ -61,15 +60,14 @@ function SendButton({ enabled, onPress }: { enabled: boolean; onPress: () => voi
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={!enabled}
-      style={[animStyle, enabled ? Shadows.glow : {}]}
+      style={[animStyle, enabled ? Shadows.warmGlow : {}]}
     >
       {enabled ? (
-        <LinearGradient
-          colors={[...Gradients.primaryCta]}
-          style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+        <View
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F5A623', alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons name="send" size={18} color="#FFFFFF" />
-        </LinearGradient>
+        </View>
       ) : (
         <View
           style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.disabled, alignItems: 'center', justifyContent: 'center' }}
@@ -236,12 +234,11 @@ export default function RecordChatScreen() {
           </View>
         )}
         {isUser ? (
-          <LinearGradient
-            colors={[...Gradients.primaryCta]}
-            style={{ borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 12 }}
+          <View
+            style={{ backgroundColor: '#F5A623', borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 12 }}
           >
             <Text className="text-base text-white leading-6">{item.content}</Text>
-          </LinearGradient>
+          </View>
         ) : (
           <View
             style={[

@@ -303,7 +303,7 @@ export default function ProfileScreen() {
                   <Switch
                     value={medReminders}
                     onValueChange={toggleMedReminders}
-                    trackColor={{ false: '#D1D5DB', true: '#0D7377' }}
+                    trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
                     thumbColor="#FFFFFF"
                   />
                 }
@@ -316,7 +316,7 @@ export default function ProfileScreen() {
                   <Switch
                     value={vaxReminders}
                     onValueChange={toggleVaxReminders}
-                    trackColor={{ false: '#D1D5DB', true: '#0D7377' }}
+                    trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
                     thumbColor="#FFFFFF"
                   />
                 }

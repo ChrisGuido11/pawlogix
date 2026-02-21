@@ -12,7 +12,9 @@
       "WebFetch(domain:mobbin.com)",
       "WebSearch",
       "Bash(test:*)",
-      "Bash(npx expo export:*)"
+      "Bash(npx expo export:*)",
+      "Bash(npm list:*)",
+      "Bash(dir:*)"
     ]
   }
 }

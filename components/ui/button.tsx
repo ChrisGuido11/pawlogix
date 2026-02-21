@@ -1,11 +1,10 @@
 import { Pressable, ActivityIndicator, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { usePressAnimation } from '@/hooks/usePressAnimation';
-import { Gradients, Colors } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Colors } from '@/constants/Colors';
+import { Shadows, BorderRadius } from '@/constants/spacing';
 
 interface ButtonProps {
   title: string;
@@ -19,6 +18,12 @@ interface ButtonProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const sizeHeights = {
+  sm: 40,
+  md: 50,
+  lg: 56,
+};
 
 export function Button({
   title,
@@ -38,21 +43,20 @@ export function Button({
     onPress();
   };
 
-  const sizeStyles = {
-    sm: 'py-2.5 px-4',
-    md: 'py-3.5 px-6',
-    lg: 'py-4 px-8',
-  };
-
-  const textSizeStyles = {
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
-  };
-
+  const textSizes = { sm: 14, md: 16, lg: 18 };
   const iconSize = size === 'sm' ? 16 : size === 'lg' ? 22 : 18;
+  const height = sizeHeights[size];
 
-  // Primary uses gradient
+  const baseStyle = {
+    height,
+    borderRadius: BorderRadius.button,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+    paddingHorizontal: 24,
+  };
+
   if (variant === 'primary') {
     return (
       <AnimatedPressable
@@ -60,31 +64,30 @@ export function Button({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={isDisabled}
-        style={[animatedStyle, isDisabled ? {} : Shadows.glow]}
+        style={[
+          animatedStyle,
+          baseStyle,
+          {
+            backgroundColor: isDisabled ? Colors.disabled : Colors.secondary,
+          },
+          isDisabled ? {} : Shadows.warmGlow,
+        ]}
         className={className}
       >
-        <LinearGradient
-          colors={isDisabled ? ['#D1D5DB', '#D1D5DB'] : [...Gradients.primaryCta]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className={`rounded-xl ${sizeStyles[size]} flex-row items-center justify-center gap-2`}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <>
-              {icon && <Ionicons name={icon} size={iconSize} color="#FFFFFF" />}
-              <Text className={`${textSizeStyles[size]} font-bold text-white`}>
-                {title}
-              </Text>
-            </>
-          )}
-        </LinearGradient>
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <>
+            {icon && <Ionicons name={icon} size={iconSize} color="#FFFFFF" />}
+            <Text style={{ fontSize: textSizes[size], fontWeight: '700', color: '#FFFFFF' }}>
+              {title}
+            </Text>
+          </>
+        )}
       </AnimatedPressable>
     );
   }
 
-  // Destructive uses gradient
   if (variant === 'destructive') {
     return (
       <AnimatedPressable
@@ -92,45 +95,41 @@ export function Button({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={isDisabled}
-        style={[animatedStyle, isDisabled ? {} : {
-          shadowColor: '#EF5350',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 12,
-          elevation: 4,
-        }]}
+        style={[
+          animatedStyle,
+          baseStyle,
+          {
+            backgroundColor: isDisabled ? Colors.disabled : Colors.error,
+          },
+          isDisabled ? {} : {
+            shadowColor: Colors.error,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 10,
+            elevation: 4,
+          },
+        ]}
         className={className}
       >
-        <LinearGradient
-          colors={isDisabled ? ['#D1D5DB', '#D1D5DB'] : [...Gradients.destructive]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className={`rounded-xl ${sizeStyles[size]} flex-row items-center justify-center gap-2`}
-        >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" size="small" />
-          ) : (
-            <>
-              {icon && <Ionicons name={icon} size={iconSize} color="#FFFFFF" />}
-              <Text className={`${textSizeStyles[size]} font-bold text-white`}>
-                {title}
-              </Text>
-            </>
-          )}
-        </LinearGradient>
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <>
+            {icon && <Ionicons name={icon} size={iconSize} color="#FFFFFF" />}
+            <Text style={{ fontSize: textSizes[size], fontWeight: '700', color: '#FFFFFF' }}>
+              {title}
+            </Text>
+          </>
+        )}
       </AnimatedPressable>
     );
   }
 
   // Secondary & Ghost
-  const variantStyles = {
-    secondary: isDisabled ? 'bg-disabled/20' : 'bg-primary-light',
-    ghost: '',
-  };
-  const textStyles = {
-    secondary: isDisabled ? 'text-text-secondary' : 'text-primary',
-    ghost: isDisabled ? 'text-text-secondary' : 'text-primary',
-  };
+  const bgColor = variant === 'secondary'
+    ? (isDisabled ? '#E5E7EB33' : Colors.primary50)
+    : 'transparent';
+  const textColor = isDisabled ? Colors.textSecondary : Colors.primary;
 
   return (
     <AnimatedPressable
@@ -138,21 +137,20 @@ export function Button({
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       disabled={isDisabled}
-      className={`rounded-xl ${sizeStyles[size]} flex-row items-center justify-center gap-2 ${variantStyles[variant]} ${className}`}
-      style={[animatedStyle, variant === 'secondary' && !isDisabled ? Shadows.sm : {}]}
+      style={[
+        animatedStyle,
+        baseStyle,
+        { backgroundColor: bgColor },
+        variant === 'secondary' && !isDisabled ? Shadows.sm : {},
+      ]}
+      className={className}
     >
       {loading ? (
-        <ActivityIndicator color="#0D7377" size="small" />
+        <ActivityIndicator color={Colors.primary} size="small" />
       ) : (
         <>
-          {icon && (
-            <Ionicons
-              name={icon}
-              size={iconSize}
-              color={isDisabled ? Colors.textSecondary : Colors.primary}
-            />
-          )}
-          <Text className={`${textSizeStyles[size]} font-bold ${textStyles[variant]}`}>
+          {icon && <Ionicons name={icon} size={iconSize} color={textColor} />}
+          <Text style={{ fontSize: textSizes[size], fontWeight: '700', color: textColor }}>
             {title}
           </Text>
         </>

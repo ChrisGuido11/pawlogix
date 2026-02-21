@@ -230,14 +230,13 @@ export default function RecordsScreen() {
             }}
             onPressIn={onPressIn}
             onPressOut={onPressOut}
-            style={[fabAnimStyle, fabPressStyle, Shadows.glow, { position: 'absolute', bottom: 110, right: 20 }]}
+            style={[fabAnimStyle, fabPressStyle, Shadows.warmGlow, { position: 'absolute', bottom: 110, right: 20 }]}
           >
-            <LinearGradient
-              colors={[...Gradients.primaryCta]}
-              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+            <View
+              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.secondary }}
             >
               <Ionicons name="scan" size={24} color="#FFFFFF" />
-            </LinearGradient>
+            </View>
           </AnimatedPressable>
         </SafeAreaView>
       </GradientBackground>
