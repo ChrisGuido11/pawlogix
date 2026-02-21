@@ -2,15 +2,21 @@ import { useEffect, useState, useRef } from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
+  withSpring,
+  Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
+import { GradientBackground } from '@/components/ui/gradient-background';
 import { supabase } from '@/lib/supabase';
+import { Colors, Gradients } from '@/constants/Colors';
+import { Shadows } from '@/constants/spacing';
 
 const PROGRESS_STEPS = [
   'Reading your document...',
@@ -18,40 +24,119 @@ const PROGRESS_STEPS = [
   'Preparing your summary...',
 ];
 
+function OrbitingCircle({ angle, radius, color, size, delay }: {
+  angle: number;
+  radius: number;
+  color: string;
+  size: number;
+  delay: number;
+}) {
+  const rotation = useSharedValue(angle);
+
+  useEffect(() => {
+    setTimeout(() => {
+      rotation.value = withRepeat(
+        withTiming(angle + 360, { duration: 4000, easing: Easing.linear }),
+        -1,
+        false
+      );
+    }, delay);
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => {
+    const rad = (rotation.value * Math.PI) / 180;
+    return {
+      transform: [
+        { translateX: Math.cos(rad) * radius },
+        { translateY: Math.sin(rad) * radius },
+      ],
+    };
+  });
+
+  return (
+    <Animated.View
+      style={[
+        animStyle,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          position: 'absolute',
+        },
+      ]}
+    />
+  );
+}
+
 function ProgressSteps() {
   const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setStepIndex((prev) => (prev + 1) % PROGRESS_STEPS.length);
+      setStepIndex((prev) => {
+        if (prev >= PROGRESS_STEPS.length - 1) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 1;
+      });
     }, 3000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <View className="mt-6 gap-2">
-      {PROGRESS_STEPS.map((step, index) => (
-        <View key={index} className="flex-row items-center gap-2">
-          <View
-            className={`w-2 h-2 rounded-full ${
-              index === stepIndex
-                ? 'bg-primary'
-                : index < stepIndex
-                  ? 'bg-primary/40'
-                  : 'bg-border'
-            }`}
-          />
-          <Text
-            className={`text-sm ${
-              index === stepIndex
-                ? 'text-text-primary font-medium'
-                : 'text-text-secondary'
-            }`}
-          >
-            {step}
-          </Text>
-        </View>
-      ))}
+    <View className="mt-8 gap-3 items-center">
+      {PROGRESS_STEPS.map((step, index) => {
+        const isActive = index === stepIndex;
+        const isDone = index < stepIndex;
+        const dotScale = useSharedValue(1);
+
+        useEffect(() => {
+          if (isDone) {
+            dotScale.value = withSpring(1.2, { damping: 8, stiffness: 200 });
+            setTimeout(() => {
+              dotScale.value = withSpring(1, { damping: 12, stiffness: 150 });
+            }, 200);
+          }
+        }, [isDone]);
+
+        const dotAnimStyle = useAnimatedStyle(() => ({
+          transform: [{ scale: dotScale.value }],
+        }));
+
+        return (
+          <View key={index} className="flex-row items-center gap-3">
+            <Animated.View style={dotAnimStyle}>
+              {isDone ? (
+                <LinearGradient
+                  colors={[...Gradients.primaryCta]}
+                  style={{ width: 8, height: 8, borderRadius: 4 }}
+                />
+              ) : (
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: isActive ? Colors.primary : Colors.borderLight,
+                  }}
+                />
+              )}
+            </Animated.View>
+            {/* Connecting line (except last) */}
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: isActive ? '600' : '400',
+                color: isActive ? Colors.textPrimary : Colors.textSecondary,
+              }}
+            >
+              {isDone ? '\u2713 ' : ''}{step}
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -64,14 +149,14 @@ export default function RecordProcessingScreen() {
   >('pending');
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const scale = useSharedValue(1);
+  const glowScale = useSharedValue(1);
 
   useEffect(() => {
-    scale.value = withRepeat(withTiming(1.1, { duration: 750 }), -1, true);
+    glowScale.value = withRepeat(withTiming(1.08, { duration: 1200 }), -1, true);
   }, []);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+  const glowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: glowScale.value }],
   }));
 
   useEffect(() => {
@@ -161,44 +246,59 @@ export default function RecordProcessingScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background items-center justify-center px-8">
-      {status === 'failed' ? (
-        <>
-          <Ionicons name="alert-circle-outline" size={64} color="#EF5350" />
-          <Text className="text-xl font-semibold text-text-primary mt-4 text-center">
-            Something went wrong
-          </Text>
-          <Text className="text-base text-text-secondary mt-2 text-center mb-6">
-            {error || "We couldn't analyze your record. Please try again."}
-          </Text>
-          <Button
-            title="Try Again"
-            onPress={handleRetry}
-            className="w-full mb-3"
-          />
-          <Button
-            title="Cancel"
-            onPress={() => router.replace('/(tabs)')}
-            variant="secondary"
-            className="w-full"
-          />
-        </>
-      ) : (
-        <>
-          <Animated.View style={animatedStyle}>
-            <View className="w-24 h-24 rounded-full bg-primary/10 items-center justify-center">
-              <Ionicons name="paw" size={48} color="#0D7377" />
-            </View>
-          </Animated.View>
-          <Text className="text-xl font-semibold text-text-primary mt-6 text-center">
-            Analyzing your pet's record...
-          </Text>
-          <Text className="text-base text-text-secondary mt-2 text-center">
-            This usually takes 10-30 seconds
-          </Text>
-          <ProgressSteps />
-        </>
-      )}
-    </SafeAreaView>
+    <View className="flex-1">
+      <GradientBackground variant="warm">
+        <SafeAreaView className="flex-1 items-center justify-center px-8">
+          {status === 'failed' ? (
+            <>
+              <Ionicons name="alert-circle-outline" size={64} color={Colors.error} />
+              <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textPrimary }} className="mt-4 text-center">
+                Something went wrong
+              </Text>
+              <Text className="text-base text-text-secondary mt-2 text-center mb-6">
+                {error || "We couldn't analyze your record. Please try again."}
+              </Text>
+              <Button
+                title="Try Again"
+                onPress={handleRetry}
+                className="w-full mb-3"
+              />
+              <Button
+                title="Cancel"
+                onPress={() => router.replace('/(tabs)')}
+                variant="secondary"
+                className="w-full"
+              />
+            </>
+          ) : (
+            <>
+              {/* Central icon with glow + orbiting accents */}
+              <View style={{ width: 160, height: 160, alignItems: 'center', justifyContent: 'center' }}>
+                <OrbitingCircle angle={0} radius={65} color={Colors.secondary} size={12} delay={0} />
+                <OrbitingCircle angle={120} radius={65} color={Colors.primary300} size={10} delay={200} />
+                <OrbitingCircle angle={240} radius={65} color={Colors.primary100} size={8} delay={400} />
+
+                <Animated.View style={[glowStyle, Shadows.glow, { borderRadius: 48 }]}>
+                  <LinearGradient
+                    colors={[...Gradients.primaryCta]}
+                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="paw" size={44} color="#FFFFFF" />
+                  </LinearGradient>
+                </Animated.View>
+              </View>
+
+              <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textPrimary }} className="mt-6 text-center">
+                Analyzing your pet's record...
+              </Text>
+              <Text className="text-base text-text-secondary mt-2 text-center">
+                This usually takes 10-30 seconds
+              </Text>
+              <ProgressSteps />
+            </>
+          )}
+        </SafeAreaView>
+      </GradientBackground>
+    </View>
   );
 }

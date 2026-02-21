@@ -1,29 +1,40 @@
 import { View, Pressable, Platform } from 'react-native';
+import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { usePressAnimation } from '@/hooks/usePressAnimation';
+import { Shadows } from '@/constants/spacing';
 
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
   selected?: boolean;
+  variant?: 'default' | 'elevated' | 'subtle';
   className?: string;
+  style?: any;
 }
 
-const cardShadow = Platform.select({
-  ios: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-  },
-  android: {
-    elevation: 2,
-  },
-  default: {},
-});
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function Card({ children, onPress, selected = false, className = '' }: CardProps) {
-  const baseStyles = 'bg-surface rounded-xl p-4';
-  const borderStyles = selected ? 'border-2 border-primary' : 'border border-border';
+export function Card({
+  children,
+  onPress,
+  selected = false,
+  variant = 'default',
+  className = '',
+  style,
+}: CardProps) {
+  const { onPressIn, onPressOut, animatedStyle } = usePressAnimation(0.98);
+
+  const shadowStyle = selected
+    ? Shadows.glow
+    : variant === 'elevated'
+      ? Shadows.lg
+      : variant === 'subtle'
+        ? Shadows.sm
+        : Shadows.md;
+
+  const bgClass = variant === 'subtle' ? 'bg-surface-muted' : 'bg-surface';
+  const baseStyles = `${bgClass} rounded-2xl p-4`;
 
   if (onPress) {
     const handlePress = () => {
@@ -32,18 +43,20 @@ export function Card({ children, onPress, selected = false, className = '' }: Ca
     };
 
     return (
-      <Pressable
+      <AnimatedPressable
         onPress={handlePress}
-        className={`${baseStyles} ${borderStyles} ${className}`}
-        style={({ pressed }) => [cardShadow, { opacity: pressed ? 0.95 : 1 }]}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        className={`${baseStyles} ${className}`}
+        style={[shadowStyle, animatedStyle, style]}
       >
         {children}
-      </Pressable>
+      </AnimatedPressable>
     );
   }
 
   return (
-    <View className={`${baseStyles} ${borderStyles} ${className}`} style={cardShadow}>
+    <View className={`${baseStyles} ${className}`} style={[shadowStyle, style]}>
       {children}
     </View>
   );

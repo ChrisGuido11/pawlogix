@@ -1,58 +1,83 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withDelay,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { usePets } from '@/lib/pet-context';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { GradientBackground } from '@/components/ui/gradient-background';
+import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
+import { usePressAnimation } from '@/hooks/usePressAnimation';
 import { calculateAge } from '@/lib/utils';
+import { Colors, Gradients } from '@/constants/Colors';
+import { Shadows } from '@/constants/spacing';
 import type { PetProfile } from '@/types';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function PetCardSkeleton() {
   return (
-    <View className="bg-surface rounded-xl border border-border p-4 mb-3 flex-row items-center gap-3">
-      <Skeleton width={56} height={56} className="rounded-full" />
-      <View className="flex-1 gap-2">
-        <Skeleton height={18} className="w-2/3" />
-        <Skeleton height={14} className="w-1/2" />
+    <Card className="mb-3">
+      <View className="flex-row items-center gap-3">
+        <Skeleton width={64} height={64} className="rounded-full" />
+        <View className="flex-1 gap-2">
+          <Skeleton height={18} className="w-2/3" />
+          <Skeleton height={14} className="w-1/2" />
+        </View>
       </View>
-      <Skeleton width={20} height={20} className="rounded" />
-    </View>
+    </Card>
   );
 }
 
-function PetCard({ pet, onPress }: { pet: PetProfile; onPress: () => void }) {
+function PetCard({ pet, onPress, index }: { pet: PetProfile; onPress: () => void; index: number }) {
+  const animStyle = useStaggeredEntrance(index);
+
   return (
-    <Card onPress={onPress} className="mb-3">
-      <View className="flex-row items-center gap-3">
-        {pet.photo_url ? (
-          <Image
-            source={{ uri: pet.photo_url }}
-            style={{ width: 56, height: 56, borderRadius: 28 }}
-          />
-        ) : (
-          <View className="w-14 h-14 rounded-full bg-primary/10 items-center justify-center">
-            <Ionicons
-              name={pet.species === 'dog' ? 'paw' : 'paw-outline'}
-              size={24}
-              color="#0D7377"
-            />
+    <Animated.View style={animStyle}>
+      <Card onPress={onPress} className="mb-3">
+        <View className="flex-row items-center gap-3">
+          {pet.photo_url ? (
+            <View style={[Shadows.sm, { borderRadius: 32 }]}>
+              <Image
+                source={{ uri: pet.photo_url }}
+                style={{ width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#FFFFFF' }}
+              />
+            </View>
+          ) : (
+            <LinearGradient
+              colors={[...Gradients.primaryCta]}
+              style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons
+                name={pet.species === 'dog' ? 'paw' : 'paw-outline'}
+                size={28}
+                color="#FFFFFF"
+              />
+            </LinearGradient>
+          )}
+          <View className="flex-1">
+            <Text className="text-lg font-bold text-text-primary">{pet.name}</Text>
+            <Text className="text-sm text-text-secondary mt-0.5">
+              {pet.breed ?? pet.species}
+              {pet.date_of_birth ? ` · ${calculateAge(pet.date_of_birth)}` : ''}
+            </Text>
           </View>
-        )}
-        <View className="flex-1">
-          <Text className="text-lg font-semibold text-text-primary">{pet.name}</Text>
-          <Text className="text-sm text-text-secondary">
-            {pet.breed ?? pet.species}
-            {pet.date_of_birth ? ` · ${calculateAge(pet.date_of_birth)}` : ''}
-          </Text>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#64748B" />
-      </View>
-    </Card>
+      </Card>
+    </Animated.View>
   );
 }
 
@@ -60,6 +85,16 @@ export default function PetsScreen() {
   const router = useRouter();
   const { pets, isLoading, refreshPets } = usePets();
   const [refreshing, setRefreshing] = useState(false);
+  const fabScale = useSharedValue(0);
+  const { onPressIn, onPressOut, animatedStyle: fabPressStyle } = usePressAnimation(0.9);
+
+  useEffect(() => {
+    fabScale.value = withDelay(500, withSpring(1, { damping: 12, stiffness: 150 }));
+  }, []);
+
+  const fabAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: fabScale.value }],
+  }));
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -69,52 +104,78 @@ export default function PetsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background px-4 pt-4">
-        <Text className="text-3xl font-bold text-text-primary mb-6">My Pets</Text>
-        <PetCardSkeleton />
-        <PetCardSkeleton />
-        <PetCardSkeleton />
-      </SafeAreaView>
+      <View className="flex-1">
+        <GradientBackground variant="warm">
+          <SafeAreaView className="flex-1 px-5 pt-4">
+            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-1">
+              My Pets
+            </Text>
+            <Text className="text-sm text-text-secondary mb-6">Loading...</Text>
+            <PetCardSkeleton />
+            <PetCardSkeleton />
+            <PetCardSkeleton />
+          </SafeAreaView>
+        </GradientBackground>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-1 px-4 pt-4">
-        <Text className="text-3xl font-bold text-text-primary mb-6">My Pets</Text>
+    <View className="flex-1">
+      <GradientBackground variant="warm">
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-5 pt-4">
+            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-1">
+              My Pets
+            </Text>
+            <Text className="text-sm text-text-secondary mb-6">
+              {pets.length === 0 ? 'Add your first pet' : `${pets.length} companion${pets.length > 1 ? 's' : ''}`}
+            </Text>
 
-        {pets.length === 0 ? (
-          <EmptyState
-            icon="paw-outline"
-            title="No pets yet!"
-            subtitle="Add your first furry friend to get started."
-            actionLabel="Add Pet"
-            onAction={() => router.push('/pet/create')}
-          />
-        ) : (
-          <FlashList
-            data={pets}
-            renderItem={({ item }) => (
-              <PetCard
-                pet={item}
-                onPress={() => router.push(`/pet/${item.id}` as any)}
+            {pets.length === 0 ? (
+              <EmptyState
+                icon="paw-outline"
+                title="No pets yet!"
+                subtitle="Add your first furry friend to get started."
+                actionLabel="Add Pet"
+                onAction={() => router.push('/pet/create')}
+              />
+            ) : (
+              <FlashList
+                data={pets}
+                renderItem={({ item, index }) => (
+                  <PetCard
+                    pet={item}
+                    onPress={() => router.push(`/pet/${item.id}` as any)}
+                    index={index}
+                  />
+                )}
+                keyExtractor={(item) => item.id}
+                refreshControl={
+                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0D7377" />
+                }
               />
             )}
-            keyExtractor={(item) => item.id}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0D7377" />
-            }
-          />
-        )}
-      </View>
+          </View>
 
-      <Pressable
-        onPress={() => router.push('/pet/create')}
-        className="absolute bottom-28 right-5 w-14 h-14 rounded-full bg-primary items-center justify-center shadow-lg"
-        style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}
-      >
-        <Ionicons name="add" size={28} color="#FFFFFF" />
-      </Pressable>
-    </SafeAreaView>
+          <AnimatedPressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+              router.push('/pet/create');
+            }}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
+            style={[fabAnimStyle, fabPressStyle, Shadows.glow, { position: 'absolute', bottom: 110, right: 20 }]}
+          >
+            <LinearGradient
+              colors={[...Gradients.primaryCta]}
+              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="add" size={28} color="#FFFFFF" />
+            </LinearGradient>
+          </AnimatedPressable>
+        </SafeAreaView>
+      </GradientBackground>
+    </View>
   );
 }

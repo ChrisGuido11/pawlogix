@@ -3,14 +3,18 @@ import { View, Text, ScrollView, Switch, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { writeAsStringAsync, documentDirectory } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { GradientBackground } from '@/components/ui/gradient-background';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
+import { Colors, Gradients } from '@/constants/Colors';
+import { Shadows } from '@/constants/spacing';
 
 function SettingsRow({
   icon,
@@ -38,11 +42,22 @@ function SettingsRow({
       className="flex-row items-center gap-3 py-3.5"
       style={({ pressed }) => ({ opacity: pressed && onPress ? 0.7 : 1 })}
     >
-      <Ionicons
-        name={icon as any}
-        size={20}
-        color={destructive ? '#EF5350' : '#64748B'}
-      />
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          backgroundColor: destructive ? Colors.errorLight : Colors.surfaceMuted,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons
+          name={icon as any}
+          size={18}
+          color={destructive ? Colors.error : Colors.textSecondary}
+        />
+      </View>
       <Text
         className={`text-base flex-1 ${
           destructive ? 'text-error' : 'text-text-primary'
@@ -50,7 +65,7 @@ function SettingsRow({
       >
         {label}
       </Text>
-      {trailing ?? (onPress ? <Ionicons name="chevron-forward" size={18} color="#D1D5DB" /> : null)}
+      {trailing ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} /> : null)}
     </Pressable>
   );
 }
@@ -65,6 +80,7 @@ export default function ProfileScreen() {
 
   const toggleMedReminders = async (value: boolean) => {
     setMedReminders(value);
+    Haptics.selectionAsync();
     if (user?.id) {
       await supabase
         .from('pl_profiles')
@@ -75,6 +91,7 @@ export default function ProfileScreen() {
 
   const toggleVaxReminders = async (value: boolean) => {
     setVaxReminders(value);
+    Haptics.selectionAsync();
     if (user?.id) {
       await supabase
         .from('pl_profiles')
@@ -143,11 +160,9 @@ export default function ProfileScreen() {
             try {
               if (!user?.id) return;
 
-              // Delete all user data in order
               await supabase.from('pl_record_chats').delete().eq('user_id', user.id);
               await supabase.from('pl_health_records').delete().eq('user_id', user.id);
 
-              // Delete storage files
               const { data: petPhotos } = await supabase.storage
                 .from('pl-pet-photos')
                 .list(user.id);
@@ -170,7 +185,6 @@ export default function ProfileScreen() {
               await supabase.from('pl_usage_tracking').delete().eq('user_id', user.id);
               await supabase.from('pl_profiles').delete().eq('id', user.id);
 
-              // Sign out and create fresh anonymous session
               await signOut();
 
               toast({ title: 'Account deleted', preset: 'done' });
@@ -208,141 +222,172 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1 px-4 pt-4 pb-8">
-        <Text className="text-3xl font-bold text-text-primary mb-6">Settings</Text>
-
-        {/* Account Section */}
-        {isAnonymous ? (
-          <Card className="mb-5">
-            <View className="items-center py-2">
-              <Ionicons name="person-circle-outline" size={48} color="#0D7377" />
-              <Text className="text-lg font-semibold text-text-primary mt-2">
-                Create an Account
-              </Text>
-              <Text className="text-sm text-text-secondary text-center mt-1 mb-4">
-                Back up your data and access it on any device
-              </Text>
-              <Button
-                title="Sign Up"
-                onPress={() => router.push('/auth/signup')}
-                className="w-full"
-              />
-            </View>
-            <Text
-              className="text-sm text-primary text-center mt-3"
-              onPress={() => router.push('/auth/login')}
-            >
-              Already have an account? Log In
+    <View className="flex-1">
+      <GradientBackground variant="warm">
+        <SafeAreaView className="flex-1">
+          <ScrollView className="flex-1 px-5 pt-4 pb-8">
+            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-6">
+              Settings
             </Text>
-          </Card>
-        ) : (
-          <Card className="mb-5">
-            <View className="flex-row items-center gap-3">
-              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
-                <Ionicons name="person" size={24} color="#0D7377" />
+
+            {/* Account Section */}
+            {isAnonymous ? (
+              <View style={[Shadows.lg, { borderRadius: 16, marginBottom: 20, overflow: 'hidden' }]}>
+                <LinearGradient
+                  colors={[...Gradients.primaryHeader]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{ borderRadius: 16, padding: 20 }}
+                >
+                  <View className="items-center py-2">
+                    <Ionicons name="person-circle-outline" size={48} color="#FFFFFF" />
+                    <Text className="text-lg font-bold text-white mt-2">
+                      Create an Account
+                    </Text>
+                    <Text className="text-sm text-white/80 text-center mt-1 mb-4">
+                      Back up your data and access it on any device
+                    </Text>
+                    <Pressable
+                      onPress={() => router.push('/auth/signup')}
+                      style={[Shadows.sm, { backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, width: '100%' }]}
+                    >
+                      <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>
+                        Sign Up
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Pressable
+                    onPress={() => router.push('/auth/login')}
+                    className="py-3 mt-1"
+                    hitSlop={8}
+                  >
+                    <Text className="text-sm text-white/90 text-center font-medium">
+                      Already have an account? Log In
+                    </Text>
+                  </Pressable>
+                </LinearGradient>
               </View>
-              <View className="flex-1">
-                <Text className="text-lg font-semibold text-text-primary">
-                  {profile?.display_name ?? 'PawLogix User'}
-                </Text>
-                <Text className="text-sm text-text-secondary">
-                  {profile?.email}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        )}
+            ) : (
+              <Card className="mb-5" variant="elevated">
+                <View className="flex-row items-center gap-3">
+                  <LinearGradient
+                    colors={[...Gradients.primaryCta]}
+                    style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="person" size={24} color="#FFFFFF" />
+                  </LinearGradient>
+                  <View className="flex-1">
+                    <Text className="text-lg font-bold text-text-primary">
+                      {profile?.display_name ?? 'PawLogix User'}
+                    </Text>
+                    <Text className="text-sm text-text-secondary">
+                      {profile?.email}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            )}
 
-        {/* Notifications */}
-        <Text className="text-xs font-semibold text-text-secondary mb-2 mt-2">
-          Notifications
-        </Text>
-        <Card className="mb-5">
-          <SettingsRow
-            icon="medical-outline"
-            label="Medication Reminders"
-            trailing={
-              <Switch
-                value={medReminders}
-                onValueChange={toggleMedReminders}
-                trackColor={{ false: '#D1D5DB', true: '#0D7377' }}
-                thumbColor="#FFFFFF"
+            {/* Notifications */}
+            <Text
+              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
+              className="uppercase mb-2 mt-2"
+            >
+              Notifications
+            </Text>
+            <Card className="mb-5">
+              <SettingsRow
+                icon="medical-outline"
+                label="Medication Reminders"
+                trailing={
+                  <Switch
+                    value={medReminders}
+                    onValueChange={toggleMedReminders}
+                    trackColor={{ false: '#D1D5DB', true: '#0D7377' }}
+                    thumbColor="#FFFFFF"
+                  />
+                }
               />
-            }
-          />
-          <View className="h-px bg-border" />
-          <SettingsRow
-            icon="shield-checkmark-outline"
-            label="Vaccine Reminders"
-            trailing={
-              <Switch
-                value={vaxReminders}
-                onValueChange={toggleVaxReminders}
-                trackColor={{ false: '#D1D5DB', true: '#0D7377' }}
-                thumbColor="#FFFFFF"
+              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
+              <SettingsRow
+                icon="shield-checkmark-outline"
+                label="Vaccine Reminders"
+                trailing={
+                  <Switch
+                    value={vaxReminders}
+                    onValueChange={toggleVaxReminders}
+                    trackColor={{ false: '#D1D5DB', true: '#0D7377' }}
+                    thumbColor="#FFFFFF"
+                  />
+                }
               />
-            }
-          />
-        </Card>
+            </Card>
 
-        {/* Legal */}
-        <Text className="text-xs font-semibold text-text-secondary mb-2">
-          Legal
-        </Text>
-        <Card className="mb-5">
-          <SettingsRow
-            icon="shield-outline"
-            label="Privacy Policy"
-            onPress={() => showToastPlaceholder('Privacy Policy')}
-          />
-          <View className="h-px bg-border" />
-          <SettingsRow
-            icon="document-text-outline"
-            label="Terms of Service"
-            onPress={() => showToastPlaceholder('Terms of Service')}
-          />
-          <View className="h-px bg-border" />
-          <SettingsRow
-            icon="help-circle-outline"
-            label="Support & FAQ"
-            onPress={() => showToastPlaceholder('Support & FAQ')}
-          />
-        </Card>
+            {/* Legal */}
+            <Text
+              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
+              className="uppercase mb-2"
+            >
+              Legal
+            </Text>
+            <Card className="mb-5">
+              <SettingsRow
+                icon="shield-outline"
+                label="Privacy Policy"
+                onPress={() => showToastPlaceholder('Privacy Policy')}
+              />
+              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
+              <SettingsRow
+                icon="document-text-outline"
+                label="Terms of Service"
+                onPress={() => showToastPlaceholder('Terms of Service')}
+              />
+              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
+              <SettingsRow
+                icon="help-circle-outline"
+                label="Support & FAQ"
+                onPress={() => showToastPlaceholder('Support & FAQ')}
+              />
+            </Card>
 
-        {/* Data */}
-        <Text className="text-xs font-semibold text-text-secondary mb-2">
-          Data
-        </Text>
-        <Card className="mb-5">
-          <SettingsRow
-            icon="download-outline"
-            label="Export My Data"
-            onPress={exportData}
-          />
-          <View className="h-px bg-border" />
-          <SettingsRow
-            icon="trash-outline"
-            label="Delete Account"
-            onPress={deleteAccount}
-            destructive
-          />
-        </Card>
+            {/* Data */}
+            <Text
+              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
+              className="uppercase mb-2"
+            >
+              Data
+            </Text>
+            <Card className="mb-5">
+              <SettingsRow
+                icon="download-outline"
+                label="Export My Data"
+                onPress={exportData}
+              />
+              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
+              <SettingsRow
+                icon="trash-outline"
+                label="Delete Account"
+                onPress={deleteAccount}
+                destructive
+              />
+            </Card>
 
-        {/* Sign Out */}
-        {!isAnonymous && (
-          <Button
-            title="Sign Out"
-            onPress={handleSignOut}
-            variant="secondary"
-            className="mb-4"
-          />
-        )}
+            {/* Sign Out */}
+            {!isAnonymous && (
+              <Button
+                title="Sign Out"
+                onPress={handleSignOut}
+                variant="secondary"
+                className="mb-4"
+              />
+            )}
 
-        <Text className="text-xs text-text-secondary text-center mt-4 mb-8">
-          PawLogix v1.0.0 (Beta)
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+            <Text className="text-xs text-text-tertiary text-center mt-4 mb-8">
+              PawLogix v1.0.0 (Beta)
+            </Text>
+          </ScrollView>
+        </SafeAreaView>
+      </GradientBackground>
+    </View>
   );
 }

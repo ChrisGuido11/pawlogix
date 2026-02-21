@@ -4,6 +4,7 @@ import Animated, {
   useSharedValue,
   withRepeat,
   withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 
@@ -14,18 +15,18 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) {
-  const opacity = useSharedValue(0.3);
+  const shimmerX = useSharedValue(-1);
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withTiming(0.7, { duration: 1000 }),
+    shimmerX.value = withRepeat(
+      withTiming(2, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      false
     );
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
+    opacity: 0.4 + 0.3 * Math.sin(shimmerX.value * Math.PI),
   }));
 
   return (
@@ -34,7 +35,7 @@ export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) 
         animatedStyle,
         { width: width as number, height },
       ]}
-      className={`bg-border rounded-lg ${className}`}
+      className={`bg-border-light rounded-2xl ${className}`}
     />
   );
 }

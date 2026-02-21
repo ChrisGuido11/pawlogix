@@ -6,10 +6,14 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { GradientBackground } from '@/components/ui/gradient-background';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from '@/lib/toast';
+import { Colors, Gradients } from '@/constants/Colors';
+import { Shadows } from '@/constants/spacing';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -42,70 +46,88 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
-        <ScrollView className="flex-1 px-4 pt-4" keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} className="mb-4">
-            <Ionicons name="arrow-back" size={24} color="#1A1A2E" />
-          </Pressable>
+    <View className="flex-1">
+      <GradientBackground variant="warm">
+        <SafeAreaView className="flex-1">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            className="flex-1"
+          >
+            <ScrollView className="flex-1 px-5 pt-4" keyboardShouldPersistTaps="handled">
+              <Pressable
+                onPress={() => router.back()}
+                style={[Shadows.sm, { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }]}
+                hitSlop={8}
+              >
+                <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+              </Pressable>
 
-          <Text className="text-3xl font-bold text-text-primary mb-2">
-            Welcome Back
-          </Text>
-          <Text className="text-base text-text-secondary mb-8">
-            Log in to access your pet health data
-          </Text>
+              {/* Logo icon */}
+              <View className="items-center mb-6">
+                <LinearGradient
+                  colors={[...Gradients.primaryCta]}
+                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="paw" size={28} color="#FFFFFF" />
+                </LinearGradient>
+              </View>
 
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Email"
-                placeholder="you@example.com"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                containerClassName="mb-4"
+              <Text style={{ fontSize: 28, fontWeight: '700', color: Colors.textPrimary }} className="mb-2">
+                Welcome Back
+              </Text>
+              <Text className="text-base text-text-secondary mb-8">
+                Log in to access your pet health data
+              </Text>
+
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    label="Email"
+                    placeholder="you@example.com"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.email?.message}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    containerClassName="mb-4"
+                  />
+                )}
               />
-            )}
-          />
 
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Password"
-                placeholder="Your password"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.password?.message}
-                secureTextEntry
-                containerClassName="mb-2"
+              <Controller
+                control={control}
+                name="password"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    label="Password"
+                    placeholder="Your password"
+                    value={value}
+                    onChangeText={onChange}
+                    onBlur={onBlur}
+                    error={errors.password?.message}
+                    secureTextEntry
+                    containerClassName="mb-2"
+                  />
+                )}
               />
-            )}
-          />
 
-          <Pressable onPress={() => router.push('/auth/forgot-password')} className="mb-6">
-            <Text className="text-sm text-primary">Forgot Password?</Text>
-          </Pressable>
+              <Pressable onPress={() => router.push('/auth/forgot-password')} className="mb-6">
+                <Text className="text-sm text-primary font-semibold">Forgot Password?</Text>
+              </Pressable>
 
-          <Button
-            title="Log In"
-            onPress={handleSubmit(onSubmit)}
-            loading={isSubmitting}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+              <Button
+                title="Log In"
+                onPress={handleSubmit(onSubmit)}
+                loading={isSubmitting}
+              />
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </GradientBackground>
+    </View>
   );
 }

@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -13,8 +14,11 @@ import Animated, {
 import { Card } from '@/components/ui/card';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { Colors, Gradients } from '@/constants/Colors';
+import { Shadows } from '@/constants/spacing';
 import type { RecordChat, HealthRecord } from '@/types';
 
 interface ChatMessage {
@@ -57,17 +61,44 @@ function SendButton({ enabled, onPress }: { enabled: boolean; onPress: () => voi
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={!enabled}
-      style={animStyle}
-      className={`w-11 h-11 rounded-full items-center justify-center ${
-        enabled ? 'bg-primary' : 'bg-disabled'
-      }`}
+      style={[animStyle, enabled ? Shadows.glow : {}]}
     >
-      <Ionicons
-        name="send"
-        size={18}
-        color={enabled ? '#FFFFFF' : '#64748B'}
-      />
+      {enabled ? (
+        <LinearGradient
+          colors={[...Gradients.primaryCta]}
+          style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="send" size={18} color="#FFFFFF" />
+        </LinearGradient>
+      ) : (
+        <View
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.disabled, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Ionicons name="send" size={18} color={Colors.textTertiary} />
+        </View>
+      )}
     </AnimatedPressable>
+  );
+}
+
+function SuggestionPill({ text, onPress, index }: { text: string; onPress: () => void; index: number }) {
+  const animStyle = useStaggeredEntrance(index);
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={onPress}
+        style={{
+          backgroundColor: Colors.primary50,
+          borderWidth: 1,
+          borderColor: Colors.primary200,
+          borderRadius: 20,
+          paddingHorizontal: 16,
+          paddingVertical: 10,
+        }}
+      >
+        <Text className="text-sm text-primary font-semibold">{text}</Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -87,7 +118,6 @@ export default function RecordChatScreen() {
       if (!id) return;
       setIsLoading(true);
       try {
-        // Fetch record
         const { data: recordData } = await supabase
           .from('pl_health_records')
           .select('*')
@@ -95,7 +125,6 @@ export default function RecordChatScreen() {
           .single();
         if (recordData) setRecord(recordData as HealthRecord);
 
-        // Fetch chat history
         const { data: chatData } = await supabase
           .from('pl_record_chats')
           .select('*')
@@ -117,7 +146,6 @@ export default function RecordChatScreen() {
     setInput('');
     setIsSending(true);
 
-    // Optimistic add user message
     const userMessage: ChatMessage = {
       id: `temp-${Date.now()}`,
       role: 'user',
@@ -127,7 +155,6 @@ export default function RecordChatScreen() {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      // Save user message
       const { data: savedUserMsg } = await supabase
         .from('pl_record_chats')
         .insert({
@@ -139,7 +166,6 @@ export default function RecordChatScreen() {
         .select()
         .single();
 
-      // Call Edge Function
       const { data: { session } } = await supabase.auth.getSession();
       const chatHistory = messages.map((m) => ({
         role: m.role,
@@ -165,7 +191,6 @@ export default function RecordChatScreen() {
       const data = await response.json();
 
       if (data.reply) {
-        // Save assistant message
         const { data: savedAssistantMsg } = await supabase
           .from('pl_record_chats')
           .insert({
@@ -199,42 +224,64 @@ export default function RecordChatScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: ChatMessage }) => (
-    <View
-      className={`mb-3 max-w-[85%] ${
-        item.role === 'user' ? 'self-end' : 'self-start'
-      }`}
-    >
-      <View
-        className={`rounded-2xl px-4 py-3 ${
-          item.role === 'user' ? 'bg-primary' : 'bg-surface border border-border'
-        }`}
-      >
-        <Text
-          className={`text-base leading-6 ${
-            item.role === 'user' ? 'text-white' : 'text-text-primary'
-          }`}
-        >
-          {item.content}
-        </Text>
+  const renderMessage = ({ item }: { item: ChatMessage }) => {
+    const isUser = item.role === 'user';
+
+    return (
+      <View className={`mb-3 max-w-[85%] ${isUser ? 'self-end' : 'self-start'}`}>
+        {!isUser && (
+          <View className="flex-row items-center gap-1 mb-1">
+            <Ionicons name="sparkles" size={12} color={Colors.primary300} />
+            <Text style={{ fontSize: 10, color: Colors.textTertiary }}>AI Assistant</Text>
+          </View>
+        )}
+        {isUser ? (
+          <LinearGradient
+            colors={[...Gradients.primaryCta]}
+            style={{ borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 12 }}
+          >
+            <Text className="text-base text-white leading-6">{item.content}</Text>
+          </LinearGradient>
+        ) : (
+          <View
+            style={[
+              Shadows.sm,
+              {
+                backgroundColor: Colors.surfaceMuted,
+                borderRadius: 18,
+                borderBottomLeftRadius: 6,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+              },
+            ]}
+          >
+            <Text className="text-base text-text-primary leading-6">{item.content}</Text>
+          </View>
+        )}
+        {!isUser && (
+          <Text style={{ fontSize: 10, color: Colors.textTertiary, marginTop: 4, marginLeft: 8 }}>
+            AI interpretation — consult your vet
+          </Text>
+        )}
       </View>
-      {item.role === 'assistant' && (
-        <Text className="text-[10px] text-text-secondary mt-1 ml-2">
-          AI interpretation — consult your vet
-        </Text>
-      )}
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* Header */}
-      <View className="flex-row items-center gap-3 px-4 py-3 border-b border-border bg-surface">
-        <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1A1A2E" />
+      <View
+        style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          style={[Shadows.sm, { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}
+          hitSlop={8}
+        >
+          <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
         </Pressable>
         <View className="flex-1">
-          <Text className="text-lg font-semibold text-text-primary">
+          <Text className="text-lg font-bold text-text-primary">
             Ask About This Record
           </Text>
           {record?.interpretation?.summary && (
@@ -254,19 +301,30 @@ export default function RecordChatScreen() {
         <View className="flex-1 px-4 pt-4">
           {isLoading ? (
             <View className="gap-3">
-              <Skeleton height={60} className="w-2/3 self-start" />
-              <Skeleton height={40} className="w-1/2 self-end" />
-              <Skeleton height={80} className="w-3/4 self-start" />
+              <Skeleton height={60} className="w-2/3 self-start rounded-2xl" />
+              <Skeleton height={40} className="w-1/2 self-end rounded-2xl" />
+              <Skeleton height={80} className="w-3/4 self-start rounded-2xl" />
             </View>
           ) : messages.length === 0 ? (
             <View className="flex-1 items-center justify-center">
-              <Ionicons name="chatbubbles-outline" size={48} color="rgba(13, 115, 119, 0.2)" />
+              <Ionicons name="chatbubbles-outline" size={48} color={Colors.primary200} />
               <Text className="text-base text-text-secondary mt-3 text-center">
                 Ask any question about this record
               </Text>
-              <Text className="text-sm text-text-secondary mt-1 text-center">
-                e.g., "What does elevated BUN mean?"
-              </Text>
+              <View className="flex-row flex-wrap justify-center gap-2 mt-4 px-4">
+                {[
+                  'What do these results mean?',
+                  'Is anything concerning?',
+                  'What should I ask my vet?',
+                ].map((suggestion, idx) => (
+                  <SuggestionPill
+                    key={suggestion}
+                    text={suggestion}
+                    onPress={() => setInput(suggestion)}
+                    index={idx}
+                  />
+                ))}
+              </View>
             </View>
           ) : (
             <FlashList
@@ -282,13 +340,24 @@ export default function RecordChatScreen() {
         </View>
 
         {/* Input */}
-        <View className="px-4 py-3 bg-surface border-t border-border">
+        <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12 }]}>
           <DisclaimerBanner className="mb-2" />
           <View className="flex-row items-end gap-2">
             <TextInput
-              className="flex-1 bg-background rounded-2xl px-4 py-3 text-base text-text-primary max-h-24 border border-border"
+              style={[
+                {
+                  flex: 1,
+                  backgroundColor: Colors.surfaceMuted,
+                  borderRadius: 20,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  fontSize: 16,
+                  color: Colors.textPrimary,
+                  maxHeight: 96,
+                },
+              ]}
               placeholder="Ask a question..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor={Colors.textTertiary}
               value={input}
               onChangeText={setInput}
               multiline
