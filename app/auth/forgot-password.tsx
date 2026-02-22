@@ -10,7 +10,7 @@ import { Image } from 'expo-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
-import { supabase } from '@/lib/supabase';
+import { supabase, scopeEmail } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Typography } from '@/constants/typography';
@@ -35,7 +35,7 @@ export default function ForgotPasswordScreen() {
   const onSubmit = async (data: ResetForm) => {
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email);
+      const { error } = await supabase.auth.resetPasswordForEmail(scopeEmail(data.email));
       if (error) throw error;
       setSent(true);
       toast({ title: 'Reset link sent!', message: 'Check your email inbox.', preset: 'done' });

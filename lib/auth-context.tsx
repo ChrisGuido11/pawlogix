@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase } from './supabase';
+import { supabase, scopeEmail } from './supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { UserProfile } from '@/types';
 
@@ -80,23 +80,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const linkAccount = async (email: string, password: string, displayName?: string) => {
     const { error } = await supabase.auth.updateUser({
-      email,
+      email: scopeEmail(email),
       password,
       data: { app: 'pawlogix' },
     });
     if (error) throw error;
 
-    if (displayName && user?.id) {
+    if (user?.id) {
       await supabase
         .from('pl_profiles')
-        .update({ display_name: displayName })
+        .update({
+          display_name: displayName || null,
+          email,
+        })
         .eq('id', user.id);
     }
     await refreshProfile();
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: scopeEmail(email),
+      password,
+    });
     if (error) throw error;
   };
 
