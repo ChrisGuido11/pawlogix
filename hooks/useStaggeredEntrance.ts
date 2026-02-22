@@ -6,8 +6,8 @@ import {
   withSpring,
 } from 'react-native-reanimated';
 
-export function useStaggeredEntrance(index: number, delay = 80) {
-  const translateY = useSharedValue(24);
+export function useStaggeredEntrance(index: number, delay = 60) {
+  const translateY = useSharedValue(16);
   const opacity = useSharedValue(0);
 
   useEffect(() => {

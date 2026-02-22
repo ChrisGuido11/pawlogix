@@ -13,7 +13,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
-import { GradientBackground } from '@/components/ui/gradient-background';
 import { supabase } from '@/lib/supabase';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
@@ -86,7 +85,7 @@ function ProgressSteps() {
   }, []);
 
   return (
-    <View className="mt-8 gap-3 items-center">
+    <View style={{ marginTop: 32, gap: 12, alignItems: 'center' }}>
       {PROGRESS_STEPS.map((step, index) => {
         const isActive = index === stepIndex;
         const isDone = index < stepIndex;
@@ -106,7 +105,7 @@ function ProgressSteps() {
         }));
 
         return (
-          <View key={index} className="flex-row items-center gap-3">
+          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Animated.View style={dotAnimStyle}>
               {isDone ? (
                 <LinearGradient
@@ -119,17 +118,16 @@ function ProgressSteps() {
                     width: 8,
                     height: 8,
                     borderRadius: 4,
-                    backgroundColor: isActive ? Colors.primary : Colors.borderLight,
+                    backgroundColor: isActive ? Colors.primary : Colors.border,
                   }}
                 />
               )}
             </Animated.View>
-            {/* Connecting line (except last) */}
             <Text
               style={{
                 fontSize: 14,
                 fontWeight: isActive ? '600' : '400',
-                color: isActive ? Colors.textPrimary : Colors.textSecondary,
+                color: isActive ? Colors.textHeading : Colors.textBody,
               }}
             >
               {isDone ? '\u2713 ' : ''}{step}
@@ -246,59 +244,57 @@ export default function RecordProcessingScreen() {
   };
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1 items-center justify-center px-8">
-          {status === 'failed' ? (
-            <>
-              <Ionicons name="alert-circle-outline" size={64} color={Colors.error} />
-              <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textPrimary }} className="mt-4 text-center">
-                Something went wrong
-              </Text>
-              <Text className="text-base text-text-secondary mt-2 text-center mb-6">
-                {error || "We couldn't analyze your record. Please try again."}
-              </Text>
-              <Button
-                title="Try Again"
-                onPress={handleRetry}
-                className="w-full mb-3"
-              />
-              <Button
-                title="Cancel"
-                onPress={() => router.replace('/(tabs)')}
-                variant="secondary"
-                className="w-full"
-              />
-            </>
-          ) : (
-            <>
-              {/* Central icon with glow + orbiting accents */}
-              <View style={{ width: 160, height: 160, alignItems: 'center', justifyContent: 'center' }}>
-                <OrbitingCircle angle={0} radius={65} color={Colors.secondary} size={12} delay={0} />
-                <OrbitingCircle angle={120} radius={65} color={Colors.primary300} size={10} delay={200} />
-                <OrbitingCircle angle={240} radius={65} color={Colors.primary100} size={8} delay={400} />
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        {status === 'failed' ? (
+          <>
+            <Ionicons name="alert-circle-outline" size={64} color={Colors.error} />
+            <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textHeading, marginTop: 16, textAlign: 'center' }}>
+              Something went wrong
+            </Text>
+            <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 8, textAlign: 'center', marginBottom: 24 }}>
+              {error || "We couldn't analyze your record. Please try again."}
+            </Text>
+            <Button
+              title="Try Again"
+              onPress={handleRetry}
+              className="w-full mb-3"
+            />
+            <Button
+              title="Cancel"
+              onPress={() => router.replace('/(tabs)')}
+              variant="secondary"
+              className="w-full"
+            />
+          </>
+        ) : (
+          <>
+            {/* Central icon with glow + orbiting accents */}
+            <View style={{ width: 160, height: 160, alignItems: 'center', justifyContent: 'center' }}>
+              <OrbitingCircle angle={0} radius={65} color={Colors.secondary} size={12} delay={0} />
+              <OrbitingCircle angle={120} radius={65} color={Colors.primary} size={10} delay={200} />
+              <OrbitingCircle angle={240} radius={65} color={Colors.primaryLight} size={8} delay={400} />
 
-                <Animated.View style={[glowStyle, Shadows.glow, { borderRadius: 48 }]}>
-                  <LinearGradient
-                    colors={[...Gradients.primaryCta]}
-                    style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Ionicons name="paw" size={44} color="#FFFFFF" />
-                  </LinearGradient>
-                </Animated.View>
-              </View>
+              <Animated.View style={[glowStyle, Shadows.primaryButton, { borderRadius: 48 }]}>
+                <LinearGradient
+                  colors={[...Gradients.primaryCta]}
+                  style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Ionicons name="paw" size={44} color="#FFFFFF" />
+                </LinearGradient>
+              </Animated.View>
+            </View>
 
-              <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textPrimary }} className="mt-6 text-center">
-                Analyzing your pet's record...
-              </Text>
-              <Text className="text-base text-text-secondary mt-2 text-center">
-                This usually takes 10-30 seconds
-              </Text>
-              <ProgressSteps />
-            </>
-          )}
-        </SafeAreaView>
-      </GradientBackground>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textHeading, marginTop: 24, textAlign: 'center' }}>
+              Analyzing your pet's record...
+            </Text>
+            <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 8, textAlign: 'center' }}>
+              This usually takes 10-30 seconds
+            </Text>
+            <ProgressSteps />
+          </>
+        )}
+      </SafeAreaView>
     </View>
   );
 }

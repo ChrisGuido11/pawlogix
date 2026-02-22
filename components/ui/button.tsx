@@ -9,7 +9,7 @@ import { Shadows, BorderRadius } from '@/constants/spacing';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'destructive' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'destructive' | 'ghost' | 'pill';
   size?: 'sm' | 'md' | 'lg';
   icon?: keyof typeof Ionicons.glyphMap;
   disabled?: boolean;
@@ -18,12 +18,6 @@ interface ButtonProps {
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-const sizeHeights = {
-  sm: 40,
-  md: 50,
-  lg: 56,
-};
 
 export function Button({
   title,
@@ -36,27 +30,79 @@ export function Button({
   className = '',
 }: ButtonProps) {
   const isDisabled = disabled || loading;
-  const { onPressIn, onPressOut, animatedStyle } = usePressAnimation(0.96);
+  const { onPressIn, onPressOut, animatedStyle } = usePressAnimation(
+    variant === 'pill' ? 0.95 : 0.97
+  );
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPress();
   };
 
-  const textSizes = { sm: 14, md: 16, lg: 18 };
-  const iconSize = size === 'sm' ? 16 : size === 'lg' ? 22 : 18;
-  const height = sizeHeights[size];
+  // --- Pill variant ---
+  // Spec: bg-primary-light, text-primary, rounded-full, py-1.5 px-4, 13px Medium
+  if (variant === 'pill') {
+    return (
+      <AnimatedPressable
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={isDisabled}
+        style={[
+          animatedStyle,
+          {
+            backgroundColor: isDisabled ? Colors.disabled : Colors.primaryLight,
+            borderRadius: BorderRadius.full,
+            paddingVertical: 6,
+            paddingHorizontal: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+          },
+        ]}
+        className={className}
+      >
+        {icon && (
+          <Ionicons
+            name={icon}
+            size={14}
+            color={isDisabled ? Colors.textMuted : Colors.primary}
+          />
+        )}
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: '500',
+            color: isDisabled ? Colors.textMuted : Colors.primary,
+          }}
+        >
+          {title}
+        </Text>
+      </AnimatedPressable>
+    );
+  }
+
+  // --- Size-based dimensions ---
+  const sizeConfig = {
+    sm: { height: 40, fontSize: 14, iconSize: 16, px: 20 },
+    md: { height: 50, fontSize: 16, iconSize: 18, px: 24 },
+    lg: { height: 56, fontSize: 18, iconSize: 22, px: 28 },
+  };
+  const cfg = sizeConfig[size];
 
   const baseStyle = {
-    height,
-    borderRadius: BorderRadius.button,
+    height: cfg.height,
+    borderRadius: BorderRadius.button, // 12px
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     gap: 8,
-    paddingHorizontal: 24,
+    paddingHorizontal: cfg.px,
   };
 
+  // --- Primary variant ---
+  // Spec: bg-primary (#5BC5F2), white text, bold, brand-tinted shadow
   if (variant === 'primary') {
     return (
       <AnimatedPressable
@@ -68,18 +114,26 @@ export function Button({
           animatedStyle,
           baseStyle,
           {
-            backgroundColor: isDisabled ? Colors.disabled : Colors.secondary,
+            backgroundColor: isDisabled ? Colors.disabled : Colors.primary,
           },
-          isDisabled ? {} : Shadows.warmGlow,
+          isDisabled ? {} : Shadows.primaryButton,
         ]}
         className={className}
       >
         {loading ? (
-          <ActivityIndicator color="#FFFFFF" size="small" />
+          <ActivityIndicator color={Colors.textOnPrimary} size="small" />
         ) : (
           <>
-            {icon && <Ionicons name={icon} size={iconSize} color="#FFFFFF" />}
-            <Text style={{ fontSize: textSizes[size], fontWeight: '700', color: '#FFFFFF' }}>
+            {icon && (
+              <Ionicons name={icon} size={cfg.iconSize} color={Colors.textOnPrimary} />
+            )}
+            <Text
+              style={{
+                fontSize: cfg.fontSize,
+                fontWeight: '700',
+                color: Colors.textOnPrimary,
+              }}
+            >
               {title}
             </Text>
           </>
@@ -88,6 +142,8 @@ export function Button({
     );
   }
 
+  // --- Destructive variant ---
+  // Spec: transparent bg, 1.5px solid error border, error text
   if (variant === 'destructive') {
     return (
       <AnimatedPressable
@@ -99,24 +155,31 @@ export function Button({
           animatedStyle,
           baseStyle,
           {
-            backgroundColor: isDisabled ? Colors.disabled : Colors.error,
-          },
-          isDisabled ? {} : {
-            shadowColor: Colors.error,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 10,
-            elevation: 4,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderColor: isDisabled ? Colors.disabled : Colors.error,
           },
         ]}
         className={className}
       >
         {loading ? (
-          <ActivityIndicator color="#FFFFFF" size="small" />
+          <ActivityIndicator color={Colors.error} size="small" />
         ) : (
           <>
-            {icon && <Ionicons name={icon} size={iconSize} color="#FFFFFF" />}
-            <Text style={{ fontSize: textSizes[size], fontWeight: '700', color: '#FFFFFF' }}>
+            {icon && (
+              <Ionicons
+                name={icon}
+                size={cfg.iconSize}
+                color={isDisabled ? Colors.disabled : Colors.error}
+              />
+            )}
+            <Text
+              style={{
+                fontSize: cfg.fontSize,
+                fontWeight: '600',
+                color: isDisabled ? Colors.disabled : Colors.error,
+              }}
+            >
               {title}
             </Text>
           </>
@@ -125,12 +188,55 @@ export function Button({
     );
   }
 
-  // Secondary & Ghost
-  const bgColor = variant === 'secondary'
-    ? (isDisabled ? '#E5E7EB33' : Colors.primary50)
-    : 'transparent';
-  const textColor = isDisabled ? Colors.textSecondary : Colors.primary;
+  // --- Secondary variant ---
+  // Spec: transparent bg, 1.5px solid primary border, primary text
+  if (variant === 'secondary') {
+    return (
+      <AnimatedPressable
+        onPress={handlePress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        disabled={isDisabled}
+        style={[
+          animatedStyle,
+          baseStyle,
+          {
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderColor: isDisabled ? Colors.disabled : Colors.primary,
+          },
+        ]}
+        className={className}
+      >
+        {loading ? (
+          <ActivityIndicator color={Colors.primary} size="small" />
+        ) : (
+          <>
+            {icon && (
+              <Ionicons
+                name={icon}
+                size={cfg.iconSize}
+                color={isDisabled ? Colors.disabled : Colors.primary}
+              />
+            )}
+            <Text
+              style={{
+                fontSize: cfg.fontSize,
+                fontWeight: '600',
+                color: isDisabled ? Colors.disabled : Colors.primary,
+              }}
+            >
+              {title}
+            </Text>
+          </>
+        )}
+      </AnimatedPressable>
+    );
+  }
 
+  // --- Ghost variant ---
+  // Transparent bg, primary text, no border
+  const ghostTextColor = isDisabled ? Colors.textMuted : Colors.primary;
   return (
     <AnimatedPressable
       onPress={handlePress}
@@ -140,8 +246,7 @@ export function Button({
       style={[
         animatedStyle,
         baseStyle,
-        { backgroundColor: bgColor },
-        variant === 'secondary' && !isDisabled ? Shadows.sm : {},
+        { backgroundColor: 'transparent' },
       ]}
       className={className}
     >
@@ -149,8 +254,14 @@ export function Button({
         <ActivityIndicator color={Colors.primary} size="small" />
       ) : (
         <>
-          {icon && <Ionicons name={icon} size={iconSize} color={textColor} />}
-          <Text style={{ fontSize: textSizes[size], fontWeight: '700', color: textColor }}>
+          {icon && <Ionicons name={icon} size={cfg.iconSize} color={ghostTextColor} />}
+          <Text
+            style={{
+              fontSize: cfg.fontSize,
+              fontWeight: '600',
+              color: ghostTextColor,
+            }}
+          >
             {title}
           </Text>
         </>

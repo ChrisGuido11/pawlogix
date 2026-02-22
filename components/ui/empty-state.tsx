@@ -1,121 +1,92 @@
 import { View, Text } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import { useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Button } from './button';
-import { Shadows } from '@/constants/spacing';
 import { Colors } from '@/constants/Colors';
 
 interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;
-  accentIcon1?: keyof typeof Ionicons.glyphMap;
-  accentIcon2?: keyof typeof Ionicons.glyphMap;
+  /** Path to mascot illustration image (e.g. require('@/assets/illustrations/mascot-sleeping.png')) */
+  illustration?: any;
+  /** Size of the illustration in px (default 140) */
+  illustrationSize?: number;
   title: string;
   subtitle?: string;
   actionLabel?: string;
   onAction?: () => void;
 }
 
-function FloatingAccent({
-  icon,
-  size,
-  color,
-  offsetX,
-  offsetY,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  size: number;
-  color: string;
-  offsetX: number;
-  offsetY: number;
-}) {
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    translateY.value = withRepeat(
-      withTiming(8, { duration: 2000 }),
-      -1,
-      true
-    );
-  }, []);
-
-  const floatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        floatStyle,
-        {
-          position: 'absolute',
-          left: offsetX,
-          top: offsetY,
-        },
-      ]}
-    >
-      <Ionicons name={icon} size={size} color={color} />
-    </Animated.View>
-  );
-}
-
+// Spec: Centered vertically, mascot illustration on soft blue blob (180px circle, bg-primary-light),
+// title 20px SemiBold text-heading, subtitle 15px text-muted, CTA pill button mt-6
+// If no illustration: paw icon placeholder in primary color on blue circle + TODO comment
 export function EmptyState({
   icon = 'paw-outline',
-  accentIcon1 = 'heart-outline',
-  accentIcon2 = 'sparkles-outline',
+  illustration,
+  illustrationSize = 140,
   title,
   subtitle,
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const blobSize = 180;
+
   return (
-    <View className="flex-1 items-center justify-center px-8 py-12">
-      <View style={{ width: 120, height: 120, position: 'relative' }}>
-        <View
-          style={[
-            Shadows.md,
-            {
-              width: 120,
-              height: 120,
-              borderRadius: 60,
-              backgroundColor: Colors.primary50,
-              alignItems: 'center',
-              justifyContent: 'center',
-            },
-          ]}
-        >
-          <Ionicons name={icon} size={52} color={Colors.primary} />
-        </View>
-        <FloatingAccent
-          icon={accentIcon1}
-          size={20}
-          color={Colors.secondary}
-          offsetX={-16}
-          offsetY={-8}
-        />
-        <FloatingAccent
-          icon={accentIcon2}
-          size={18}
-          color={Colors.primary300}
-          offsetX={108}
-          offsetY={10}
-        />
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 48 }}>
+      {/* Illustration or placeholder */}
+      <View
+        style={{
+          width: blobSize,
+          height: blobSize,
+          borderRadius: blobSize / 2,
+          backgroundColor: Colors.primaryLight,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {illustration ? (
+          <Image
+            source={illustration}
+            style={{ width: illustrationSize, height: illustrationSize }}
+            contentFit="contain"
+          />
+        ) : (
+          // {/* TODO: Replace with 3D mascot illustration — mascot-[pose].png */}
+          <Ionicons name={icon} size={64} color={Colors.primary} />
+        )}
       </View>
-      <Text className="text-xl font-bold text-text-primary mt-6 text-center">
+
+      {/* Title */}
+      <Text
+        style={{
+          fontSize: 20,
+          fontWeight: '600',
+          color: Colors.textHeading,
+          marginTop: 24,
+          textAlign: 'center',
+        }}
+      >
         {title}
       </Text>
+
+      {/* Subtitle */}
       {subtitle && (
-        <Text className="text-base text-text-secondary mt-2 text-center max-w-[300px]">
+        <Text
+          style={{
+            fontSize: 15,
+            color: Colors.textMuted,
+            marginTop: 8,
+            textAlign: 'center',
+            maxWidth: 300,
+            lineHeight: 22,
+          }}
+        >
           {subtitle}
         </Text>
       )}
+
+      {/* CTA */}
       {actionLabel && onAction && (
-        <View className="mt-6 w-full">
+        <View style={{ marginTop: 24, width: '100%' }}>
           <Button title={actionLabel} onPress={onAction} />
         </View>
       )}

@@ -10,7 +10,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import Animated from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { useAuth } from '@/lib/auth-context';
 import { usePets } from '@/lib/pet-context';
@@ -190,202 +190,192 @@ export default function RecordScanScreen() {
   }
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <ScrollView className="flex-1 px-5 pt-4 pb-8">
-            {/* Header */}
-            <View className="flex-row items-center justify-between mb-6">
+    <CurvedHeaderPage
+      headerProps={{ title: 'Scan a Record', showBack: true }}
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
+      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Step: Choose Method */}
+        {step === 'choose' && (
+          <View style={{ gap: 16 }}>
+            <StaggeredItem index={0}>
+              <Card onPress={openCamera} variant="elevated" className="py-8 items-center" style={{ minHeight: 120 }}>
+                <LinearGradient
+                  colors={[...Gradients.primaryCta]}
+                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
+                >
+                  <Ionicons name="camera-outline" size={28} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                  Take Photo
+                </Text>
+                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 4 }}>
+                  Use your camera to scan a document
+                </Text>
+              </Card>
+            </StaggeredItem>
+
+            <StaggeredItem index={1}>
+              <Card onPress={pickFromLibrary} variant="elevated" className="py-8 items-center" style={{ minHeight: 120 }}>
+                <LinearGradient
+                  colors={[...Gradients.primaryCta]}
+                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
+                >
+                  <Ionicons name="images-outline" size={28} color="#FFFFFF" />
+                </LinearGradient>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                  Upload from Library
+                </Text>
+                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 4 }}>
+                  Select existing photos from your device
+                </Text>
+              </Card>
+            </StaggeredItem>
+          </View>
+        )}
+
+        {/* Step: Preview Images */}
+        {(step === 'preview' || step === 'details') && (
+          <>
+            <Text
+              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
+            >
+              Selected Images ({images.length})
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 20 }}
+            >
+              {images.map((uri, index) => (
+                <View key={index} style={{ marginRight: 12, position: 'relative' }}>
+                  <View style={[Shadows.md, { borderRadius: 12 }]}>
+                    <Image
+                      source={{ uri }}
+                      style={{ width: 140, height: 180, borderRadius: 12 }}
+                    />
+                  </View>
+                  <Pressable
+                    onPress={() => removeImage(index)}
+                    style={[Shadows.sm, { position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center' }]}
+                  >
+                    <Ionicons name="close" size={16} color="white" />
+                  </Pressable>
+                </View>
+              ))}
               <Pressable
-                onPress={() => router.back()}
-                style={[Shadows.sm, { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}
-                hitSlop={8}
+                onPress={pickFromLibrary}
+                style={{ width: 140, height: 180, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+                <Ionicons name="add" size={28} color={Colors.textMuted} />
+                <Text style={{ fontSize: 12, color: Colors.textMuted, marginTop: 4 }}>Add More</Text>
               </Pressable>
-              <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textPrimary }}>
-                Scan a Record
-              </Text>
-              <View className="w-10" />
+            </ScrollView>
+
+            {step === 'preview' && (
+              <Button
+                title="Continue"
+                onPress={() => setStep('details')}
+                className="mb-4"
+              />
+            )}
+          </>
+        )}
+
+        {/* Step: Details */}
+        {step === 'details' && (
+          <>
+            <Text
+              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
+            >
+              Record Type
+            </Text>
+            <View className="flex-row flex-wrap gap-2 mb-5">
+              {RECORD_TYPES.map((type) => {
+                const isSelected = selectedType === type.key;
+                return (
+                  <Pressable
+                    key={type.key}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setSelectedType(type.key);
+                    }}
+                  >
+                    {isSelected ? (
+                      <LinearGradient
+                        colors={[Colors.primaryLight, Colors.primaryLight]}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: Colors.primary }}
+                      >
+                        <Ionicons name={type.icon as any} size={16} color={Colors.primary} />
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.primary }}>{type.label}</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View
+                        style={[Shadows.sm, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, backgroundColor: Colors.surface }]}
+                      >
+                        <Ionicons name={type.icon as any} size={16} color={Colors.textBody} />
+                        <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.textBody }}>{type.label}</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
             </View>
 
-            {/* Step: Choose Method */}
-            {step === 'choose' && (
-              <View className="gap-4">
-                <StaggeredItem index={0}>
-                  <Card onPress={openCamera} variant="elevated" className="py-8 items-center" style={{ minHeight: 120 }}>
-                    <LinearGradient
-                      colors={[...Gradients.primaryCta]}
-                      style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
-                    >
-                      <Ionicons name="camera-outline" size={28} color="#FFFFFF" />
-                    </LinearGradient>
-                    <Text className="text-lg font-bold text-text-primary">
-                      Take Photo
-                    </Text>
-                    <Text className="text-sm text-text-secondary mt-1">
-                      Use your camera to scan a document
-                    </Text>
-                  </Card>
-                </StaggeredItem>
-
-                <StaggeredItem index={1}>
-                  <Card onPress={pickFromLibrary} variant="elevated" className="py-8 items-center" style={{ minHeight: 120 }}>
-                    <LinearGradient
-                      colors={[...Gradients.secondaryCta]}
-                      style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
-                    >
-                      <Ionicons name="images-outline" size={28} color="#FFFFFF" />
-                    </LinearGradient>
-                    <Text className="text-lg font-bold text-text-primary">
-                      Upload from Library
-                    </Text>
-                    <Text className="text-sm text-text-secondary mt-1">
-                      Select existing photos from your device
-                    </Text>
-                  </Card>
-                </StaggeredItem>
-              </View>
-            )}
-
-            {/* Step: Preview Images */}
-            {(step === 'preview' || step === 'details') && (
+            {pets.length > 1 && (
               <>
                 <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-                  className="uppercase mb-3"
+                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
                 >
-                  Selected Images ({images.length})
+                  Which Pet?
                 </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  className="mb-5"
-                >
-                  {images.map((uri, index) => (
-                    <View key={index} className="mr-3 relative">
-                      <View style={[Shadows.md, { borderRadius: 12 }]}>
-                        <Image
-                          source={{ uri }}
-                          style={{ width: 140, height: 180, borderRadius: 12 }}
-                        />
-                      </View>
-                      <Pressable
-                        onPress={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-error items-center justify-center"
-                        style={Shadows.sm}
-                      >
-                        <Ionicons name="close" size={16} color="white" />
-                      </Pressable>
-                    </View>
-                  ))}
-                  <Pressable
-                    onPress={pickFromLibrary}
-                    style={{ width: 140, height: 180, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: Colors.borderLight, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Ionicons name="add" size={28} color={Colors.textTertiary} />
-                    <Text className="text-xs text-text-tertiary mt-1">Add More</Text>
-                  </Pressable>
-                </ScrollView>
-
-                {step === 'preview' && (
-                  <Button
-                    title="Continue"
-                    onPress={() => setStep('details')}
-                    className="mb-4"
-                  />
-                )}
-              </>
-            )}
-
-            {/* Step: Details */}
-            {step === 'details' && (
-              <>
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-                  className="uppercase mb-3"
-                >
-                  Record Type
-                </Text>
-                <View className="flex-row flex-wrap gap-2 mb-5">
-                  {RECORD_TYPES.map((type) => {
-                    const isSelected = selectedType === type.key;
+                <View style={{ gap: 8, marginBottom: 20 }}>
+                  {pets.map((pet) => {
+                    const isSelected = selectedPetId === pet.id;
                     return (
                       <Pressable
-                        key={type.key}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setSelectedType(type.key);
-                        }}
+                        key={pet.id}
+                        onPress={() => setSelectedPetId(pet.id)}
                       >
-                        {isSelected ? (
-                          <LinearGradient
-                            colors={[Colors.primary50, Colors.primary100]}
-                            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: Colors.primary200 }}
-                          >
-                            <Ionicons name={type.icon as any} size={16} color={Colors.primary} />
-                            <Text className="text-sm font-bold text-primary">{type.label}</Text>
-                          </LinearGradient>
-                        ) : (
-                          <View
-                            style={[Shadows.sm, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, backgroundColor: Colors.surface }]}
-                          >
-                            <Ionicons name={type.icon as any} size={16} color={Colors.textSecondary} />
-                            <Text className="text-sm font-medium text-text-secondary">{type.label}</Text>
+                        <Card variant={isSelected ? 'elevated' : 'default'}>
+                          <View className="flex-row items-center gap-3">
+                            <Ionicons
+                              name="paw"
+                              size={20}
+                              color={isSelected ? Colors.primary : Colors.textBody}
+                            />
+                            <Text
+                              style={{
+                                fontSize: 16,
+                                fontWeight: '600',
+                                color: isSelected ? Colors.primary : Colors.textHeading,
+                              }}
+                            >
+                              {pet.name}
+                            </Text>
+                            {isSelected && (
+                              <View style={{ marginLeft: 'auto' }}>
+                                <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                              </View>
+                            )}
                           </View>
-                        )}
+                        </Card>
                       </Pressable>
                     );
                   })}
                 </View>
-
-                {pets.length > 1 && (
-                  <>
-                    <Text
-                      style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-                      className="uppercase mb-3"
-                    >
-                      Which Pet?
-                    </Text>
-                    <View className="gap-2 mb-5">
-                      {pets.map((pet) => (
-                        <Pressable
-                          key={pet.id}
-                          onPress={() => setSelectedPetId(pet.id)}
-                        >
-                          <Card selected={selectedPetId === pet.id}>
-                            <View className="flex-row items-center gap-3">
-                              <Ionicons
-                                name="paw"
-                                size={20}
-                                color={selectedPetId === pet.id ? Colors.primary : Colors.textSecondary}
-                              />
-                              <Text
-                                className={`text-base font-semibold ${
-                                  selectedPetId === pet.id ? 'text-primary' : 'text-text-primary'
-                                }`}
-                              >
-                                {pet.name}
-                              </Text>
-                            </View>
-                          </Card>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </>
-                )}
-
-                <Button
-                  title="Interpret This Record"
-                  onPress={handleSubmit}
-                  loading={isSubmitting}
-                  icon="sparkles"
-                />
               </>
             )}
-          </ScrollView>
-        </SafeAreaView>
-      </GradientBackground>
-    </View>
+
+            <Button
+              title="Interpret This Record"
+              onPress={handleSubmit}
+              loading={isSubmitting}
+              icon="sparkles"
+            />
+          </>
+        )}
+      </ScrollView>
+    </CurvedHeaderPage>
   );
 }

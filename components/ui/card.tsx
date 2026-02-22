@@ -7,8 +7,7 @@ import { Shadows, BorderRadius } from '@/constants/spacing';
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  selected?: boolean;
-  variant?: 'default' | 'elevated' | 'subtle';
+  variant?: 'default' | 'elevated';
   className?: string;
   style?: any;
 }
@@ -18,23 +17,16 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function Card({
   children,
   onPress,
-  selected = false,
   variant = 'default',
   className = '',
   style,
 }: CardProps) {
-  const { onPressIn, onPressOut, animatedStyle } = usePressAnimation(0.98);
+  const { onPressIn, onPressOut, animatedStyle } = usePressAnimation(0.97);
 
-  const shadowStyle = selected
-    ? Shadows.glow
-    : variant === 'elevated'
-      ? Shadows.lg
-      : variant === 'subtle'
-        ? Shadows.sm
-        : Shadows.md;
+  const shadowStyle = variant === 'elevated' ? Shadows.lg : Shadows.md;
 
-  const bgClass = variant === 'subtle' ? 'bg-surface-muted' : 'bg-surface';
-  const baseStyles = `${bgClass} rounded-xl p-4`;
+  // Spec: bg-surface (#FFFFFF), rounded-2xl (16px), p-5 (20px), no border, shadow only
+  const baseStyles = 'bg-surface rounded-2xl p-5';
 
   if (onPress) {
     const handlePress = () => {

@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { View, Text, Pressable, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +16,7 @@ import { usePets } from '@/lib/pet-context';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { usePressAnimation } from '@/hooks/usePressAnimation';
 import { calculateAge } from '@/lib/utils';
@@ -29,12 +28,12 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function PetCardSkeleton() {
   return (
-    <Card className="mb-3">
-      <View className="flex-row items-center gap-3">
-        <Skeleton width={64} height={64} className="rounded-full" />
-        <View className="flex-1 gap-2">
-          <Skeleton height={18} className="w-2/3" />
-          <Skeleton height={14} className="w-1/2" />
+    <Card style={{ marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Skeleton width={64} height={64} />
+        <View style={{ flex: 1, gap: 8 }}>
+          <Skeleton height={18} width="66%" />
+          <Skeleton height={14} width="50%" />
         </View>
       </View>
     </Card>
@@ -46,13 +45,13 @@ function PetCard({ pet, onPress, index }: { pet: PetProfile; onPress: () => void
 
   return (
     <Animated.View style={animStyle}>
-      <Card onPress={onPress} className="mb-3">
-        <View className="flex-row items-center gap-3">
+      <Card onPress={onPress} style={{ marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {pet.photo_url ? (
             <View style={[Shadows.sm, { borderRadius: 32 }]}>
               <Image
                 source={{ uri: pet.photo_url }}
-                style={{ width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: '#FFFFFF' }}
+                style={{ width: 64, height: 64, borderRadius: 32, borderWidth: 2, borderColor: Colors.primaryLight }}
               />
             </View>
           ) : (
@@ -67,14 +66,14 @@ function PetCard({ pet, onPress, index }: { pet: PetProfile; onPress: () => void
               />
             </LinearGradient>
           )}
-          <View className="flex-1">
-            <Text className="text-lg font-bold text-text-primary">{pet.name}</Text>
-            <Text className="text-sm text-text-secondary mt-0.5">
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>{pet.name}</Text>
+            <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 2 }}>
               {pet.breed ?? pet.species}
               {pet.date_of_birth ? ` · ${calculateAge(pet.date_of_birth)}` : ''}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
         </View>
       </Card>
     </Animated.View>
@@ -102,79 +101,72 @@ export default function PetsScreen() {
     setRefreshing(false);
   }, [refreshPets]);
 
+  const subtitle = pets.length === 0
+    ? 'Add your first pet'
+    : `${pets.length} companion${pets.length > 1 ? 's' : ''}`;
+
   if (isLoading) {
     return (
-      <View className="flex-1">
-        <GradientBackground variant="warm">
-          <SafeAreaView className="flex-1 px-5 pt-4">
-            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-1">
-              My Pets
-            </Text>
-            <Text className="text-sm text-text-secondary mb-6">Loading...</Text>
-            <PetCardSkeleton />
-            <PetCardSkeleton />
-            <PetCardSkeleton />
-          </SafeAreaView>
-        </GradientBackground>
-      </View>
+      <CurvedHeaderPage
+        headerProps={{ title: 'My Pets', subtitle: 'Loading...' }}
+        contentStyle={{ paddingHorizontal: 0 }}
+      >
+        <View style={{ paddingHorizontal: 16 }}>
+          <PetCardSkeleton />
+          <PetCardSkeleton />
+          <PetCardSkeleton />
+        </View>
+      </CurvedHeaderPage>
     );
   }
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <View className="flex-1 px-5 pt-4">
-            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-1">
-              My Pets
-            </Text>
-            <Text className="text-sm text-text-secondary mb-6">
-              {pets.length === 0 ? 'Add your first pet' : `${pets.length} companion${pets.length > 1 ? 's' : ''}`}
-            </Text>
-
-            {pets.length === 0 ? (
-              <EmptyState
-                icon="paw-outline"
-                title="No pets yet!"
-                subtitle="Add your first furry friend to get started."
-                actionLabel="Add Pet"
-                onAction={() => router.push('/pet/create')}
-              />
-            ) : (
-              <FlashList
-                data={pets}
-                renderItem={({ item, index }) => (
-                  <PetCard
-                    pet={item}
-                    onPress={() => router.push(`/pet/${item.id}` as any)}
-                    index={index}
-                  />
-                )}
-                keyExtractor={(item) => item.id}
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0D7377" />
-                }
+    <CurvedHeaderPage
+      headerProps={{ title: 'My Pets', subtitle }}
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
+      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+        {pets.length === 0 ? (
+          <EmptyState
+            icon="paw-outline"
+            title="No pets yet!"
+            subtitle="Add your first furry friend to get started."
+            actionLabel="Add Pet"
+            onAction={() => router.push('/pet/create')}
+          />
+        ) : (
+          <FlashList
+            data={pets}
+            renderItem={({ item, index }) => (
+              <PetCard
+                pet={item}
+                onPress={() => router.push(`/pet/${item.id}` as any)}
+                index={index}
               />
             )}
-          </View>
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+            }
+          />
+        )}
+      </View>
 
-          <AnimatedPressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              router.push('/pet/create');
-            }}
-            onPressIn={onPressIn}
-            onPressOut={onPressOut}
-            style={[fabAnimStyle, fabPressStyle, Shadows.warmGlow, { position: 'absolute', bottom: 110, right: 20 }]}
-          >
-            <View
-              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.secondary }}
-            >
-              <Ionicons name="add" size={28} color="#FFFFFF" />
-            </View>
-          </AnimatedPressable>
-        </SafeAreaView>
-      </GradientBackground>
-    </View>
+      <AnimatedPressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          router.push('/pet/create');
+        }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[fabAnimStyle, fabPressStyle, Shadows.primaryButton, { position: 'absolute', bottom: 110, right: 20 }]}
+      >
+        <View
+          style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}
+        >
+          <Ionicons name="add" size={28} color="#FFFFFF" />
+        </View>
+      </AnimatedPressable>
+    </CurvedHeaderPage>
   );
 }

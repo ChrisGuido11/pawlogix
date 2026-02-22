@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,11 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -46,88 +44,75 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1"
-          >
-            <ScrollView className="flex-1 px-5 pt-4" keyboardShouldPersistTaps="handled">
-              <Pressable
-                onPress={() => router.back()}
-                style={[Shadows.sm, { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }]}
-                hitSlop={8}
-              >
-                <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-              </Pressable>
+    <CurvedHeaderPage
+      headerProps={{ title: 'Welcome Back', showBack: true }}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+          {/* Logo icon */}
+          <View style={{ alignItems: 'center', marginBottom: 24 }}>
+            <LinearGradient
+              colors={[...Gradients.primaryCta]}
+              style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="paw" size={28} color="#FFFFFF" />
+            </LinearGradient>
+          </View>
 
-              {/* Logo icon */}
-              <View className="items-center mb-6">
-                <LinearGradient
-                  colors={[...Gradients.primaryCta]}
-                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Ionicons name="paw" size={28} color="#FFFFFF" />
-                </LinearGradient>
-              </View>
+          <Text style={{ fontSize: 16, color: Colors.textBody, marginBottom: 32 }}>
+            Log in to access your pet health data
+          </Text>
 
-              <Text style={{ fontSize: 28, fontWeight: '700', color: Colors.textPrimary }} className="mb-2">
-                Welcome Back
-              </Text>
-              <Text className="text-base text-text-secondary mb-8">
-                Log in to access your pet health data
-              </Text>
-
-              <Controller
-                control={control}
-                name="email"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Email"
-                    placeholder="you@example.com"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    error={errors.email?.message}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    containerClassName="mb-4"
-                  />
-                )}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Email"
+                placeholder="you@example.com"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.email?.message}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+                containerClassName="mb-4"
               />
+            )}
+          />
 
-              <Controller
-                control={control}
-                name="password"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Password"
-                    placeholder="Your password"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    error={errors.password?.message}
-                    secureTextEntry
-                    containerClassName="mb-2"
-                  />
-                )}
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Password"
+                placeholder="Your password"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.password?.message}
+                secureTextEntry
+                containerClassName="mb-2"
               />
+            )}
+          />
 
-              <Pressable onPress={() => router.push('/auth/forgot-password')} className="mb-6">
-                <Text className="text-sm text-primary font-semibold">Forgot Password?</Text>
-              </Pressable>
+          <Pressable onPress={() => router.push('/auth/forgot-password')} style={{ marginBottom: 24 }}>
+            <Text style={{ fontSize: 14, color: Colors.primary, fontWeight: '600' }}>Forgot Password?</Text>
+          </Pressable>
 
-              <Button
-                title="Log In"
-                onPress={handleSubmit(onSubmit)}
-                loading={isSubmitting}
-              />
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      </GradientBackground>
-    </View>
+          <Button
+            title="Log In"
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </CurvedHeaderPage>
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +11,7 @@ import { Image } from 'expo-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { usePets } from '@/lib/pet-context';
 import { supabase } from '@/lib/supabase';
@@ -145,229 +144,214 @@ export default function PetCreateScreen() {
   const selectedBreed = watch('breed');
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="flex-1"
-          >
-            <ScrollView className="flex-1 px-5 pt-4 pb-8" keyboardShouldPersistTaps="handled">
-              <Pressable
-                onPress={() => router.back()}
-                style={[Shadows.sm, { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }]}
-                hitSlop={8}
-              >
-                <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-              </Pressable>
+    <CurvedHeaderPage
+      headerProps={{ title: 'Add Your Pet', showBack: true }}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+          <Text style={{ fontSize: 16, color: Colors.textBody, marginBottom: 24 }}>
+            Tell us about your furry friend
+          </Text>
 
-              <Text style={{ fontSize: 28, fontWeight: '700', color: Colors.textPrimary }} className="mb-2">
-                Add Your Pet
-              </Text>
-              <Text className="text-base text-text-secondary mb-6">
-                Tell us about your furry friend
-              </Text>
-
-              {/* Photo Picker */}
-              <Pressable onPress={pickImage} className="self-center mb-6 items-center">
-                {photoUri ? (
-                  <View style={[Shadows.lg, { borderRadius: 60 }]}>
-                    <Image
-                      source={{ uri: photoUri }}
-                      style={{ width: 120, height: 120, borderRadius: 60 }}
-                    />
-                    <View className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary items-center justify-center border-2 border-white">
-                      <Ionicons name="camera" size={14} color="#FFFFFF" />
-                    </View>
-                  </View>
-                ) : (
-                  <View className="items-center">
-                    <View style={[Shadows.glow, { borderRadius: 60 }]}>
-                      <LinearGradient
-                        colors={[...Gradients.primaryCta]}
-                        style={{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        <Ionicons name="camera-outline" size={40} color="#FFFFFF" />
-                      </LinearGradient>
-                    </View>
-                    <Text className="text-sm text-text-secondary mt-3">Tap to add photo</Text>
-                  </View>
-                )}
-              </Pressable>
-
-              <Controller
-                control={control}
-                name="name"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Pet Name *"
-                    placeholder="What's your pet's name?"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    error={errors.name?.message}
-                    autoCapitalize="words"
-                    containerClassName="mb-4"
-                  />
-                )}
-              />
-
-              {/* Species Selector */}
-              <Text
-                style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-                className="uppercase mb-2"
-              >
-                Species *
-              </Text>
-              <View className="flex-row gap-3 mb-4">
-                {(['dog', 'cat'] as const).map((s) => {
-                  const isSelected = species === s;
-                  return (
-                    <Pressable
-                      key={s}
-                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setValue('species', s); setValue('breed', ''); }}
-                      style={[
-                        isSelected ? Shadows.md : Shadows.sm,
-                        { flex: 1, borderRadius: 16 },
-                      ]}
-                    >
-                      {isSelected ? (
-                        <LinearGradient
-                          colors={[Colors.primary50, Colors.primary100]}
-                          style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
-                        >
-                          <Ionicons name="paw" size={28} color={Colors.primary} />
-                          <Text className="text-sm font-bold text-primary mt-1.5">
-                            {s === 'dog' ? 'Dog' : 'Cat'}
-                          </Text>
-                        </LinearGradient>
-                      ) : (
-                        <View style={{ backgroundColor: Colors.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}>
-                          <Ionicons name="paw-outline" size={28} color={Colors.textSecondary} />
-                          <Text className="text-sm font-medium text-text-secondary mt-1.5">
-                            {s === 'dog' ? 'Dog' : 'Cat'}
-                          </Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  );
-                })}
+          {/* Photo Picker */}
+          <Pressable onPress={pickImage} style={{ alignSelf: 'center', marginBottom: 24, alignItems: 'center' }}>
+            {photoUri ? (
+              <View style={[Shadows.lg, { borderRadius: 60 }]}>
+                <Image
+                  source={{ uri: photoUri }}
+                  style={{ width: 120, height: 120, borderRadius: 60 }}
+                />
+                <View style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFFFFF' }}>
+                  <Ionicons name="camera" size={14} color="#FFFFFF" />
+                </View>
               </View>
+            ) : (
+              <View style={{ alignItems: 'center' }}>
+                <View style={[Shadows.primaryButton, { borderRadius: 60 }]}>
+                  <LinearGradient
+                    colors={[...Gradients.primaryCta]}
+                    style={{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Ionicons name="camera-outline" size={40} color="#FFFFFF" />
+                  </LinearGradient>
+                </View>
+                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 12 }}>Tap to add photo</Text>
+              </View>
+            )}
+          </Pressable>
 
-              {/* Breed Picker */}
-              <Controller
-                control={control}
-                name="breed"
-                render={({ field: { value } }) => (
-                  <View className="mb-4">
-                    <Text
-                      style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-                      className="uppercase mb-2"
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Pet Name *"
+                placeholder="What's your pet's name?"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={errors.name?.message}
+                autoCapitalize="words"
+                containerClassName="mb-4"
+              />
+            )}
+          />
+
+          {/* Species Selector */}
+          <Text
+            style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
+          >
+            Species *
+          </Text>
+          <View className="flex-row gap-3 mb-4">
+            {(['dog', 'cat'] as const).map((s) => {
+              const isSelected = species === s;
+              return (
+                <Pressable
+                  key={s}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setValue('species', s); setValue('breed', ''); }}
+                  style={[
+                    isSelected ? Shadows.md : Shadows.sm,
+                    { flex: 1, borderRadius: 16 },
+                  ]}
+                >
+                  {isSelected ? (
+                    <LinearGradient
+                      colors={[Colors.primaryLight, Colors.primaryLight]}
+                      style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
                     >
-                      Breed
-                    </Text>
-                    <Pressable
-                      onPress={() => setShowBreedPicker(!showBreedPicker)}
-                      style={[Shadows.sm, { backgroundColor: Colors.surfaceMuted, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
-                    >
-                      <Text style={{ color: value ? Colors.textPrimary : Colors.textTertiary, fontSize: 16 }}>
-                        {value || 'Select breed'}
+                      <Ionicons name="paw" size={28} color={Colors.primary} />
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.primary, marginTop: 6 }}>
+                        {s === 'dog' ? 'Dog' : 'Cat'}
                       </Text>
-                      <Ionicons name={showBreedPicker ? 'chevron-up' : 'chevron-down'} size={20} color={Colors.textTertiary} />
-                    </Pressable>
-                    {showBreedPicker && (
-                      <Card variant="elevated" className="mt-2 max-h-56">
-                        <TextInput
-                          className="bg-surface-muted rounded-xl px-3 py-2.5 text-sm text-text-primary mb-2"
-                          placeholder="Search breeds..."
-                          placeholderTextColor={Colors.textTertiary}
-                          value={breedSearch}
-                          onChangeText={setBreedSearch}
-                        />
-                        <ScrollView className="max-h-40" nestedScrollEnabled>
-                          {filteredBreeds.map((breed) => (
-                            <Pressable
-                              key={breed}
-                              onPress={() => {
-                                setValue('breed', breed);
-                                setShowBreedPicker(false);
-                                setBreedSearch('');
-                              }}
-                              className="py-2.5 px-2 flex-row items-center justify-between"
-                            >
-                              <Text className={`text-sm ${value === breed ? 'text-primary font-bold' : 'text-text-primary'}`}>
-                                {breed}
-                              </Text>
-                              {value === breed && (
-                                <Ionicons name="checkmark" size={18} color={Colors.primary} />
-                              )}
-                            </Pressable>
-                          ))}
-                        </ScrollView>
-                      </Card>
-                    )}
-                  </View>
-                )}
-              />
+                    </LinearGradient>
+                  ) : (
+                    <View style={{ backgroundColor: Colors.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}>
+                      <Ionicons name="paw-outline" size={28} color={Colors.textBody} />
+                      <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.textBody, marginTop: 6 }}>
+                        {s === 'dog' ? 'Dog' : 'Cat'}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
 
-              <Controller
-                control={control}
-                name="dateOfBirth"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Date of Birth"
-                    placeholder="YYYY-MM-DD (approximate is fine)"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    containerClassName="mb-4"
-                  />
+          {/* Breed Picker */}
+          <Controller
+            control={control}
+            name="breed"
+            render={({ field: { value } }) => (
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
+                >
+                  Breed
+                </Text>
+                <Pressable
+                  onPress={() => setShowBreedPicker(!showBreedPicker)}
+                  style={[Shadows.sm, { backgroundColor: Colors.primaryLight, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                >
+                  <Text style={{ color: value ? Colors.textHeading : Colors.textMuted, fontSize: 16 }}>
+                    {value || 'Select breed'}
+                  </Text>
+                  <Ionicons name={showBreedPicker ? 'chevron-up' : 'chevron-down'} size={20} color={Colors.textMuted} />
+                </Pressable>
+                {showBreedPicker && (
+                  <Card variant="elevated" className="mt-2 max-h-56">
+                    <TextInput
+                      style={{ backgroundColor: Colors.primaryLight, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Colors.textHeading, marginBottom: 8 }}
+                      placeholder="Search breeds..."
+                      placeholderTextColor={Colors.textMuted}
+                      value={breedSearch}
+                      onChangeText={setBreedSearch}
+                    />
+                    <ScrollView style={{ maxHeight: 160 }} nestedScrollEnabled>
+                      {filteredBreeds.map((breed) => (
+                        <Pressable
+                          key={breed}
+                          onPress={() => {
+                            setValue('breed', breed);
+                            setShowBreedPicker(false);
+                            setBreedSearch('');
+                          }}
+                          style={{ paddingVertical: 10, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                        >
+                          <Text style={{ fontSize: 14, color: value === breed ? Colors.primary : Colors.textHeading, fontWeight: value === breed ? '700' : '400' }}>
+                            {breed}
+                          </Text>
+                          {value === breed && (
+                            <Ionicons name="checkmark" size={18} color={Colors.primary} />
+                          )}
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </Card>
                 )}
-              />
+              </View>
+            )}
+          />
 
-              <Controller
-                control={control}
-                name="weightKg"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Weight (kg)"
-                    placeholder="e.g., 25.5"
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    keyboardType="decimal-pad"
-                    containerClassName="mb-4"
-                  />
-                )}
+          <Controller
+            control={control}
+            name="dateOfBirth"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Date of Birth"
+                placeholder="YYYY-MM-DD (approximate is fine)"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                containerClassName="mb-4"
               />
+            )}
+          />
 
-              <Controller
-                control={control}
-                name="notes"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Notes (optional)"
-                    placeholder="Allergies, conditions, anything the vet should know..."
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                    multiline
-                    numberOfLines={3}
-                    containerClassName="mb-6"
-                  />
-                )}
+          <Controller
+            control={control}
+            name="weightKg"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Weight (kg)"
+                placeholder="e.g., 25.5"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                keyboardType="decimal-pad"
+                containerClassName="mb-4"
               />
+            )}
+          />
 
-              <Button
-                title="Save Pet"
-                onPress={handleSubmit(onSubmit)}
-                loading={isSubmitting}
-                icon="paw"
+          <Controller
+            control={control}
+            name="notes"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Notes (optional)"
+                placeholder="Allergies, conditions, anything the vet should know..."
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                multiline
+                numberOfLines={3}
+                containerClassName="mb-6"
               />
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      </GradientBackground>
-    </View>
+            )}
+          />
+
+          <Button
+            title="Save Pet"
+            onPress={handleSubmit(onSubmit)}
+            loading={isSubmitting}
+            icon="paw"
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </CurvedHeaderPage>
   );
 }

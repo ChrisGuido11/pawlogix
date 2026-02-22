@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CurvedHeader } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
@@ -141,7 +141,7 @@ export default function PetDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-background px-5 pt-4">
+      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: 20, paddingTop: 60 }}>
         <View className="flex-row items-center gap-3 mb-6">
           <Skeleton width={40} height={40} className="rounded-xl" />
           <Skeleton height={20} className="w-1/3" />
@@ -161,81 +161,57 @@ export default function PetDetailScreen() {
             <Skeleton height={12} className="w-2/3" />
           </Card>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!pet) {
     return (
-      <SafeAreaView className="flex-1 bg-background">
+      <View style={{ flex: 1, backgroundColor: Colors.background }}>
         <EmptyState
           icon="alert-circle-outline"
           title="Pet not found"
           actionLabel="Go Back"
           onAction={() => router.back()}
         />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView className="flex-1" bounces={false}>
-        {/* Gradient Hero Header */}
-        <LinearGradient
-          colors={[...Gradients.primaryHeader]}
-          style={{ paddingTop: 16, paddingBottom: 80, paddingHorizontal: 20 }}
-        >
-          {/* Header Nav */}
-          <View className="flex-row items-center justify-between mb-4">
-            <Pressable
-              onPress={() => router.back()}
-              style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-              hitSlop={8}
-            >
-              <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-            </Pressable>
-            <View className="flex-row gap-3">
-              <Pressable
-                onPress={() => { setActivePet(pet); router.back(); }}
-                style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-                hitSlop={8}
-              >
-                <Ionicons name="star-outline" size={20} color="#FFFFFF" />
-              </Pressable>
-              <Pressable
-                onPress={handleDelete}
-                style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-                hitSlop={8}
-              >
-                <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </View>
+    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
+      <CurvedHeader
+        title={pet.name}
+        subtitle={`${pet.breed ?? pet.species} ${pet.date_of_birth ? `· ${calculateAge(pet.date_of_birth)}` : ''}`}
+        showBack
+        rightIcon="trash-outline"
+        onRightPress={handleDelete}
+        extraPaddingBottom={40}
+      />
 
-          {/* Pet name over gradient */}
-          <Text style={{ fontSize: 28, fontWeight: '700', color: '#FFFFFF' }} className="text-center">
-            {pet.name}
-          </Text>
-          <Text className="text-white/80 text-center mt-1">
-            {pet.breed ?? pet.species} {pet.date_of_birth ? `· ${calculateAge(pet.date_of_birth)}` : ''}
-          </Text>
-        </LinearGradient>
-
-        {/* Floating avatar */}
-        <View style={{ alignItems: 'center', marginTop: -60, marginBottom: 16 }}>
-          <Pressable onPress={updatePhoto} style={[Shadows.lg, { borderRadius: 60 }]}>
+      {/* Overlapping avatar */}
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: Colors.background,
+          marginTop: -32,
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+        }}
+      >
+        <View style={{ alignItems: 'center', marginTop: -48 }}>
+          <Pressable onPress={updatePhoto} style={[Shadows.lg, { borderRadius: 48 }]}>
             {pet.photo_url ? (
               <Image
                 source={{ uri: pet.photo_url }}
-                style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 4, borderColor: '#FFFFFF' }}
+                style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#FFFFFF' }}
               />
             ) : (
               <LinearGradient
-                colors={[Colors.primary200, Colors.primary400]}
-                style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}
+                colors={[...Gradients.primaryCta]}
+                style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name="camera-outline" size={36} color="#FFFFFF" />
+                <Ionicons name="camera-outline" size={32} color="#FFFFFF" />
               </LinearGradient>
             )}
           </Pressable>
@@ -244,27 +220,25 @@ export default function PetDetailScreen() {
           )}
         </View>
 
-        <View className="px-5">
+        <ScrollView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }} contentContainerStyle={{ paddingBottom: 32 }}>
           {/* Quick Actions */}
           <StaggeredCard index={0}>
             <View className="flex-row gap-3 mb-5">
               <Card onPress={() => router.push('/record/scan')} className="flex-1 items-center py-5">
-                <LinearGradient
-                  colors={[Colors.primary50, Colors.primary100]}
-                  style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}
+                <View
+                  style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}
                 >
                   <Ionicons name="scan-outline" size={24} color={Colors.primary} />
-                </LinearGradient>
-                <Text className="text-xs font-bold text-text-primary">Scan Record</Text>
+                </View>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textHeading }}>Scan Record</Text>
               </Card>
               <Card onPress={() => Alert.alert('Coming Soon', 'Health Trends will be available in a future update.')} className="flex-1 items-center py-5">
-                <LinearGradient
-                  colors={[Colors.secondary50, Colors.secondary100]}
-                  style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}
+                <View
+                  style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.warningLight, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}
                 >
                   <Ionicons name="trending-up-outline" size={24} color={Colors.secondary} />
-                </LinearGradient>
-                <Text className="text-xs font-bold text-text-primary">Health Trends</Text>
+                </View>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textHeading }}>Health Trends</Text>
               </Card>
             </View>
           </StaggeredCard>
@@ -272,8 +246,7 @@ export default function PetDetailScreen() {
           {/* Records Section */}
           <StaggeredCard index={1}>
             <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-              className="uppercase mb-3"
+              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
             >
               Records
             </Text>
@@ -282,8 +255,8 @@ export default function PetDetailScreen() {
           {records.length === 0 ? (
             <Card>
               <View className="items-center py-6">
-                <Ionicons name="document-text-outline" size={40} color={Colors.primary200} />
-                <Text className="text-sm text-text-secondary mt-2 text-center">
+                <Ionicons name="document-text-outline" size={40} color={Colors.primary} />
+                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 8, textAlign: 'center' }}>
                   No records yet. Scan your first vet record!
                 </Text>
               </View>
@@ -303,10 +276,10 @@ export default function PetDetailScreen() {
                       <Ionicons name="document-text" size={18} color="#FFFFFF" />
                     </LinearGradient>
                     <View className="flex-1">
-                      <Text className="text-base font-semibold text-text-primary">
+                      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading }}>
                         {record.record_type.replace('_', ' ')}
                       </Text>
-                      <Text className="text-sm text-text-secondary">{record.record_date}</Text>
+                      <Text style={{ fontSize: 14, color: Colors.textBody }}>{record.record_date}</Text>
                     </View>
                     {record.processing_status === 'completed' ? (
                       <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
@@ -326,20 +299,17 @@ export default function PetDetailScreen() {
           {pet.notes && (
             <StaggeredCard index={records.length + 2}>
               <Text
-                style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-                className="uppercase mb-3 mt-2"
+                style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12, marginTop: 8 }}
               >
                 Notes
               </Text>
               <Card>
-                <Text className="text-base text-text-primary leading-6">{pet.notes}</Text>
+                <Text style={{ fontSize: 16, color: Colors.textHeading, lineHeight: 24 }}>{pet.notes}</Text>
               </Card>
             </StaggeredCard>
           )}
-
-          <View className="h-8" />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </View>
+    </View>
   );
 }

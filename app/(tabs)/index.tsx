@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,13 +11,14 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { getRecordTypeLabel, formatDate, calculateAge } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, BorderRadius } from '@/constants/spacing';
 import type { HealthRecord } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -84,7 +84,7 @@ function PetSelectorBar({
                     width: isActive ? 39 : 48,
                     height: isActive ? 39 : 48,
                     borderRadius: isActive ? 12 : 16,
-                    backgroundColor: Colors.primary100,
+                    backgroundColor: Colors.primaryLight,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
@@ -97,7 +97,7 @@ function PetSelectorBar({
               style={{
                 fontSize: 11,
                 fontWeight: isActive ? '700' : '500',
-                color: isActive ? Colors.primary : Colors.textSecondary,
+                color: isActive ? Colors.primary : Colors.textBody,
               }}
               numberOfLines={1}
             >
@@ -122,15 +122,15 @@ function PetSelectorBar({
             borderRadius: 16,
             borderWidth: 2,
             borderStyle: 'dashed',
-            borderColor: Colors.borderLight,
+            borderColor: Colors.border,
             alignItems: 'center',
             justifyContent: 'center',
             marginBottom: 4,
           }}
         >
-          <Ionicons name="add" size={22} color={Colors.textTertiary} />
+          <Ionicons name="add" size={22} color={Colors.textMuted} />
         </View>
-        <Text style={{ fontSize: 11, fontWeight: '500', color: Colors.textTertiary }}>
+        <Text style={{ fontSize: 11, fontWeight: '500', color: Colors.textMuted }}>
           Add
         </Text>
       </Pressable>
@@ -154,7 +154,7 @@ function RecordIcon({ type }: { type: string }) {
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: Colors.primary50,
+        backgroundColor: Colors.primaryLight,
         alignItems: 'center',
         justifyContent: 'center',
       }}
@@ -220,239 +220,312 @@ export default function HomeScreen() {
       ? 'Good afternoon'
       : 'Good evening';
 
+  const subtitleText = activePet ? `How is ${activePet.name} today?` : '';
+
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 }}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-          }
-        >
-          {/* App header */}
+    <CurvedHeaderPage
+      headerProps={{
+        title: `Welcome back! 👋`,
+        subtitle: subtitleText,
+        rightIcon: 'notifications-outline',
+        onRightPress: () => {},
+      }}
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
+      >
+        {/* A. Pet Selector Bar */}
+        {pets.length > 0 && (
           <StaggeredCard index={0}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <Ionicons name="paw" size={28} color={Colors.primary} />
-              <Text style={{ fontSize: 32, fontWeight: '800', color: Colors.textPrimary }}>
-                PawLogix
-              </Text>
-            </View>
-            <Text style={{ fontSize: 16, color: Colors.textSecondary, marginBottom: 20 }}>
-              {greeting}{activePet ? ` \u2014 how's ${activePet.name}?` : ''}
-            </Text>
+            <PetSelectorBar
+              pets={pets}
+              activePet={activePet}
+              onSelect={setActivePet}
+              onAdd={() => router.push('/pet/create')}
+            />
           </StaggeredCard>
+        )}
 
-          {/* A. Pet Selector Bar */}
-          {pets.length > 0 && (
+        {activePet ? (
+          <>
+            {/* B. Hero CTA Card — Scan a Record */}
             <StaggeredCard index={1}>
-              <PetSelectorBar
-                pets={pets}
-                activePet={activePet}
-                onSelect={setActivePet}
-                onAdd={() => router.push('/pet/create')}
-              />
-            </StaggeredCard>
-          )}
-
-          {activePet ? (
-            <>
-              {/* B. Active Pet Hero Card */}
-              <StaggeredCard index={2}>
-                <Card
-                  onPress={() => router.push(`/pet/${activePet.id}` as any)}
-                  variant="elevated"
-                  className="mb-5 overflow-hidden"
+              <Pressable
+                onPress={() => router.push('/record/scan')}
+                style={{ marginBottom: 20 }}
+              >
+                <LinearGradient
+                  colors={Gradients.primaryCta}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[
+                    {
+                      borderRadius: BorderRadius.heroCard,
+                      padding: 20,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      overflow: 'hidden',
+                    },
+                    Shadows.lg,
+                  ]}
                 >
-                  {/* Teal left accent */}
-                  <View
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 12,
-                      bottom: 12,
-                      width: 3,
-                      borderRadius: 2,
-                      backgroundColor: Colors.primary,
-                    }}
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textOnPrimary, marginBottom: 4 }}>
+                      Scan your pet's
+                    </Text>
+                    <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textOnPrimary, marginBottom: 12 }}>
+                      vet record!
+                    </Text>
+                    <View
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        paddingHorizontal: 24,
+                        paddingVertical: 10,
+                        borderRadius: BorderRadius.pill,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        alignSelf: 'flex-start',
+                        gap: 6,
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.primary }}>
+                        Scan Now
+                      </Text>
+                      <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
+                    </View>
+                  </View>
+
+                  <Image
+                    source={require('@/assets/illustrations/mascot-stethoscope.png')}
+                    style={{ width: 110, height: 110 }}
+                    contentFit="contain"
                   />
+                </LinearGradient>
+              </Pressable>
+            </StaggeredCard>
 
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginLeft: 4 }}>
-                    {activePet.photo_url ? (
-                      <View style={[Shadows.md, { borderRadius: 24 }]}>
-                        <Image
-                          source={{ uri: activePet.photo_url }}
-                          style={{
-                            width: 60,
-                            height: 60,
-                            borderRadius: 20,
-                            borderWidth: 2,
-                            borderColor: '#FFFFFF',
-                          }}
-                        />
-                      </View>
-                    ) : (
-                      <View
+            {/* C. Active Pet Card */}
+            <StaggeredCard index={2}>
+              <Card
+                onPress={() => router.push(`/pet/${activePet.id}` as any)}
+                variant="elevated"
+                style={{ marginBottom: 20 }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+                  {activePet.photo_url ? (
+                    <View style={[Shadows.md, { borderRadius: 32 }]}>
+                      <Image
+                        source={{ uri: activePet.photo_url }}
                         style={{
-                          width: 60,
-                          height: 60,
-                          borderRadius: 20,
-                          backgroundColor: Colors.primary100,
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          width: 64,
+                          height: 64,
+                          borderRadius: 32,
+                          borderWidth: 2,
+                          borderColor: Colors.primaryLight,
                         }}
-                      >
-                        <Ionicons name="paw" size={26} color={Colors.primary} />
-                      </View>
-                    )}
+                      />
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        width: 64,
+                        height: 64,
+                        borderRadius: 32,
+                        backgroundColor: Colors.primaryLight,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Ionicons name="paw" size={28} color={Colors.primary} />
+                    </View>
+                  )}
 
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textPrimary }}>
-                        {activePet.name}
-                      </Text>
-                      <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 2 }}>
-                        {activePet.breed ?? activePet.species}
-                        {activePet.date_of_birth ? ` \u00B7 ${calculateAge(activePet.date_of_birth)}` : ''}
-                      </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                      {activePet.name}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 2 }}>
+                      {activePet.breed ?? activePet.species}
+                      {activePet.date_of_birth ? ` · ${calculateAge(activePet.date_of_birth)}` : ''}
+                    </Text>
 
-                      {/* Quick stats row */}
-                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                        {activePet.weight_kg && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primary50, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
-                            <Ionicons name="scale-outline" size={12} color={Colors.primary} />
-                            <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{activePet.weight_kg} kg</Text>
-                          </View>
-                        )}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.successLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 }}>
-                          <Ionicons name="shield-checkmark-outline" size={12} color={Colors.success} />
-                          <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.success }}>Active</Text>
+                    {/* Quick stats row */}
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                      {activePet.weight_kg && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
+                          <Ionicons name="scale-outline" size={12} color={Colors.primary} />
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{activePet.weight_kg} kg</Text>
                         </View>
+                      )}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.successLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
+                        <Ionicons name="shield-checkmark-outline" size={12} color={Colors.success} />
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.success }}>Active</Text>
                       </View>
                     </View>
-
-                    <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
                   </View>
-                </Card>
-              </StaggeredCard>
 
-              {/* C. Primary CTA — Scan a Record */}
-              <StaggeredCard index={3}>
-                <View style={{ marginBottom: 20 }}>
-                  <Button
-                    title="Scan a Record"
-                    onPress={() => router.push('/record/scan')}
-                    icon="camera-outline"
-                    size="lg"
-                  />
+                  <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
                 </View>
-              </StaggeredCard>
+              </Card>
+            </StaggeredCard>
 
-              {/* D. Recent Activity Cards */}
-              <StaggeredCard index={4}>
+            {/* D. Recent Records */}
+            <StaggeredCard index={3}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary, textTransform: 'uppercase', marginBottom: 12 }}
+                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase' }}
                 >
                   Recent Records
                 </Text>
-              </StaggeredCard>
+                {recentRecords.length > 0 && (
+                  <Pressable onPress={() => router.push('/(tabs)/records' as any)}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.primary }}>See all</Text>
+                  </Pressable>
+                )}
+              </View>
+            </StaggeredCard>
 
-              {isLoading ? (
-                <View style={{ gap: 10 }}>
-                  {[0, 1].map((i) => (
-                    <Card key={i}>
+            {isLoading ? (
+              <View style={{ gap: 10 }}>
+                {[0, 1].map((i) => (
+                  <Card key={i}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <Skeleton width={40} height={40} />
+                      <View style={{ flex: 1, gap: 8 }}>
+                        <Skeleton height={16} width="75%" />
+                        <Skeleton height={12} width="50%" />
+                      </View>
+                      <Skeleton width={22} height={22} />
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            ) : recentRecords.length === 0 ? (
+              <Card>
+                <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                  {/* TODO: Replace with 3D mascot illustration — mascot-confused.png */}
+                  <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                    <Ionicons name="search-outline" size={28} color={Colors.primary} />
+                  </View>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.textHeading, marginBottom: 4 }}>
+                    No records yet
+                  </Text>
+                  <Text style={{ fontSize: 14, color: Colors.textBody, textAlign: 'center' }}>
+                    Scan your first vet record to get started
+                  </Text>
+                </View>
+              </Card>
+            ) : (
+              <View style={{ gap: 10, marginBottom: 20 }}>
+                {recentRecords.map((record, idx) => (
+                  <StaggeredCard key={record.id} index={4 + idx}>
+                    <Card onPress={() => router.push(`/record/${record.id}` as any)}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                        <Skeleton width={40} height={40} className="rounded-xl" />
-                        <View style={{ flex: 1, gap: 8 }}>
-                          <Skeleton height={16} className="w-3/4" />
-                          <Skeleton height={12} className="w-1/2" />
+                        {/* Severity accent strip */}
+                        <View
+                          style={{
+                            position: 'absolute',
+                            left: -16,
+                            top: 8,
+                            bottom: 8,
+                            width: 3,
+                            borderRadius: 2,
+                            backgroundColor: record.has_urgent_flags
+                              ? Colors.error
+                              : record.processing_status === 'completed'
+                                ? Colors.success
+                                : Colors.secondary,
+                          }}
+                        />
+                        <RecordIcon type={record.record_type} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading }}>
+                            {getRecordTypeLabel(record.record_type)}
+                          </Text>
+                          <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 2 }}>
+                            {formatDate(record.record_date)}
+                          </Text>
                         </View>
-                        <Skeleton width={22} height={22} className="rounded-full" />
+                        <StatusBadge record={record} />
                       </View>
                     </Card>
-                  ))}
+                  </StaggeredCard>
+                ))}
+              </View>
+            )}
+
+            {/* E. Health Snapshot — stat tiles */}
+            <StaggeredCard index={7}>
+              <Text
+                style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
+              >
+                Health Snapshot
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: Colors.primaryLight,
+                    borderRadius: BorderRadius.statTile,
+                    padding: 16,
+                  }}
+                >
+                  <Ionicons name="scale-outline" size={20} color={Colors.primary} style={{ marginBottom: 8 }} />
+                  <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 2 }}>Weight</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textHeading }}>
+                    {activePet.weight_kg ? `${activePet.weight_kg} kg` : '—'}
+                  </Text>
                 </View>
-              ) : recentRecords.length === 0 ? (
-                <Card>
-                  <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                    <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.primary50, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                      <Ionicons name="search-outline" size={28} color={Colors.primary200} />
-                    </View>
-                    <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.textPrimary, marginBottom: 4 }}>
-                      No records yet
-                    </Text>
-                    <Text style={{ fontSize: 14, color: Colors.textSecondary, textAlign: 'center' }}>
-                      Scan your first vet record to get started
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: Colors.primaryLight,
+                    borderRadius: BorderRadius.statTile,
+                    padding: 16,
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color={Colors.primary} style={{ marginBottom: 8 }} />
+                  <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 2 }}>Records</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textHeading }}>
+                    {recentRecords.length}
+                  </Text>
+                </View>
+              </View>
+            </StaggeredCard>
+
+            {/* F. Flagged items alert */}
+            {recentRecords.some((r) => r.has_urgent_flags) && (
+              <StaggeredCard index={8}>
+                <Card style={{ marginTop: 20 }} variant="elevated">
+                  <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, marginLeft: 4 }}>
+                    <Ionicons name="warning" size={20} color={Colors.warning} />
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.textHeading }}>
+                      Attention Needed
                     </Text>
                   </View>
+                  <Text style={{ fontSize: 14, color: Colors.textBody, marginLeft: 4 }}>
+                    Some recent records have flagged items that may need your vet's attention.
+                  </Text>
                 </Card>
-              ) : (
-                <View style={{ gap: 10, marginBottom: 20 }}>
-                  {recentRecords.map((record, idx) => (
-                    <StaggeredCard key={record.id} index={5 + idx}>
-                      <Card onPress={() => router.push(`/record/${record.id}` as any)}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                          {/* Severity accent strip */}
-                          <View
-                            style={{
-                              position: 'absolute',
-                              left: -16,
-                              top: 8,
-                              bottom: 8,
-                              width: 3,
-                              borderRadius: 2,
-                              backgroundColor: record.has_urgent_flags
-                                ? Colors.error
-                                : record.processing_status === 'completed'
-                                  ? Colors.success
-                                  : Colors.secondary,
-                            }}
-                          />
-                          <RecordIcon type={record.record_type} />
-                          <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textPrimary }}>
-                              {getRecordTypeLabel(record.record_type)}
-                            </Text>
-                            <Text style={{ fontSize: 14, color: Colors.textSecondary, marginTop: 2 }}>
-                              {formatDate(record.record_date)}
-                            </Text>
-                          </View>
-                          <StatusBadge record={record} />
-                        </View>
-                      </Card>
-                    </StaggeredCard>
-                  ))}
-                </View>
-              )}
-
-              {/* E. Health Snapshot — flagged items alert */}
-              {recentRecords.some((r) => r.has_urgent_flags) && (
-                <StaggeredCard index={8}>
-                  <Card className="mb-5" variant="elevated">
-                    <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, marginLeft: 4 }}>
-                      <Ionicons name="warning" size={20} color={Colors.warning} />
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.textPrimary }}>
-                        Attention Needed
-                      </Text>
-                    </View>
-                    <Text style={{ fontSize: 14, color: Colors.textSecondary, marginLeft: 4 }}>
-                      Some recent records have flagged items that may need your vet's attention.
-                    </Text>
-                  </Card>
-                </StaggeredCard>
-              )}
-            </>
-          ) : (
-            <EmptyState
-              icon="paw-outline"
-              title="Welcome to PawLogix!"
-              subtitle="Add your first pet to get started with AI-powered health insights."
-              actionLabel="Add Your Pet"
-              onAction={() => router.push('/pet/create')}
-            />
-          )}
-        </ScrollView>
-      </SafeAreaView>
-    </View>
+              </StaggeredCard>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon="paw-outline"
+            title="Welcome to PawLogix!"
+            subtitle="Add your first pet to get started with AI-powered health insights."
+            actionLabel="Add Your Pet"
+            onAction={() => router.push('/pet/create')}
+          />
+        )}
+      </ScrollView>
+    </CurvedHeaderPage>
   );
 }

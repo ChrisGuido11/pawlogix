@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -20,45 +21,48 @@ const ONBOARDING_KEY = 'pawlogix_onboarding_complete';
 
 const slides = [
   {
-    title: 'Understand Your\nPet\u2019s Health',
-    subtitle: 'Keep all your pet\u2019s medical records in one place and finally understand what they mean.',
-    mainIcon: 'paw' as const,
-    mainColor: Colors.primary,
-    mainBg: Colors.primary50,
-    ringColor: Colors.primary200,
-    accents: [
-      { icon: 'heart' as const, color: Colors.error, bg: Colors.errorLight, x: -20, y: -10, size: 44, delay: 0 },
-      { icon: 'shield-checkmark' as const, color: Colors.success, bg: Colors.successLight, x: 130, y: 20, size: 40, delay: 300 },
-      { icon: 'sparkles' as const, color: Colors.secondary, bg: Colors.secondary50, x: 110, y: 130, size: 36, delay: 600 },
-      { icon: 'pulse' as const, color: Colors.primary400, bg: Colors.primary100, x: -10, y: 120, size: 32, delay: 150 },
-    ],
-  },
-  {
-    title: 'Scan Any\nVet Record',
-    subtitle: 'Take a photo of lab results, prescriptions, or vaccine records \u2014 we\u2019ll handle the rest.',
+    title: 'Scan any\nvet record',
+    subtitle: 'Take a photo or upload \u2014 we\u2019ll handle the rest.',
+    illustration: require('@/assets/illustrations/mascot-welcome.png'),
     mainIcon: 'scan' as const,
-    mainColor: Colors.secondary,
-    mainBg: Colors.secondary50,
-    ringColor: Colors.secondary200,
+    mainColor: Colors.primary,
+    mainBg: Colors.primaryLight,
+    ringColor: Colors.primary,
     accents: [
-      { icon: 'camera' as const, color: Colors.primary, bg: Colors.primary50, x: -15, y: 0, size: 42, delay: 0 },
-      { icon: 'document-text' as const, color: Colors.primary600, bg: Colors.primary100, x: 135, y: 10, size: 38, delay: 250 },
-      { icon: 'sparkles' as const, color: Colors.secondary, bg: Colors.secondary50, x: 120, y: 135, size: 34, delay: 500 },
+      { icon: 'camera' as const, color: Colors.primary, bg: Colors.primaryLight, x: -15, y: 0, size: 42, delay: 0 },
+      { icon: 'document-text' as const, color: Colors.primaryDark, bg: Colors.primaryLight, x: 135, y: 10, size: 38, delay: 250 },
+      { icon: 'sparkles' as const, color: Colors.secondary, bg: Colors.warningLight, x: 120, y: 135, size: 34, delay: 500 },
       { icon: 'checkmark-circle' as const, color: Colors.success, bg: Colors.successLight, x: -5, y: 125, size: 36, delay: 400 },
     ],
   },
   {
-    title: 'Get Clear Answers,\nNot Jargon',
-    subtitle: 'AI translates complex medical terms into plain English you can actually understand.',
+    title: 'AI translates\nthe jargon',
+    subtitle: 'Complex medical terms become plain English instantly.',
+    illustration: require('@/assets/illustrations/mascot-magnify.png'),
     mainIcon: 'chatbubbles' as const,
-    mainColor: Colors.primary,
-    mainBg: Colors.primary50,
-    ringColor: Colors.primary200,
+    mainColor: Colors.secondary,
+    mainBg: Colors.warningLight,
+    ringColor: Colors.secondary,
     accents: [
-      { icon: 'bulb' as const, color: Colors.secondary, bg: Colors.secondary50, x: -18, y: -5, size: 44, delay: 0 },
-      { icon: 'flask' as const, color: Colors.primary400, bg: Colors.primary100, x: 132, y: 15, size: 38, delay: 200 },
+      { icon: 'bulb' as const, color: Colors.secondary, bg: Colors.warningLight, x: -18, y: -5, size: 44, delay: 0 },
+      { icon: 'flask' as const, color: Colors.primaryDark, bg: Colors.primaryLight, x: 132, y: 15, size: 38, delay: 200 },
       { icon: 'happy' as const, color: Colors.success, bg: Colors.successLight, x: 115, y: 130, size: 40, delay: 450 },
       { icon: 'medical' as const, color: Colors.error, bg: Colors.errorLight, x: -8, y: 118, size: 34, delay: 350 },
+    ],
+  },
+  {
+    title: 'Track your\npet\u2019s health',
+    subtitle: 'See trends, get reminders, stay on top of care.',
+    illustration: require('@/assets/illustrations/mascot-chart.png'),
+    mainIcon: 'trending-up' as const,
+    mainColor: Colors.primary,
+    mainBg: Colors.primaryLight,
+    ringColor: Colors.primary,
+    accents: [
+      { icon: 'heart' as const, color: Colors.error, bg: Colors.errorLight, x: -20, y: -10, size: 44, delay: 0 },
+      { icon: 'shield-checkmark' as const, color: Colors.success, bg: Colors.successLight, x: 130, y: 20, size: 40, delay: 300 },
+      { icon: 'paw' as const, color: Colors.primary, bg: Colors.primaryLight, x: 110, y: 130, size: 36, delay: 600 },
+      { icon: 'pulse' as const, color: Colors.primaryDark, bg: Colors.primaryLight, x: -10, y: 120, size: 32, delay: 150 },
     ],
   },
 ];
@@ -145,41 +149,57 @@ function SlideIllustration({
     opacity: ringOpacity.value,
   }));
 
-  return (
-    <View style={{ width: 180, height: 180, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Outer ring */}
-      <Animated.View
-        style={[
-          ringStyle,
-          {
-            position: 'absolute',
-            width: 160,
-            height: 160,
-            borderRadius: 80,
-            borderWidth: 2,
-            borderColor: slide.ringColor,
-            borderStyle: 'dashed',
-          },
-        ]}
-      />
+  const hasIllustration = 'illustration' in slide && slide.illustration;
 
-      {/* Main icon circle */}
-      <Animated.View
-        style={[
-          mainStyle,
-          Shadows.lg,
-          {
-            width: 110,
-            height: 110,
-            borderRadius: 55,
-            backgroundColor: slide.mainBg,
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-        ]}
-      >
-        <Ionicons name={slide.mainIcon} size={52} color={slide.mainColor} />
-      </Animated.View>
+  return (
+    <View style={{ width: hasIllustration ? 260 : 180, height: hasIllustration ? 260 : 180, alignItems: 'center', justifyContent: 'center' }}>
+      {hasIllustration ? (
+        /* Mascot illustration */
+        <Animated.View style={[mainStyle]}>
+          <Image
+            source={slide.illustration}
+            style={{ width: 240, height: 240 }}
+            contentFit="contain"
+            transition={300}
+          />
+        </Animated.View>
+      ) : (
+        <>
+          {/* Outer ring */}
+          <Animated.View
+            style={[
+              ringStyle,
+              {
+                position: 'absolute',
+                width: 160,
+                height: 160,
+                borderRadius: 80,
+                borderWidth: 2,
+                borderColor: slide.ringColor,
+                borderStyle: 'dashed',
+              },
+            ]}
+          />
+
+          {/* Main icon circle */}
+          <Animated.View
+            style={[
+              mainStyle,
+              Shadows.lg,
+              {
+                width: 110,
+                height: 110,
+                borderRadius: 55,
+                backgroundColor: slide.mainBg,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}
+          >
+            <Ionicons name={slide.mainIcon} size={52} color={slide.mainColor} />
+          </Animated.View>
+        </>
+      )}
 
       {/* Floating accents */}
       {slide.accents.map((accent, i) => (
@@ -190,11 +210,11 @@ function SlideIllustration({
 }
 
 function Dot({ index, activeIndex }: { index: number; activeIndex: number }) {
-  const animWidth = useSharedValue(index === 0 ? 28 : 8);
+  const animWidth = useSharedValue(index === 0 ? 24 : 8);
   const animOpacity = useSharedValue(index === 0 ? 1 : 0.3);
 
   useEffect(() => {
-    animWidth.value = withTiming(index === activeIndex ? 28 : 8, { duration: 300 });
+    animWidth.value = withTiming(index === activeIndex ? 24 : 8, { duration: 300 });
     animOpacity.value = withTiming(index === activeIndex ? 1 : 0.3, { duration: 300 });
   }, [activeIndex]);
 
@@ -210,7 +230,7 @@ function Dot({ index, activeIndex }: { index: number; activeIndex: number }) {
         {
           height: 8,
           borderRadius: 4,
-          backgroundColor: index === activeIndex ? Colors.primary : Colors.primary200,
+          backgroundColor: index === activeIndex ? Colors.primary : Colors.disabled,
         },
       ]}
     />
@@ -248,7 +268,7 @@ export default function OnboardingScreen() {
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 }}>
           {activeIndex < 2 ? (
             <Pressable onPress={skipToEnd} hitSlop={12}>
-              <Text style={{ fontSize: 16, color: Colors.textSecondary }}>Skip</Text>
+              <Text style={{ fontSize: 16, color: Colors.textBody }}>Skip</Text>
             </Pressable>
           ) : (
             <View style={{ height: 22 }} />
@@ -283,7 +303,7 @@ export default function OnboardingScreen() {
                   style={{
                     fontSize: 28,
                     fontWeight: '700',
-                    color: Colors.textPrimary,
+                    color: Colors.textHeading,
                     textAlign: 'center',
                     lineHeight: 36,
                     marginBottom: 12,
@@ -293,10 +313,10 @@ export default function OnboardingScreen() {
                 </Text>
                 <Text
                   style={{
-                    fontSize: 16,
-                    color: Colors.textSecondary,
+                    fontSize: 15,
+                    color: Colors.textMuted,
                     textAlign: 'center',
-                    lineHeight: 24,
+                    lineHeight: 22,
                     maxWidth: 300,
                     alignSelf: 'center',
                   }}
@@ -320,11 +340,24 @@ export default function OnboardingScreen() {
           {activeIndex === 2 ? (
             <Button title="Get Started" onPress={completeOnboarding} icon="paw" />
           ) : (
-            <Button
-              title="Next"
-              onPress={() => scrollRef.current?.scrollTo({ x: width * (activeIndex + 1), animated: true })}
-              variant="secondary"
-            />
+            <View style={{ alignItems: 'center' }}>
+              <Pressable
+                onPress={() => scrollRef.current?.scrollTo({ x: width * (activeIndex + 1), animated: true })}
+                style={[
+                  Shadows.primaryButton,
+                  {
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: Colors.primary,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  },
+                ]}
+              >
+                <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+              </Pressable>
+            </View>
           )}
         </View>
       </SafeAreaView>

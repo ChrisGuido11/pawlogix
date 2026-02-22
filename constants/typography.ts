@@ -14,11 +14,83 @@ export const Fonts = {
 } as const;
 
 /**
- * Typography presets — ready-to-spread into Text style props.
- * Usage: <Text style={Typography.h1}>Hello</Text>
+ * Typography presets matching the new design system.
+ * Usage: <Text style={Typography.screenTitle}>Hello</Text>
  */
 export const Typography: Record<string, TextStyle> = {
-  // Display — Splash, hero, onboarding
+  // Screen title (in header, white on blue)
+  screenTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 24,
+    lineHeight: 32,
+  },
+
+  // Screen title (in content area)
+  contentTitle: {
+    fontFamily: Fonts.bold,
+    fontSize: 28,
+    lineHeight: 36,
+  },
+
+  // Section heading
+  sectionHeading: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 20,
+    lineHeight: 28,
+  },
+
+  // Card title
+  cardTitle: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 17,
+    lineHeight: 24,
+  },
+
+  // Body text
+  body: {
+    fontFamily: Fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+
+  // Secondary text
+  secondary: {
+    fontFamily: Fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  // Caption / label
+  caption: {
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+
+  // Button text (primary)
+  buttonPrimary: {
+    fontFamily: Fonts.bold,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+
+  // Button text (secondary)
+  buttonSecondary: {
+    fontFamily: Fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+
+  // Tab label
+  tabLabel: {
+    fontFamily: Fonts.medium,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+
+  // --- Legacy aliases for backward compatibility during migration ---
+  // TODO: Remove these once all screens use new token names
+
   displayLg: {
     fontFamily: Fonts.extraBold,
     fontSize: 34,
@@ -31,8 +103,6 @@ export const Typography: Record<string, TextStyle> = {
     lineHeight: 36,
     letterSpacing: -0.3,
   },
-
-  // Headings
   h1: {
     fontFamily: Fonts.bold,
     fontSize: 24,
@@ -48,8 +118,6 @@ export const Typography: Record<string, TextStyle> = {
     fontSize: 17,
     lineHeight: 24,
   },
-
-  // Body
   bodyLg: {
     fontFamily: Fonts.regular,
     fontSize: 17,
@@ -65,24 +133,15 @@ export const Typography: Record<string, TextStyle> = {
     fontSize: 13,
     lineHeight: 18,
   },
-
-  // Labels & Buttons
   buttonLg: {
-    fontFamily: Fonts.extraBold,
+    fontFamily: Fonts.bold,
     fontSize: 17,
     lineHeight: 22,
-    letterSpacing: 0.3,
   },
   buttonMd: {
     fontFamily: Fonts.bold,
     fontSize: 15,
     lineHeight: 20,
-  },
-  caption: {
-    fontFamily: Fonts.semiBold,
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.5,
   },
   overline: {
     fontFamily: Fonts.bold,

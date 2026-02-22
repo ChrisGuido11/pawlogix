@@ -1,58 +1,261 @@
-import { Tabs } from 'expo-router';
+import { View, Text, Pressable } from 'react-native';
+import { useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
+import { Fonts } from '@/constants/typography';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// --- Animated Tab Icon with cross-fade ---
+function AnimatedTabIcon({
+  iconOutline,
+  iconFilled,
+  isFocused,
+  size = 24,
+}: {
+  iconOutline: keyof typeof Ionicons.glyphMap;
+  iconFilled: keyof typeof Ionicons.glyphMap;
+  isFocused: boolean;
+  size?: number;
+}) {
+  const filledOpacity = useSharedValue(isFocused ? 1 : 0);
+
+  useEffect(() => {
+    filledOpacity.value = withTiming(isFocused ? 1 : 0, { duration: 150 });
+  }, [isFocused]);
+
+  const outlineStyle = useAnimatedStyle(() => ({
+    opacity: 1 - filledOpacity.value,
+  }));
+
+  const filledStyle = useAnimatedStyle(() => ({
+    opacity: filledOpacity.value,
+  }));
+
+  const color = isFocused ? Colors.primary : Colors.tabInactive;
+
+  return (
+    <View style={{ width: size, height: size }}>
+      <Animated.View style={[{ position: 'absolute' }, outlineStyle]}>
+        <Ionicons name={iconOutline} size={size} color={color} />
+      </Animated.View>
+      <Animated.View style={[{ position: 'absolute' }, filledStyle]}>
+        <Ionicons name={iconFilled} size={size} color={color} />
+      </Animated.View>
+    </View>
+  );
+}
+
+// --- Tab configuration ---
+const TAB_CONFIG = [
+  {
+    name: 'index',
+    label: 'Home',
+    iconOutline: 'home-outline' as const,
+    iconFilled: 'home' as const,
+  },
+  {
+    name: 'pets',
+    label: 'Health',
+    iconOutline: 'heart-outline' as const,
+    iconFilled: 'heart' as const,
+  },
+  {
+    name: 'scan', // Special elevated button
+    label: 'Scan',
+    iconOutline: 'camera-outline' as const,
+    iconFilled: 'camera' as const,
+  },
+  {
+    name: 'records',
+    label: 'Records',
+    iconOutline: 'document-text-outline' as const,
+    iconFilled: 'document-text' as const,
+  },
+  {
+    name: 'profile',
+    label: 'Profile',
+    iconOutline: 'person-outline' as const,
+    iconFilled: 'person' as const,
+  },
+];
+
+// --- Elevated Scan Button ---
+function ScanButton({ onPress }: { onPress: () => void }) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <AnimatedPressable
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onPress();
+      }}
+      onPressIn={() => {
+        scale.value = withSpring(0.9, { damping: 15, stiffness: 300 });
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, { damping: 12, stiffness: 200 });
+      }}
+      style={[
+        animStyle,
+        Shadows.scanButton,
+        {
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          backgroundColor: Colors.primary,
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: -24,
+        },
+      ]}
+    >
+      <Ionicons name="camera" size={24} color={Colors.textOnPrimary} />
+    </AnimatedPressable>
+  );
+}
+
+// --- Custom Tab Bar ---
+function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  return (
+    <View
+      style={[
+        Shadows.tabBar,
+        {
+          flexDirection: 'row',
+          backgroundColor: Colors.surface,
+          borderTopWidth: 0.5,
+          borderTopColor: 'rgba(0,0,0,0.06)',
+          paddingBottom: insets.bottom || 8,
+          paddingTop: 8,
+          alignItems: 'flex-end',
+        },
+      ]}
+    >
+      {TAB_CONFIG.map((tab, index) => {
+        // The scan button is special — it routes to /record/scan, not a tab
+        if (tab.name === 'scan') {
+          return (
+            <View key="scan" style={{ flex: 1, alignItems: 'center' }}>
+              <ScanButton onPress={() => router.push('/record/scan')} />
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontFamily: Fonts.medium,
+                  color: Colors.tabInactive,
+                  marginTop: 4,
+                }}
+              >
+                {tab.label}
+              </Text>
+            </View>
+          );
+        }
+
+        // Map tab config name to actual route index
+        // Routes in state: index(0)=index, index(1)=pets, index(2)=records, index(3)=profile
+        const routeNameMap: Record<string, number> = {
+          index: 0,
+          pets: 1,
+          records: 2,
+          profile: 3,
+        };
+        const routeIndex = routeNameMap[tab.name];
+        const isFocused = routeIndex !== undefined && state.index === routeIndex;
+        const route = routeIndex !== undefined ? state.routes[routeIndex] : undefined;
+
+        const onPress = () => {
+          if (!route) return;
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        const color = isFocused ? Colors.primary : Colors.tabInactive;
+
+        return (
+          <Pressable
+            key={tab.name}
+            onPress={onPress}
+            style={{
+              flex: 1,
+              alignItems: 'center',
+              paddingTop: 4,
+            }}
+          >
+            {/* Active dot indicator */}
+            {isFocused && (
+              <View
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: Colors.primary,
+                  marginBottom: 4,
+                }}
+              />
+            )}
+            {!isFocused && <View style={{ height: 10 }} />}
+            <AnimatedTabIcon
+              iconOutline={tab.iconOutline}
+              iconFilled={tab.iconFilled}
+              isFocused={isFocused}
+            />
+            <Text
+              style={{
+                fontSize: 10,
+                fontFamily: Fonts.medium,
+                color,
+                marginTop: 2,
+              }}
+            >
+              {tab.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// --- Tab Layout ---
 export default function TabLayout() {
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: Colors.background,
-          borderTopWidth: 0,
-          ...Shadows.lg,
-        },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="pets"
-        options={{
-          title: 'Pets',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'paw' : 'paw-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="records"
-        options={{
-          title: 'Records',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={24} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="pets" />
+      <Tabs.Screen name="records" />
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }

@@ -70,7 +70,7 @@ function RootLayoutNav() {
         <Stack.Screen name="record" />
         <Stack.Screen name="auth" />
       </Stack>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
     </>
   );
 }

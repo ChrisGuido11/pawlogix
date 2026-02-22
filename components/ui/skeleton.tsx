@@ -14,6 +14,9 @@ interface SkeletonProps {
   className?: string;
 }
 
+// Spec: bg #E8E8E8 (slightly darker for contrast on #F5F5F5),
+// radius matches element being loaded (16px cards, rounded-full avatars),
+// shimmer animation 1.5s loop
 export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) {
   const shimmerX = useSharedValue(-1);
 
@@ -33,9 +36,14 @@ export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) 
     <Animated.View
       style={[
         animatedStyle,
-        { width: width as number, height },
+        {
+          width: width as number,
+          height,
+          backgroundColor: '#E8E8E8',
+          borderRadius: 16,
+        },
       ]}
-      className={`bg-border-light rounded-2xl ${className}`}
+      className={className}
     />
   );
 }

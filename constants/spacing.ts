@@ -10,10 +10,8 @@ export const Spacing = {
   '3xl': 32,
   '4xl': 40,
   '5xl': 48,
-  '6xl': 64,
 } as const;
 
-// Rounded everywhere — Duolingo style
 export const BorderRadius = {
   sm: 8,
   md: 12,
@@ -23,42 +21,49 @@ export const BorderRadius = {
   full: 9999,
   // Semantic aliases
   card: 16,
+  heroCard: 20,
   button: 12,
   pill: 9999,
-  input: 12,
+  input: 14,
+  bottomSheet: 24,
+  curvedHeader: 30,
+  statTile: 14,
 } as const;
 
 export const Shadows = {
+  // Card shadow (default) — soft and diffused
   sm: Platform.select({
     ios: {
-      shadowColor: '#1C1917',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
     },
     android: {
       elevation: 1,
     },
     default: {},
   }),
+  // Standard card
   md: Platform.select({
     ios: {
-      shadowColor: '#1C1917',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
     },
     android: {
       elevation: 3,
     },
     default: {},
   }),
+  // Elevated card (hero CTA, modals)
   lg: Platform.select({
     ios: {
-      shadowColor: '#1C1917',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 16,
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
     },
     android: {
       elevation: 6,
@@ -67,9 +72,9 @@ export const Shadows = {
   }),
   xl: Platform.select({
     ios: {
-      shadowColor: '#1C1917',
+      shadowColor: '#000000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.14,
+      shadowOpacity: 0.1,
       shadowRadius: 24,
     },
     android: {
@@ -77,55 +82,55 @@ export const Shadows = {
     },
     default: {},
   }),
-  // Duolingo-style "pressed" bottom border effect for buttons
-  button: Platform.select({
+  // Primary button — brand-tinted glow
+  primaryButton: Platform.select({
     ios: {
-      shadowColor: '#D94E2A',
+      shadowColor: '#5BC5F2',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 1,
-      shadowRadius: 0,
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
     },
     android: {
       elevation: 4,
     },
     default: {},
   }),
-  // Coral glow for primary CTA elements
-  glow: Platform.select({
+  // Tab bar — subtle upward shadow
+  tabBar: Platform.select({
     ios: {
-      shadowColor: '#FF6B42',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.35,
-      shadowRadius: 12,
-    },
-    android: {
-      elevation: 6,
-    },
-    default: {},
-  }),
-  // Gold glow for achievements/gamification
-  warmGlow: Platform.select({
-    ios: {
-      shadowColor: '#FFB830',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.35,
-      shadowRadius: 12,
-    },
-    android: {
-      elevation: 5,
-    },
-    default: {},
-  }),
-  // Teal glow for health/trust elements
-  coolGlow: Platform.select({
-    ios: {
-      shadowColor: '#2BBBC3',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.3,
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.04,
       shadowRadius: 10,
     },
     android: {
       elevation: 4,
+    },
+    default: {},
+  }),
+  // Elevated scan button in tab bar
+  scanButton: Platform.select({
+    ios: {
+      shadowColor: '#5BC5F2',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 14,
+    },
+    android: {
+      elevation: 8,
+    },
+    default: {},
+  }),
+  // Bottom sheet
+  bottomSheet: Platform.select({
+    ios: {
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: -4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
+    },
+    android: {
+      elevation: 10,
     },
     default: {},
   }),

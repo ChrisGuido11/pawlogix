@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Switch, Alert, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,7 +8,7 @@ import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
@@ -47,7 +46,7 @@ function SettingsRow({
           width: 36,
           height: 36,
           borderRadius: 10,
-          backgroundColor: destructive ? Colors.errorLight : Colors.surfaceMuted,
+          backgroundColor: destructive ? Colors.errorLight : Colors.primaryLight,
           alignItems: 'center',
           justifyContent: 'center',
         }}
@@ -55,17 +54,19 @@ function SettingsRow({
         <Ionicons
           name={icon as any}
           size={18}
-          color={destructive ? Colors.error : Colors.textSecondary}
+          color={destructive ? Colors.error : Colors.textBody}
         />
       </View>
       <Text
-        className={`text-base flex-1 ${
-          destructive ? 'text-error' : 'text-text-primary'
-        }`}
+        style={{
+          fontSize: 16,
+          flex: 1,
+          color: destructive ? Colors.error : Colors.textHeading,
+        }}
       >
         {label}
       </Text>
-      {trailing ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} /> : null)}
+      {trailing ?? (onPress ? <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} /> : null)}
     </Pressable>
   );
 }
@@ -222,172 +223,164 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <ScrollView className="flex-1 px-5 pt-4 pb-8">
-            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-6">
-              Settings
-            </Text>
-
-            {/* Account Section */}
-            {isAnonymous ? (
-              <View style={[Shadows.lg, { borderRadius: 16, marginBottom: 20, overflow: 'hidden' }]}>
-                <LinearGradient
-                  colors={[...Gradients.primaryHeader]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{ borderRadius: 16, padding: 20 }}
+    <CurvedHeaderPage
+      headerProps={{ title: 'Settings' }}
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
+      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Account Section */}
+        {isAnonymous ? (
+          <View style={[Shadows.lg, { borderRadius: 16, marginBottom: 20, overflow: 'hidden' }]}>
+            <LinearGradient
+              colors={[...Gradients.primaryHeader]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ borderRadius: 16, padding: 20 }}
+            >
+              <View className="items-center py-2">
+                <Ionicons name="person-circle-outline" size={48} color="#FFFFFF" />
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginTop: 8 }}>
+                  Create an Account
+                </Text>
+                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+                  Back up your data and access it on any device
+                </Text>
+                <Pressable
+                  onPress={() => router.push('/auth/signup')}
+                  style={[Shadows.sm, { backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, width: '100%' }]}
                 >
-                  <View className="items-center py-2">
-                    <Ionicons name="person-circle-outline" size={48} color="#FFFFFF" />
-                    <Text className="text-lg font-bold text-white mt-2">
-                      Create an Account
-                    </Text>
-                    <Text className="text-sm text-white/80 text-center mt-1 mb-4">
-                      Back up your data and access it on any device
-                    </Text>
-                    <Pressable
-                      onPress={() => router.push('/auth/signup')}
-                      style={[Shadows.sm, { backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, width: '100%' }]}
-                    >
-                      <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>
-                        Sign Up
-                      </Text>
-                    </Pressable>
-                  </View>
-                  <Pressable
-                    onPress={() => router.push('/auth/login')}
-                    className="py-3 mt-1"
-                    hitSlop={8}
-                  >
-                    <Text className="text-sm text-white/90 text-center font-medium">
-                      Already have an account? Log In
-                    </Text>
-                  </Pressable>
-                </LinearGradient>
+                  <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>
+                    Sign Up
+                  </Text>
+                </Pressable>
               </View>
-            ) : (
-              <Card className="mb-5" variant="elevated">
-                <View className="flex-row items-center gap-3">
-                  <LinearGradient
-                    colors={[...Gradients.primaryCta]}
-                    style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Ionicons name="person" size={24} color="#FFFFFF" />
-                  </LinearGradient>
-                  <View className="flex-1">
-                    <Text className="text-lg font-bold text-text-primary">
-                      {profile?.display_name ?? 'PawLogix User'}
-                    </Text>
-                    <Text className="text-sm text-text-secondary">
-                      {profile?.email}
-                    </Text>
-                  </View>
-                </View>
-              </Card>
-            )}
+              <Pressable
+                onPress={() => router.push('/auth/login')}
+                className="py-3 mt-1"
+                hitSlop={8}
+              >
+                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', textAlign: 'center', fontWeight: '500' }}>
+                  Already have an account? Log In
+                </Text>
+              </Pressable>
+            </LinearGradient>
+          </View>
+        ) : (
+          <Card className="mb-5" variant="elevated">
+            <View className="flex-row items-center gap-3">
+              <LinearGradient
+                colors={[...Gradients.primaryCta]}
+                style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="person" size={24} color="#FFFFFF" />
+              </LinearGradient>
+              <View className="flex-1">
+                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                  {profile?.display_name ?? 'PawLogix User'}
+                </Text>
+                <Text style={{ fontSize: 14, color: Colors.textBody }}>
+                  {profile?.email}
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
 
-            {/* Notifications */}
-            <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-              className="uppercase mb-2 mt-2"
-            >
-              Notifications
-            </Text>
-            <Card className="mb-5">
-              <SettingsRow
-                icon="medical-outline"
-                label="Medication Reminders"
-                trailing={
-                  <Switch
-                    value={medReminders}
-                    onValueChange={toggleMedReminders}
-                    trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
-                    thumbColor="#FFFFFF"
-                  />
-                }
+        {/* Notifications */}
+        <Text
+          style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8, marginTop: 8 }}
+        >
+          Notifications
+        </Text>
+        <Card className="mb-5">
+          <SettingsRow
+            icon="medical-outline"
+            label="Medication Reminders"
+            trailing={
+              <Switch
+                value={medReminders}
+                onValueChange={toggleMedReminders}
+                trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
+                thumbColor="#FFFFFF"
               />
-              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
-              <SettingsRow
-                icon="shield-checkmark-outline"
-                label="Vaccine Reminders"
-                trailing={
-                  <Switch
-                    value={vaxReminders}
-                    onValueChange={toggleVaxReminders}
-                    trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
-                    thumbColor="#FFFFFF"
-                  />
-                }
+            }
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <SettingsRow
+            icon="shield-checkmark-outline"
+            label="Vaccine Reminders"
+            trailing={
+              <Switch
+                value={vaxReminders}
+                onValueChange={toggleVaxReminders}
+                trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
+                thumbColor="#FFFFFF"
               />
-            </Card>
+            }
+          />
+        </Card>
 
-            {/* Legal */}
-            <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-              className="uppercase mb-2"
-            >
-              Legal
-            </Text>
-            <Card className="mb-5">
-              <SettingsRow
-                icon="shield-outline"
-                label="Privacy Policy"
-                onPress={() => showToastPlaceholder('Privacy Policy')}
-              />
-              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
-              <SettingsRow
-                icon="document-text-outline"
-                label="Terms of Service"
-                onPress={() => showToastPlaceholder('Terms of Service')}
-              />
-              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
-              <SettingsRow
-                icon="help-circle-outline"
-                label="Support & FAQ"
-                onPress={() => showToastPlaceholder('Support & FAQ')}
-              />
-            </Card>
+        {/* Legal */}
+        <Text
+          style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
+        >
+          Legal
+        </Text>
+        <Card className="mb-5">
+          <SettingsRow
+            icon="shield-outline"
+            label="Privacy Policy"
+            onPress={() => showToastPlaceholder('Privacy Policy')}
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <SettingsRow
+            icon="document-text-outline"
+            label="Terms of Service"
+            onPress={() => showToastPlaceholder('Terms of Service')}
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <SettingsRow
+            icon="help-circle-outline"
+            label="Support & FAQ"
+            onPress={() => showToastPlaceholder('Support & FAQ')}
+          />
+        </Card>
 
-            {/* Data */}
-            <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textSecondary }}
-              className="uppercase mb-2"
-            >
-              Data
-            </Text>
-            <Card className="mb-5">
-              <SettingsRow
-                icon="download-outline"
-                label="Export My Data"
-                onPress={exportData}
-              />
-              <View style={{ height: 1, backgroundColor: Colors.borderLight, marginLeft: 48 }} />
-              <SettingsRow
-                icon="trash-outline"
-                label="Delete Account"
-                onPress={deleteAccount}
-                destructive
-              />
-            </Card>
+        {/* Data */}
+        <Text
+          style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
+        >
+          Data
+        </Text>
+        <Card className="mb-5">
+          <SettingsRow
+            icon="download-outline"
+            label="Export My Data"
+            onPress={exportData}
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <SettingsRow
+            icon="trash-outline"
+            label="Delete Account"
+            onPress={deleteAccount}
+            destructive
+          />
+        </Card>
 
-            {/* Sign Out */}
-            {!isAnonymous && (
-              <Button
-                title="Sign Out"
-                onPress={handleSignOut}
-                variant="secondary"
-                className="mb-4"
-              />
-            )}
+        {/* Sign Out */}
+        {!isAnonymous && (
+          <Button
+            title="Sign Out"
+            onPress={handleSignOut}
+            variant="secondary"
+            className="mb-4"
+          />
+        )}
 
-            <Text className="text-xs text-text-tertiary text-center mt-4 mb-8">
-              PawLogix v1.0.0 (Beta)
-            </Text>
-          </ScrollView>
-        </SafeAreaView>
-      </GradientBackground>
-    </View>
+        <Text style={{ fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginTop: 16, marginBottom: 32 }}>
+          PawLogix v1.0.0 (Beta)
+        </Text>
+      </ScrollView>
+    </CurvedHeaderPage>
   );
 }

@@ -1,88 +1,59 @@
 export const Colors = {
-  // Primary — Bold coral-orange (high energy, friendly, action-oriented)
-  primary: '#FF6B42',
-  primary50: '#FFF5F0',
-  primary100: '#FFE0D4',
-  primary200: '#FF9A7A',
-  primary300: '#FF8560',
-  primary400: '#FF7851',
-  primary500: '#FF6B42',
-  primary600: '#E55E3A',
-  primary700: '#D94E2A',
-  primary800: '#B8401F',
-  primary900: '#8C3018',
-  primaryLight: '#FFF5F0',
+  // Primary — Sky Blue (friendly, clean, trustworthy)
+  primary: '#5BC5F2',
+  primaryDark: '#3BA8D8',
+  primaryLight: '#E8F6FC',
 
-  // Secondary — Deep teal (trust, health, calm complement to coral)
-  secondary: '#2BBBC3',
-  secondary50: '#F0FAFB',
-  secondary100: '#D4F1F3',
-  secondary200: '#7DD8DC',
-  secondary300: '#50CDD3',
-  secondary400: '#38C4CB',
-  secondary500: '#2BBBC3',
-  secondary600: '#1A8A91',
+  // Secondary — Warm Amber (star ratings, achievements, attention)
+  secondary: '#FFBE3D',
 
-  // Tertiary — Warm gold (achievements, streaks, gamification)
-  tertiary: '#FFB830',
-  tertiary50: '#FFFBF0',
-  tertiaryLight: '#FFDA80',
-  tertiaryDark: '#CC9320',
+  // Accent — Soft Coral (hearts, urgent flags, love/care accents)
+  accentCoral: '#FF6B8A',
 
-  // Surfaces & Backgrounds — warm-toned
-  background: '#FAFAF9',
-  backgroundWarm: '#F5F5F4',
+  // Surfaces & Backgrounds
+  background: '#F5F5F5',
   surface: '#FFFFFF',
-  surfaceMuted: '#F5F5F4',
 
-  // Text — warm neutrals (not blue-grays)
-  textPrimary: '#1C1917',
-  textSecondary: '#78716C',
-  textTertiary: '#A8A29E',
+  // Header gradient
+  headerGradientStart: '#5BC5F2',
+  headerGradientEnd: '#4AB8E8',
 
-  // Semantic — Success / Warning / Error / Info
+  // Text
+  textHeading: '#1E1E2D',
+  textBody: '#3D3D4E',
+  textMuted: '#9E9EB0',
+  textOnPrimary: '#FFFFFF',
+
+  // Semantic
   success: '#34C759',
-  successLight: '#F0FFF4',
-  successDark: '#248A3D',
-  warning: '#FF9500',
+  successLight: '#EAFBF0',
+  warning: '#FFAA33',
   warningLight: '#FFF8E1',
-  warningDark: '#CC7700',
-  error: '#FF3B30',
+  error: '#E53E3E',
   errorLight: '#FFF0EF',
-  errorDark: '#CC2F26',
-  info: '#5856D6',
 
-  // Borders — warm-toned
-  border: '#D6D3D1',
-  borderLight: '#E7E5E4',
-
-  // States
-  disabled: '#A8A29E',
-
-  // Pet accent colors
-  petDog: '#8B6914',
-  petCat: '#6366F1',
+  // Borders & States
+  border: '#EAEAEA',
+  disabled: '#D0D0D8',
+  tabInactive: '#B0B0C0',
 } as const;
 
 export const Gradients = {
-  primaryHeader: ['#FF6B42', '#D94E2A'] as const,
-  primaryCta: ['#FF6B42', '#E55E3A'] as const,
-  warmBackground: ['#FAFAF9', '#F5F5F4'] as const,
-  secondaryCta: ['#2BBBC3', '#1A8A91'] as const,
-  tertiaryCta: ['#FFB830', '#CC9320'] as const,
-  surfaceSubtle: ['#FFFFFF', '#F5F5F4'] as const,
-  destructive: ['#FF3B30', '#CC2F26'] as const,
-};
+  primaryHeader: ['#5BC5F2', '#4AB8E8'] as const,
+  primaryCta: ['#5BC5F2', '#3BA8D8'] as const,
+  warmBackground: ['#F5F5F5', '#FAFAFA'] as const,
+  surfaceSubtle: ['#FFFFFF', '#F5F5F5'] as const,
+} as const;
 
 export type ColorToken = keyof typeof Colors;
 
 // Tab bar colors for Expo Router
 export default {
   light: {
-    text: Colors.textPrimary,
+    text: Colors.textHeading,
     background: Colors.background,
     tint: Colors.primary,
-    tabIconDefault: Colors.textTertiary,
+    tabIconDefault: Colors.tabInactive,
     tabIconSelected: Colors.primary,
   },
   dark: {

@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, Pressable, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +15,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GradientBackground } from '@/components/ui/gradient-background';
+import { CurvedHeaderPage } from '@/components/ui/curved-header';
+import { FilterPills } from '@/components/ui/filter-pills';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { usePressAnimation } from '@/hooks/usePressAnimation';
 import { supabase } from '@/lib/supabase';
@@ -26,6 +26,14 @@ import { getRecordTypeLabel, formatDate } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
 import type { HealthRecord } from '@/types';
+
+const FILTER_OPTIONS = ['All', 'Lab Results', 'Vet Records', 'Prescriptions'] as const;
+const FILTER_MAP: Record<string, string | null> = {
+  'All': null,
+  'Lab Results': 'lab_results',
+  'Vet Records': 'vet_visit',
+  'Prescriptions': 'prescription',
+};
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -71,7 +79,7 @@ function RecordCard({ record, onPress, index }: { record: HealthRecord; onPress:
 
           <View className="flex-1">
             <View className="flex-row items-center gap-2">
-              <Text className="text-base font-semibold text-text-primary">
+              <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading }}>
                 {getRecordTypeLabel(record.record_type)}
               </Text>
               {record.flagged_items_count > 0 && (
@@ -82,9 +90,9 @@ function RecordCard({ record, onPress, index }: { record: HealthRecord; onPress:
                 />
               )}
             </View>
-            <Text className="text-sm text-text-secondary">{formatDate(record.record_date)}</Text>
+            <Text style={{ fontSize: 14, color: Colors.textBody }}>{formatDate(record.record_date)}</Text>
             {record.interpretation?.summary && (
-              <Text className="text-sm text-text-tertiary mt-0.5" numberOfLines={1}>
+              <Text style={{ fontSize: 14, color: Colors.textMuted, marginTop: 2 }} numberOfLines={1}>
                 {record.interpretation.summary}
               </Text>
             )}
@@ -108,6 +116,7 @@ export default function RecordsScreen() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
   const fabScale = useSharedValue(0);
   const { onPressIn, onPressOut, animatedStyle: fabPressStyle } = usePressAnimation(0.9);
 
@@ -119,6 +128,11 @@ export default function RecordsScreen() {
     transform: [{ scale: fabScale.value }],
   }));
 
+  const filteredRecords = useMemo(() => {
+    const type = FILTER_MAP[activeFilter];
+    if (!type) return records;
+    return records.filter((r) => r.record_type === type);
+  }, [records, activeFilter]);
   const fetchRecords = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -157,89 +171,90 @@ export default function RecordsScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1">
-        <GradientBackground variant="warm">
-          <SafeAreaView className="flex-1 px-5 pt-4">
-            <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }} className="mb-6">
-              Records
-            </Text>
-            {[0, 1, 2].map((i) => (
-              <Card key={i} className="mb-3">
-                <View className="flex-row items-center gap-3">
-                  <Skeleton width={40} height={40} className="rounded-xl" />
-                  <View className="flex-1 gap-2">
-                    <Skeleton height={16} className="w-3/4" />
-                    <Skeleton height={12} className="w-1/2" />
-                  </View>
-                  <Skeleton width={22} height={22} className="rounded-full" />
+      <CurvedHeaderPage
+        headerProps={{ title: 'Health Records' }}
+        contentStyle={{ paddingHorizontal: 0 }}
+      >
+        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          {[0, 1, 2].map((i) => (
+            <Card key={i} className="mb-3">
+              <View className="flex-row items-center gap-3">
+                <Skeleton width={40} height={40} className="rounded-xl" />
+                <View className="flex-1 gap-2">
+                  <Skeleton height={16} className="w-3/4" />
+                  <Skeleton height={12} className="w-1/2" />
                 </View>
-              </Card>
-            ))}
-          </SafeAreaView>
-        </GradientBackground>
-      </View>
+                <Skeleton width={22} height={22} className="rounded-full" />
+              </View>
+            </Card>
+          ))}
+        </View>
+      </CurvedHeaderPage>
     );
   }
 
   return (
-    <View className="flex-1">
-      <GradientBackground variant="warm">
-        <SafeAreaView className="flex-1">
-          <View className="flex-1 px-5 pt-4">
-            <View className="flex-row items-center justify-between mb-6">
-              <Text style={{ fontSize: 36, fontWeight: '800', color: Colors.textPrimary }}>
-                Records
-              </Text>
-              {activePet && (
-                <Badge label={activePet.name} variant="primary" />
-              )}
-            </View>
+    <CurvedHeaderPage
+      headerProps={{
+        title: 'Health Records',
+        children: (
+          <FilterPills
+            options={[...FILTER_OPTIONS]}
+            selected={activeFilter}
+            onSelect={setActiveFilter}
+          />
+        ),
+      }}
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
+      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+        {activePet && (
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 12 }}>
+            <Badge label={activePet.name} variant="primary" />
+          </View>
+        )}
 
-            {records.length === 0 ? (
-              <EmptyState
-                icon="document-text-outline"
-                accentIcon1="flask-outline"
-                accentIcon2="shield-checkmark-outline"
-                title="No records yet"
-                subtitle="Scan your pet's vet records to get AI-powered health insights."
-                actionLabel="Scan a Record"
-                onAction={() => router.push('/record/scan')}
-              />
-            ) : (
-              <FlashList
-                data={records}
-                renderItem={({ item, index }) => (
-                  <RecordCard
-                    record={item}
-                    onPress={() => router.push(`/record/${item.id}` as any)}
-                    index={index}
-                  />
-                )}
-                keyExtractor={(item) => item.id}
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0D7377" />
-                }
+        {filteredRecords.length === 0 ? (
+          <EmptyState
+            icon="document-text-outline"
+            title={activeFilter === 'All' ? 'No records yet' : `No ${activeFilter.toLowerCase()} found`}
+            subtitle={activeFilter === 'All' ? "Scan your pet's vet records to get AI-powered health insights." : 'Try selecting a different filter.'}
+            actionLabel={activeFilter === 'All' ? 'Scan a Record' : undefined}
+            onAction={activeFilter === 'All' ? () => router.push('/record/scan') : undefined}
+          />
+        ) : (
+          <FlashList
+            data={filteredRecords}
+            renderItem={({ item, index }) => (
+              <RecordCard
+                record={item}
+                onPress={() => router.push(`/record/${item.id}` as any)}
+                index={index}
               />
             )}
-          </View>
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+            }
+          />
+        )}
+      </View>
 
-          <AnimatedPressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-              router.push('/record/scan');
-            }}
-            onPressIn={onPressIn}
-            onPressOut={onPressOut}
-            style={[fabAnimStyle, fabPressStyle, Shadows.warmGlow, { position: 'absolute', bottom: 110, right: 20 }]}
-          >
-            <View
-              style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.secondary }}
-            >
-              <Ionicons name="scan" size={24} color="#FFFFFF" />
-            </View>
-          </AnimatedPressable>
-        </SafeAreaView>
-      </GradientBackground>
-    </View>
+      <AnimatedPressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          router.push('/record/scan');
+        }}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[fabAnimStyle, fabPressStyle, Shadows.primaryButton, { position: 'absolute', bottom: 110, right: 20 }]}
+      >
+        <View
+          style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}
+        >
+          <Ionicons name="scan" size={24} color="#FFFFFF" />
+        </View>
+      </AnimatedPressable>
+    </CurvedHeaderPage>
   );
 }

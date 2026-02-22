@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
@@ -13,6 +12,7 @@ import Animated, {
 import { Card } from '@/components/ui/card';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CurvedHeader } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -60,11 +60,11 @@ function SendButton({ enabled, onPress }: { enabled: boolean; onPress: () => voi
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={!enabled}
-      style={[animStyle, enabled ? Shadows.warmGlow : {}]}
+      style={[animStyle, enabled ? Shadows.primaryButton : {}]}
     >
       {enabled ? (
         <View
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F5A623', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}
         >
           <Ionicons name="send" size={18} color="#FFFFFF" />
         </View>
@@ -72,7 +72,7 @@ function SendButton({ enabled, onPress }: { enabled: boolean; onPress: () => voi
         <View
           style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.disabled, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Ionicons name="send" size={18} color={Colors.textTertiary} />
+          <Ionicons name="send" size={18} color={Colors.textMuted} />
         </View>
       )}
     </AnimatedPressable>
@@ -86,15 +86,15 @@ function SuggestionPill({ text, onPress, index }: { text: string; onPress: () =>
       <Pressable
         onPress={onPress}
         style={{
-          backgroundColor: Colors.primary50,
+          backgroundColor: Colors.primaryLight,
           borderWidth: 1,
-          borderColor: Colors.primary200,
+          borderColor: Colors.primary,
           borderRadius: 20,
           paddingHorizontal: 16,
           paddingVertical: 10,
         }}
       >
-        <Text className="text-sm text-primary font-semibold">{text}</Text>
+        <Text style={{ fontSize: 14, color: Colors.primary, fontWeight: '600' }}>{text}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -226,25 +226,25 @@ export default function RecordChatScreen() {
     const isUser = item.role === 'user';
 
     return (
-      <View className={`mb-3 max-w-[85%] ${isUser ? 'self-end' : 'self-start'}`}>
+      <View style={{ marginBottom: 12, maxWidth: '85%', alignSelf: isUser ? 'flex-end' : 'flex-start' }}>
         {!isUser && (
-          <View className="flex-row items-center gap-1 mb-1">
-            <Ionicons name="sparkles" size={12} color={Colors.primary300} />
-            <Text style={{ fontSize: 10, color: Colors.textTertiary }}>AI Assistant</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <Ionicons name="sparkles" size={12} color={Colors.primary} />
+            <Text style={{ fontSize: 10, color: Colors.textMuted }}>AI Assistant</Text>
           </View>
         )}
         {isUser ? (
           <View
-            style={{ backgroundColor: '#F5A623', borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 12 }}
+            style={{ backgroundColor: Colors.primary, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 12 }}
           >
-            <Text className="text-base text-white leading-6">{item.content}</Text>
+            <Text style={{ fontSize: 16, color: '#FFFFFF', lineHeight: 24 }}>{item.content}</Text>
           </View>
         ) : (
           <View
             style={[
               Shadows.sm,
               {
-                backgroundColor: Colors.surfaceMuted,
+                backgroundColor: Colors.surface,
                 borderRadius: 18,
                 borderBottomLeftRadius: 6,
                 paddingHorizontal: 16,
@@ -252,11 +252,11 @@ export default function RecordChatScreen() {
               },
             ]}
           >
-            <Text className="text-base text-text-primary leading-6">{item.content}</Text>
+            <Text style={{ fontSize: 16, color: Colors.textHeading, lineHeight: 24 }}>{item.content}</Text>
           </View>
         )}
         {!isUser && (
-          <Text style={{ fontSize: 10, color: Colors.textTertiary, marginTop: 4, marginLeft: 8 }}>
+          <Text style={{ fontSize: 10, color: Colors.textMuted, marginTop: 4, marginLeft: 8 }}>
             AI interpretation — consult your vet
           </Text>
         )}
@@ -265,108 +265,94 @@ export default function RecordChatScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      {/* Header */}
+    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
+      <CurvedHeader title="Ask About This Record" showBack />
       <View
-        style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+        style={{
+          flex: 1,
+          backgroundColor: Colors.background,
+          marginTop: -32,
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+        }}
       >
-        <Pressable
-          onPress={() => router.back()}
-          style={[Shadows.sm, { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }]}
-          hitSlop={8}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={0}
         >
-          <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
-        </Pressable>
-        <View className="flex-1">
-          <Text className="text-lg font-bold text-text-primary">
-            Ask About This Record
-          </Text>
-          {record?.interpretation?.summary && (
-            <Text className="text-xs text-text-secondary" numberOfLines={1}>
-              {record.interpretation.summary}
-            </Text>
-          )}
-        </View>
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-        keyboardVerticalOffset={0}
-      >
-        {/* Messages */}
-        <View className="flex-1 px-4 pt-4">
-          {isLoading ? (
-            <View className="gap-3">
-              <Skeleton height={60} className="w-2/3 self-start rounded-2xl" />
-              <Skeleton height={40} className="w-1/2 self-end rounded-2xl" />
-              <Skeleton height={80} className="w-3/4 self-start rounded-2xl" />
-            </View>
-          ) : messages.length === 0 ? (
-            <View className="flex-1 items-center justify-center">
-              <Ionicons name="chatbubbles-outline" size={48} color={Colors.primary200} />
-              <Text className="text-base text-text-secondary mt-3 text-center">
-                Ask any question about this record
-              </Text>
-              <View className="flex-row flex-wrap justify-center gap-2 mt-4 px-4">
-                {[
-                  'What do these results mean?',
-                  'Is anything concerning?',
-                  'What should I ask my vet?',
-                ].map((suggestion, idx) => (
-                  <SuggestionPill
-                    key={suggestion}
-                    text={suggestion}
-                    onPress={() => setInput(suggestion)}
-                    index={idx}
-                  />
-                ))}
+          {/* Messages */}
+          <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24 }}>
+            {isLoading ? (
+              <View className="gap-3">
+                <Skeleton height={60} className="w-2/3 self-start rounded-2xl" />
+                <Skeleton height={40} className="w-1/2 self-end rounded-2xl" />
+                <Skeleton height={80} className="w-3/4 self-start rounded-2xl" />
               </View>
-            </View>
-          ) : (
-            <FlashList
-              ref={listRef}
-              data={messages}
-              renderItem={renderMessage}
-              keyExtractor={(item) => item.id}
-              onContentSizeChange={() =>
-                listRef.current?.scrollToEnd({ animated: true })
-              }
-            />
-          )}
-        </View>
+            ) : messages.length === 0 ? (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="chatbubbles-outline" size={48} color={Colors.primary} />
+                <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 12, textAlign: 'center' }}>
+                  Ask any question about this record
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16, paddingHorizontal: 16 }}>
+                  {[
+                    'What do these results mean?',
+                    'Is anything concerning?',
+                    'What should I ask my vet?',
+                  ].map((suggestion, idx) => (
+                    <SuggestionPill
+                      key={suggestion}
+                      text={suggestion}
+                      onPress={() => setInput(suggestion)}
+                      index={idx}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <FlashList
+                ref={listRef}
+                data={messages}
+                renderItem={renderMessage}
+                keyExtractor={(item) => item.id}
+                onContentSizeChange={() =>
+                  listRef.current?.scrollToEnd({ animated: true })
+                }
+              />
+            )}
+          </View>
 
-        {/* Input */}
-        <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12 }]}>
-          <DisclaimerBanner className="mb-2" />
-          <View className="flex-row items-end gap-2">
-            <TextInput
-              style={[
-                {
+          {/* Input */}
+          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12 }]}>
+            <DisclaimerBanner className="mb-2" />
+            <View className="flex-row items-end gap-2">
+              <TextInput
+                style={{
                   flex: 1,
-                  backgroundColor: Colors.surfaceMuted,
+                  backgroundColor: Colors.primaryLight,
                   borderRadius: 20,
                   paddingHorizontal: 16,
                   paddingVertical: 12,
                   fontSize: 16,
-                  color: Colors.textPrimary,
+                  color: Colors.textHeading,
                   maxHeight: 96,
-                },
-              ]}
-              placeholder="Ask a question..."
-              placeholderTextColor={Colors.textTertiary}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              editable={!isSending}
-            />
-            <SendButton
-              enabled={!!input.trim() && !isSending}
-              onPress={sendMessage}
-            />
+                }}
+                placeholder="Ask a question..."
+                placeholderTextColor={Colors.textMuted}
+                value={input}
+                onChangeText={setInput}
+                multiline
+                editable={!isSending}
+              />
+              <SendButton
+                enabled={!!input.trim() && !isSending}
+                onPress={sendMessage}
+              />
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </View>
+    </View>
   );
 }
