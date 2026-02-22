@@ -26,12 +26,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAnonymous = user?.is_anonymous ?? true;
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from('pl_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    if (data) setProfile(data as UserProfile);
+    try {
+      const { data } = await supabase
+        .from('pl_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      if (data) setProfile(data as UserProfile);
+    } catch {
+      // Profile may not exist yet for anonymous users
+    }
   }, []);
 
   const refreshProfile = useCallback(async () => {
