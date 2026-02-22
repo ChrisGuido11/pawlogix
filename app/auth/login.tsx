@@ -27,22 +27,28 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<LoginForm>({
+  const { control, trigger, getValues, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
 
-  const onSubmit = async (data: LoginForm) => {
-    setIsSubmitting(true);
-    try {
-      await signIn(data.email, data.password);
-      toast({ title: 'Welcome back!', preset: 'done' });
-      router.replace('/(tabs)');
-    } catch (error: any) {
-      toast({ title: 'Login failed', message: error.message || 'Invalid credentials', preset: 'error' });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const onPressLogin = () => {
+    trigger().then((isValid) => {
+      if (!isValid) return;
+      const data = getValues();
+      setIsSubmitting(true);
+      signIn(data.email, data.password)
+        .then(() => {
+          toast({ title: 'Welcome back!', preset: 'done' });
+          router.replace('/(tabs)');
+        })
+        .catch((error: any) => {
+          toast({ title: 'Login failed', message: error.message || 'Invalid credentials', preset: 'error' });
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    });
   };
 
   return (
@@ -110,7 +116,7 @@ export default function LoginScreen() {
 
           <Button
             title="Log In"
-            onPress={handleSubmit(onSubmit)}
+            onPress={onPressLogin}
             loading={isSubmitting}
           />
         </ScrollView>

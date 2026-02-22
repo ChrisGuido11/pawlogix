@@ -32,24 +32,28 @@ export default function SignupScreen() {
   const { linkAccount } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<SignupForm>({
+  const { control, trigger, getValues, formState: { errors } } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
     defaultValues: { email: '', password: '', confirmPassword: '', displayName: '' },
   });
 
-  const onSubmit = (data: SignupForm) => {
-    setIsSubmitting(true);
-    linkAccount(data.email, data.password, data.displayName || undefined)
-      .then(() => {
-        toast({ title: 'Account created!', message: 'Your data is now backed up.', preset: 'done' });
-        router.back();
-      })
-      .catch((error: any) => {
-        toast({ title: 'Error', message: error.message || 'Failed to create account', preset: 'error' });
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-      });
+  const onPressCreate = () => {
+    trigger().then((isValid) => {
+      if (!isValid) return;
+      const data = getValues();
+      setIsSubmitting(true);
+      linkAccount(data.email, data.password, data.displayName || undefined)
+        .then(() => {
+          toast({ title: 'Account created!', message: 'Your data is now backed up.', preset: 'done' });
+          router.back();
+        })
+        .catch((error: any) => {
+          toast({ title: 'Error', message: error.message || 'Failed to create account', preset: 'error' });
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    });
   };
 
   return (
@@ -146,7 +150,7 @@ export default function SignupScreen() {
 
           <Button
             title="Create Account"
-            onPress={handleSubmit(onSubmit)}
+            onPress={onPressCreate}
             loading={isSubmitting}
           />
         </ScrollView>
