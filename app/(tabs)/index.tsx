@@ -519,10 +519,11 @@ export default function HomeScreen() {
           </>
         ) : (
           <EmptyState
+            illustration={require('@/assets/illustrations/mascot-welcome.png')}
             icon="paw-outline"
             title="Welcome to PawLogix!"
-            subtitle="Add your first pet to get started with AI-powered health insights."
-            actionLabel="Add Your Pet"
+            subtitle="Scan vet records, get AI-powered health insights, and keep track of your pet's care. Add a pet whenever you're ready!"
+            actionLabel="Add a Pet"
             onAction={() => router.push('/pet/create')}
           />
         )}
