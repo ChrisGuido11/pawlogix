@@ -35,9 +35,9 @@ export function Button({
     variant === 'pill' ? 0.95 : 0.97
   );
 
-  const handlePress = async () => {
+  const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await onPress();
+    onPress();
   };
 
   // --- Pill variant ---

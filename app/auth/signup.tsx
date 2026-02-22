@@ -37,17 +37,19 @@ export default function SignupScreen() {
     defaultValues: { email: '', password: '', confirmPassword: '', displayName: '' },
   });
 
-  const onSubmit = async (data: SignupForm) => {
+  const onSubmit = (data: SignupForm) => {
     setIsSubmitting(true);
-    try {
-      await linkAccount(data.email, data.password, data.displayName || undefined);
-      toast({ title: 'Account created!', message: 'Your data is now backed up.', preset: 'done' });
-      router.back();
-    } catch (error: any) {
-      toast({ title: 'Error', message: error.message || 'Failed to create account', preset: 'error' });
-    } finally {
-      setIsSubmitting(false);
-    }
+    linkAccount(data.email, data.password, data.displayName || undefined)
+      .then(() => {
+        toast({ title: 'Account created!', message: 'Your data is now backed up.', preset: 'done' });
+        router.back();
+      })
+      .catch((error: any) => {
+        toast({ title: 'Error', message: error.message || 'Failed to create account', preset: 'error' });
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
