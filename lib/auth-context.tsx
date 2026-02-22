@@ -79,23 +79,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile]);
 
   const linkAccount = async (email: string, password: string, displayName?: string) => {
-    const { error } = await supabase.auth.updateUser({
+    const { data, error } = await supabase.auth.updateUser({
       email: scopeEmail(email),
       password,
       data: { app: 'pawlogix' },
     });
     if (error) throw error;
 
-    if (user?.id) {
+    const userId = data.user?.id ?? user?.id;
+    if (userId) {
       await supabase
         .from('pl_profiles')
-        .update({
+        .upsert({
+          id: userId,
           display_name: displayName || null,
           email,
-        })
-        .eq('id', user.id);
+        }, { onConflict: 'id' });
+      await refreshProfile();
     }
-    await refreshProfile();
   };
 
   const signIn = async (email: string, password: string) => {

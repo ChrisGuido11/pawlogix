@@ -9,7 +9,7 @@ import { Typography, Fonts } from '@/constants/typography';
 
 interface ButtonProps {
   title: string;
-  onPress: () => void;
+  onPress: () => void | Promise<void>;
   variant?: 'primary' | 'secondary' | 'destructive' | 'ghost' | 'pill';
   size?: 'sm' | 'md' | 'lg';
   icon?: keyof typeof Ionicons.glyphMap;
@@ -35,9 +35,9 @@ export function Button({
     variant === 'pill' ? 0.95 : 0.97
   );
 
-  const handlePress = () => {
+  const handlePress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onPress();
+    await onPress();
   };
 
   // --- Pill variant ---
