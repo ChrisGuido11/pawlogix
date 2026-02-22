@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Button } from '@/components/ui/button';
+import { Spacing } from '@/constants/spacing';
 
 export default function NotFoundScreen() {
   const router = useRouter();
@@ -10,7 +11,7 @@ export default function NotFoundScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background items-center justify-center px-8">
       <Stack.Screen options={{ title: 'Not Found' }} />
-      <View style={{ width: 160, height: 160, borderRadius: 80, overflow: 'hidden', marginBottom: 16 }}>
+      <View style={{ width: 160, height: 160, borderRadius: 80, overflow: 'hidden', marginBottom: Spacing.lg }}>
         <Image
           source={require('@/assets/illustrations/mascot-tangled.png')}
           style={{ width: 160, height: 160 }}

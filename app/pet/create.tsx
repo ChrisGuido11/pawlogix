@@ -18,7 +18,9 @@ import { supabase } from '@/lib/supabase';
 import { getBreedsBySpecies } from '@/constants/breeds';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { SectionLabel } from '@/components/ui/section-label';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 
@@ -151,21 +153,21 @@ export default function PetCreateScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
-          <Text style={{ fontSize: 16, color: Colors.textBody, marginBottom: 24 }}>
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
+          <Text style={[Typography.body, { color: Colors.textBody, marginBottom: Spacing['2xl'] }]}>
             Tell us about your furry friend
           </Text>
 
           {/* Photo Picker */}
-          <Pressable onPress={pickImage} style={{ alignSelf: 'center', marginBottom: 24, alignItems: 'center' }}>
+          <Pressable onPress={pickImage} style={{ alignSelf: 'center', marginBottom: Spacing['2xl'], alignItems: 'center' }}>
             {photoUri ? (
               <View style={[Shadows.lg, { borderRadius: 60 }]}>
                 <Image
                   source={{ uri: photoUri }}
                   style={{ width: 120, height: 120, borderRadius: 60 }}
                 />
-                <View style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#FFFFFF' }}>
-                  <Ionicons name="camera" size={14} color="#FFFFFF" />
+                <View style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.textOnPrimary }}>
+                  <Ionicons name="camera" size={14} color={Colors.textOnPrimary} />
                 </View>
               </View>
             ) : (
@@ -175,10 +177,10 @@ export default function PetCreateScreen() {
                     colors={[...Gradients.primaryCta]}
                     style={{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' }}
                   >
-                    <Ionicons name="camera-outline" size={40} color="#FFFFFF" />
+                    <Ionicons name="camera-outline" size={40} color={Colors.textOnPrimary} />
                   </LinearGradient>
                 </View>
-                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 12 }}>Tap to add photo</Text>
+                <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.md }]}>Tap to add photo</Text>
               </View>
             )}
           </Pressable>
@@ -201,11 +203,9 @@ export default function PetCreateScreen() {
           />
 
           {/* Species Selector */}
-          <Text
-            style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
-          >
+          <SectionLabel style={{ marginBottom: Spacing.sm }}>
             Species *
-          </Text>
+          </SectionLabel>
           <View className="flex-row gap-3 mb-4">
             {(['dog', 'cat'] as const).map((s) => {
               const isSelected = species === s;
@@ -215,23 +215,23 @@ export default function PetCreateScreen() {
                   onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setValue('species', s); setValue('breed', ''); }}
                   style={[
                     isSelected ? Shadows.md : Shadows.sm,
-                    { flex: 1, borderRadius: 16 },
+                    { flex: 1, borderRadius: BorderRadius.card },
                   ]}
                 >
                   {isSelected ? (
                     <LinearGradient
                       colors={[Colors.primaryLight, Colors.primaryLight]}
-                      style={{ borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}
+                      style={{ borderRadius: BorderRadius.card, paddingVertical: Spacing.lg, alignItems: 'center' }}
                     >
                       <Ionicons name="paw" size={28} color={Colors.primary} />
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.primary, marginTop: 6 }}>
+                      <Text style={[Typography.secondary, { fontFamily: Fonts.bold, color: Colors.primary, marginTop: 6 }]}>
                         {s === 'dog' ? 'Dog' : 'Cat'}
                       </Text>
                     </LinearGradient>
                   ) : (
-                    <View style={{ backgroundColor: Colors.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center' }}>
+                    <View style={{ backgroundColor: Colors.surface, borderRadius: BorderRadius.card, paddingVertical: Spacing.lg, alignItems: 'center' }}>
                       <Ionicons name="paw-outline" size={28} color={Colors.textBody} />
-                      <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.textBody, marginTop: 6 }}>
+                      <Text style={[Typography.secondary, { fontFamily: Fonts.medium, color: Colors.textBody, marginTop: 6 }]}>
                         {s === 'dog' ? 'Dog' : 'Cat'}
                       </Text>
                     </View>
@@ -246,17 +246,15 @@ export default function PetCreateScreen() {
             control={control}
             name="breed"
             render={({ field: { value } }) => (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
-                >
+              <View style={{ marginBottom: Spacing.lg }}>
+                <SectionLabel style={{ marginBottom: Spacing.sm }}>
                   Breed
-                </Text>
+                </SectionLabel>
                 <Pressable
                   onPress={() => setShowBreedPicker(!showBreedPicker)}
-                  style={[Shadows.sm, { backgroundColor: Colors.primaryLight, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                  style={[Shadows.sm, { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.lg, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
                 >
-                  <Text style={{ color: value ? Colors.textHeading : Colors.textMuted, fontSize: 16 }}>
+                  <Text style={[Typography.body, { color: value ? Colors.textHeading : Colors.textMuted }]}>
                     {value || 'Select breed'}
                   </Text>
                   <Ionicons name={showBreedPicker ? 'chevron-up' : 'chevron-down'} size={20} color={Colors.textMuted} />
@@ -264,7 +262,7 @@ export default function PetCreateScreen() {
                 {showBreedPicker && (
                   <Card variant="elevated" className="mt-2 max-h-56">
                     <TextInput
-                      style={{ backgroundColor: Colors.primaryLight, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: Colors.textHeading, marginBottom: 8 }}
+                      style={[Typography.secondary, { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.md, paddingVertical: 10, color: Colors.textHeading, marginBottom: Spacing.sm }]}
                       placeholder="Search breeds..."
                       placeholderTextColor={Colors.textMuted}
                       value={breedSearch}
@@ -279,9 +277,9 @@ export default function PetCreateScreen() {
                             setShowBreedPicker(false);
                             setBreedSearch('');
                           }}
-                          style={{ paddingVertical: 10, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                          style={{ paddingVertical: 10, paddingHorizontal: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                         >
-                          <Text style={{ fontSize: 14, color: value === breed ? Colors.primary : Colors.textHeading, fontWeight: value === breed ? '700' : '400' }}>
+                          <Text style={[Typography.secondary, { color: value === breed ? Colors.primary : Colors.textHeading, fontFamily: value === breed ? Fonts.bold : Fonts.regular }]}>
                             {breed}
                           </Text>
                           {value === breed && (

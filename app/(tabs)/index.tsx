@@ -18,7 +18,9 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { getRecordTypeLabel, formatDate, calculateAge } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows, BorderRadius } from '@/constants/spacing';
+import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { SectionLabel } from '@/components/ui/section-label';
 import type { HealthRecord } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -42,8 +44,8 @@ function PetSelectorBar({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingRight: 16, gap: 12, alignItems: 'center' }}
-      style={{ marginBottom: 16 }}
+      contentContainerStyle={{ paddingRight: Spacing.lg, gap: Spacing.md, alignItems: 'center' }}
+      style={{ marginBottom: Spacing.lg }}
     >
       {pets.map((pet) => {
         const isActive = activePet?.id === pet.id;
@@ -65,7 +67,7 @@ function PetSelectorBar({
                   borderWidth: isActive ? 2.5 : 0,
                   borderColor: isActive ? Colors.primary : 'transparent',
                   padding: isActive ? 2 : 0,
-                  marginBottom: 4,
+                  marginBottom: Spacing.xs,
                 },
               ]}
             >
@@ -94,11 +96,13 @@ function PetSelectorBar({
               )}
             </View>
             <Text
-              style={{
-                fontSize: 11,
-                fontWeight: isActive ? '700' : '500',
-                color: isActive ? Colors.primary : Colors.textBody,
-              }}
+              style={[
+                Typography.caption,
+                {
+                  fontFamily: isActive ? Fonts.bold : Fonts.medium,
+                  color: isActive ? Colors.primary : Colors.textBody,
+                },
+              ]}
               numberOfLines={1}
             >
               {pet.name}
@@ -130,7 +134,7 @@ function PetSelectorBar({
         >
           <Ionicons name="add" size={22} color={Colors.textMuted} />
         </View>
-        <Text style={{ fontSize: 11, fontWeight: '500', color: Colors.textMuted }}>
+        <Text style={[Typography.caption, { color: Colors.textMuted }]}>
           Add
         </Text>
       </Pressable>
@@ -153,7 +157,7 @@ function RecordIcon({ type }: { type: string }) {
       style={{
         width: 40,
         height: 40,
-        borderRadius: 12,
+        borderRadius: BorderRadius.button,
         backgroundColor: Colors.primaryLight,
         alignItems: 'center',
         justifyContent: 'center',
@@ -234,7 +238,7 @@ export default function HomeScreen() {
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingHorizontal: Spacing.lg, paddingBottom: 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
@@ -257,7 +261,7 @@ export default function HomeScreen() {
             <StaggeredCard index={1}>
               <Pressable
                 onPress={() => router.push('/record/scan')}
-                style={{ marginBottom: 20 }}
+                style={{ marginBottom: Spacing.xl }}
               >
                 <LinearGradient
                   colors={Gradients.primaryCta}
@@ -266,7 +270,7 @@ export default function HomeScreen() {
                   style={[
                     {
                       borderRadius: BorderRadius.heroCard,
-                      padding: 20,
+                      padding: Spacing.xl,
                       flexDirection: 'row',
                       alignItems: 'center',
                       overflow: 'hidden',
@@ -275,16 +279,16 @@ export default function HomeScreen() {
                   ]}
                 >
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textOnPrimary, marginBottom: 4 }}>
+                    <Text style={[Typography.sectionHeading, { color: Colors.textOnPrimary, marginBottom: Spacing.xs }]}>
                       Scan your pet's
                     </Text>
-                    <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textOnPrimary, marginBottom: 12 }}>
+                    <Text style={[Typography.sectionHeading, { color: Colors.textOnPrimary, marginBottom: Spacing.md }]}>
                       vet record!
                     </Text>
                     <View
                       style={{
-                        backgroundColor: '#FFFFFF',
-                        paddingHorizontal: 24,
+                        backgroundColor: Colors.surface,
+                        paddingHorizontal: Spacing['2xl'],
                         paddingVertical: 10,
                         borderRadius: BorderRadius.pill,
                         flexDirection: 'row',
@@ -293,7 +297,7 @@ export default function HomeScreen() {
                         gap: 6,
                       }}
                     >
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: Colors.primary }}>
+                      <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>
                         Scan Now
                       </Text>
                       <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
@@ -316,7 +320,7 @@ export default function HomeScreen() {
               <Card
                 onPress={() => router.push(`/pet/${activePet.id}` as any)}
                 variant="elevated"
-                style={{ marginBottom: 20 }}
+                style={{ marginBottom: Spacing.xl }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   {activePet.photo_url ? (
@@ -348,25 +352,25 @@ export default function HomeScreen() {
                   )}
 
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                    <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
                       {activePet.name}
                     </Text>
-                    <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 2 }}>
+                    <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
                       {activePet.breed ?? activePet.species}
                       {activePet.date_of_birth ? ` · ${calculateAge(activePet.date_of_birth)}` : ''}
                     </Text>
 
                     {/* Quick stats row */}
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                    <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm }}>
                       {activePet.weight_kg && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.primaryLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: Colors.primaryLight, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
                           <Ionicons name="scale-outline" size={12} color={Colors.primary} />
-                          <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.primary }}>{activePet.weight_kg} kg</Text>
+                          <Text style={[Typography.caption, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>{activePet.weight_kg} kg</Text>
                         </View>
                       )}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.successLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: Colors.successLight, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
                         <Ionicons name="shield-checkmark-outline" size={12} color={Colors.success} />
-                        <Text style={{ fontSize: 11, fontWeight: '600', color: Colors.success }}>Active</Text>
+                        <Text style={[Typography.caption, { fontFamily: Fonts.semiBold, color: Colors.success }]}>Active</Text>
                       </View>
                     </View>
                   </View>
@@ -378,15 +382,11 @@ export default function HomeScreen() {
 
             {/* D. Recent Records */}
             <StaggeredCard index={3}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase' }}
-                >
-                  Recent Records
-                </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
+                <SectionLabel>Recent Records</SectionLabel>
                 {recentRecords.length > 0 && (
                   <Pressable onPress={() => router.push('/(tabs)/records' as any)}>
-                    <Text style={{ fontSize: 13, fontWeight: '600', color: Colors.primary }}>See all</Text>
+                    <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>See all</Text>
                   </Pressable>
                 )}
               </View>
@@ -409,24 +409,24 @@ export default function HomeScreen() {
               </View>
             ) : recentRecords.length === 0 ? (
               <Card>
-                <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                  <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 12 }}>
+                <View style={{ alignItems: 'center', paddingVertical: Spacing['2xl'] }}>
+                  <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: Spacing.md }}>
                     <Image
                       source={require('@/assets/illustrations/mascot-confused.png')}
                       style={{ width: 120, height: 120 }}
                       contentFit="cover"
                     />
                   </View>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.textHeading, marginBottom: 4 }}>
+                  <Text style={[Typography.body, { fontFamily: Fonts.semiBold, color: Colors.textHeading, marginBottom: Spacing.xs }]}>
                     No records yet
                   </Text>
-                  <Text style={{ fontSize: 14, color: Colors.textBody, textAlign: 'center' }}>
+                  <Text style={[Typography.secondary, { color: Colors.textBody, textAlign: 'center' }]}>
                     Scan your first vet record to get started
                   </Text>
                 </View>
               </Card>
             ) : (
-              <View style={{ gap: 10, marginBottom: 20 }}>
+              <View style={{ gap: 10, marginBottom: Spacing.xl }}>
                 {recentRecords.map((record, idx) => (
                   <StaggeredCard key={record.id} index={4 + idx}>
                     <Card onPress={() => router.push(`/record/${record.id}` as any)}>
@@ -449,10 +449,10 @@ export default function HomeScreen() {
                         />
                         <RecordIcon type={record.record_type} />
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading }}>
+                          <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
                             {getRecordTypeLabel(record.record_type)}
                           </Text>
-                          <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 2 }}>
+                          <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
                             {formatDate(record.record_date)}
                           </Text>
                         </View>
@@ -466,23 +466,19 @@ export default function HomeScreen() {
 
             {/* E. Health Snapshot — stat tiles */}
             <StaggeredCard index={7}>
-              <Text
-                style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-              >
-                Health Snapshot
-              </Text>
-              <View style={{ flexDirection: 'row', gap: 12 }}>
+              <SectionLabel style={{ marginBottom: Spacing.md }}>Health Snapshot</SectionLabel>
+              <View style={{ flexDirection: 'row', gap: Spacing.md }}>
                 <View
                   style={{
                     flex: 1,
                     backgroundColor: Colors.primaryLight,
                     borderRadius: BorderRadius.statTile,
-                    padding: 16,
+                    padding: Spacing.lg,
                   }}
                 >
-                  <Ionicons name="scale-outline" size={20} color={Colors.primary} style={{ marginBottom: 8 }} />
-                  <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 2 }}>Weight</Text>
-                  <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textHeading }}>
+                  <Ionicons name="scale-outline" size={20} color={Colors.primary} style={{ marginBottom: Spacing.sm }} />
+                  <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: 2 }]}>Weight</Text>
+                  <Text style={[Typography.sectionHeading, { color: Colors.textHeading }]}>
                     {activePet.weight_kg ? `${activePet.weight_kg} kg` : '—'}
                   </Text>
                 </View>
@@ -491,12 +487,12 @@ export default function HomeScreen() {
                     flex: 1,
                     backgroundColor: Colors.primaryLight,
                     borderRadius: BorderRadius.statTile,
-                    padding: 16,
+                    padding: Spacing.lg,
                   }}
                 >
-                  <Ionicons name="calendar-outline" size={20} color={Colors.primary} style={{ marginBottom: 8 }} />
-                  <Text style={{ fontSize: 12, color: Colors.textMuted, marginBottom: 2 }}>Records</Text>
-                  <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textHeading }}>
+                  <Ionicons name="calendar-outline" size={20} color={Colors.primary} style={{ marginBottom: Spacing.sm }} />
+                  <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: 2 }]}>Records</Text>
+                  <Text style={[Typography.sectionHeading, { color: Colors.textHeading }]}>
                     {recentRecords.length}
                   </Text>
                 </View>
@@ -506,15 +502,15 @@ export default function HomeScreen() {
             {/* F. Flagged items alert */}
             {recentRecords.some((r) => r.has_urgent_flags) && (
               <StaggeredCard index={8}>
-                <Card style={{ marginTop: 20 }} variant="elevated">
+                <Card style={{ marginTop: Spacing.xl }} variant="elevated">
                   <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8, marginLeft: 4 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm, marginLeft: Spacing.xs }}>
                     <Ionicons name="warning" size={20} color={Colors.warning} />
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.textHeading }}>
+                    <Text style={[Typography.buttonPrimary, { color: Colors.textHeading }]}>
                       Attention Needed
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 14, color: Colors.textBody, marginLeft: 4 }}>
+                  <Text style={[Typography.secondary, { color: Colors.textBody, marginLeft: Spacing.xs }]}>
                     Some recent records have flagged items that may need your vet's attention.
                   </Text>
                 </Card>

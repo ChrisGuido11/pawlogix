@@ -17,7 +17,9 @@ import { usePets } from '@/lib/pet-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { SectionLabel } from '@/components/ui/section-label';
 import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 
@@ -173,7 +175,7 @@ export default function RecordScanScreen() {
         >
           <SafeAreaView className="flex-1 justify-between">
             <Pressable onPress={() => setStep('choose')} className="p-4">
-              <Ionicons name="close" size={28} color="white" />
+              <Ionicons name="close" size={28} color={Colors.textOnPrimary} />
             </Pressable>
             <View className="items-center pb-8">
               <Pressable
@@ -194,22 +196,22 @@ export default function RecordScanScreen() {
       headerProps={{ title: 'Scan a Record', showBack: true }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
         {/* Step: Choose Method */}
         {step === 'choose' && (
-          <View style={{ gap: 16 }}>
+          <View style={{ gap: Spacing.lg }}>
             <StaggeredItem index={0}>
               <Card onPress={openCamera} variant="elevated" className="py-8 items-center" style={{ minHeight: 120 }}>
                 <LinearGradient
                   colors={[...Gradients.primaryCta]}
-                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
+                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md }}
                 >
-                  <Ionicons name="camera-outline" size={28} color="#FFFFFF" />
+                  <Ionicons name="camera-outline" size={28} color={Colors.textOnPrimary} />
                 </LinearGradient>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
                   Take Photo
                 </Text>
-                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 4 }}>
+                <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.xs }]}>
                   Use your camera to scan a document
                 </Text>
               </Card>
@@ -219,17 +221,32 @@ export default function RecordScanScreen() {
               <Card onPress={pickFromLibrary} variant="elevated" className="py-8 items-center" style={{ minHeight: 120 }}>
                 <LinearGradient
                   colors={[...Gradients.primaryCta]}
-                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}
+                  style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.md }}
                 >
-                  <Ionicons name="images-outline" size={28} color="#FFFFFF" />
+                  <Ionicons name="images-outline" size={28} color={Colors.textOnPrimary} />
                 </LinearGradient>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
                   Upload from Library
                 </Text>
-                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 4 }}>
+                <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.xs }]}>
                   Select existing photos from your device
                 </Text>
               </Card>
+            </StaggeredItem>
+
+            <StaggeredItem index={2}>
+              <View style={{ alignItems: 'center', marginTop: Spacing.xl }}>
+                <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden' }}>
+                  <Image
+                    source={require('@/assets/illustrations/mascot-scanning.png')}
+                    style={{ width: 140, height: 140 }}
+                    contentFit="cover"
+                  />
+                </View>
+                <Text style={[Typography.secondary, { color: Colors.textMuted, marginTop: Spacing.sm, textAlign: 'center' }]}>
+                  Snap or upload your vet records and we'll do the rest!
+                </Text>
+              </View>
             </StaggeredItem>
           </View>
         )}
@@ -237,38 +254,36 @@ export default function RecordScanScreen() {
         {/* Step: Preview Images */}
         {(step === 'preview' || step === 'details') && (
           <>
-            <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-            >
+            <SectionLabel style={{ marginBottom: Spacing.md }}>
               Selected Images ({images.length})
-            </Text>
+            </SectionLabel>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={{ marginBottom: 20 }}
+              style={{ marginBottom: Spacing.xl }}
             >
               {images.map((uri, index) => (
-                <View key={index} style={{ marginRight: 12, position: 'relative' }}>
-                  <View style={[Shadows.md, { borderRadius: 12 }]}>
+                <View key={index} style={{ marginRight: Spacing.md, position: 'relative' }}>
+                  <View style={[Shadows.md, { borderRadius: BorderRadius.button }]}>
                     <Image
                       source={{ uri }}
-                      style={{ width: 140, height: 180, borderRadius: 12 }}
+                      style={{ width: 140, height: 180, borderRadius: BorderRadius.button }}
                     />
                   </View>
                   <Pressable
                     onPress={() => removeImage(index)}
                     style={[Shadows.sm, { position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center' }]}
                   >
-                    <Ionicons name="close" size={16} color="white" />
+                    <Ionicons name="close" size={16} color={Colors.textOnPrimary} />
                   </Pressable>
                 </View>
               ))}
               <Pressable
                 onPress={pickFromLibrary}
-                style={{ width: 140, height: 180, borderRadius: 12, borderWidth: 2, borderStyle: 'dashed', borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 140, height: 180, borderRadius: BorderRadius.button, borderWidth: 2, borderStyle: 'dashed', borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="add" size={28} color={Colors.textMuted} />
-                <Text style={{ fontSize: 12, color: Colors.textMuted, marginTop: 4 }}>Add More</Text>
+                <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: Spacing.xs }]}>Add More</Text>
               </Pressable>
             </ScrollView>
 
@@ -285,11 +300,9 @@ export default function RecordScanScreen() {
         {/* Step: Details */}
         {step === 'details' && (
           <>
-            <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-            >
+            <SectionLabel style={{ marginBottom: Spacing.md }}>
               Record Type
-            </Text>
+            </SectionLabel>
             <View className="flex-row flex-wrap gap-2 mb-5">
               {RECORD_TYPES.map((type) => {
                 const isSelected = selectedType === type.key;
@@ -304,17 +317,17 @@ export default function RecordScanScreen() {
                     {isSelected ? (
                       <LinearGradient
                         colors={[Colors.primaryLight, Colors.primaryLight]}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: Colors.primary }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.card, borderWidth: 1, borderColor: Colors.primary }}
                       >
                         <Ionicons name={type.icon as any} size={16} color={Colors.primary} />
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: Colors.primary }}>{type.label}</Text>
+                        <Text style={[Typography.secondary, { fontFamily: Fonts.bold, color: Colors.primary }]}>{type.label}</Text>
                       </LinearGradient>
                     ) : (
                       <View
-                        style={[Shadows.sm, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 16, backgroundColor: Colors.surface }]}
+                        style={[Shadows.sm, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.card, backgroundColor: Colors.surface }]}
                       >
                         <Ionicons name={type.icon as any} size={16} color={Colors.textBody} />
-                        <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.textBody }}>{type.label}</Text>
+                        <Text style={[Typography.secondary, { fontFamily: Fonts.medium, color: Colors.textBody }]}>{type.label}</Text>
                       </View>
                     )}
                   </Pressable>
@@ -324,12 +337,10 @@ export default function RecordScanScreen() {
 
             {pets.length > 1 && (
               <>
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-                >
+                <SectionLabel style={{ marginBottom: Spacing.md }}>
                   Which Pet?
-                </Text>
-                <View style={{ gap: 8, marginBottom: 20 }}>
+                </SectionLabel>
+                <View style={{ gap: Spacing.sm, marginBottom: Spacing.xl }}>
                   {pets.map((pet) => {
                     const isSelected = selectedPetId === pet.id;
                     return (
@@ -345,11 +356,9 @@ export default function RecordScanScreen() {
                               color={isSelected ? Colors.primary : Colors.textBody}
                             />
                             <Text
-                              style={{
-                                fontSize: 16,
-                                fontWeight: '600',
+                              style={[Typography.buttonPrimary, {
                                 color: isSelected ? Colors.primary : Colors.textHeading,
-                              }}
+                              }]}
                             >
                               {pet.name}
                             </Text>

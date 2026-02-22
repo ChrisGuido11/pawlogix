@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { Colors } from '@/constants/Colors';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -39,7 +40,7 @@ export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) 
         {
           width: width as number,
           height,
-          backgroundColor: '#E8E8E8',
+          backgroundColor: Colors.border,
           borderRadius: 16,
         },
       ]}

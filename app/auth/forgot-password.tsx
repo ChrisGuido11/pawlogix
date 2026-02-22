@@ -13,6 +13,8 @@ import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
+import { Typography } from '@/constants/typography';
+import { Spacing } from '@/constants/spacing';
 
 const resetSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -52,9 +54,9 @@ export default function ForgotPasswordScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
           {/* Logo icon or success mascot */}
-          <View style={{ alignItems: 'center', marginBottom: 24 }}>
+          <View style={{ alignItems: 'center', marginBottom: Spacing['2xl'] }}>
             {sent ? (
               <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden' }}>
                 <Image
@@ -68,12 +70,12 @@ export default function ForgotPasswordScreen() {
                 colors={[...Gradients.primaryCta]}
                 style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name="paw" size={28} color="#FFFFFF" />
+                <Ionicons name="paw" size={28} color={Colors.textOnPrimary} />
               </LinearGradient>
             )}
           </View>
 
-          <Text style={{ fontSize: 16, color: Colors.textBody, marginBottom: 32 }}>
+          <Text style={[Typography.body, { color: Colors.textBody, marginBottom: Spacing['3xl'] }]}>
             {sent
               ? "We've sent a password reset link to your email."
               : "Enter your email and we'll send you a reset link."}

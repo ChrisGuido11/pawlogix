@@ -1,6 +1,8 @@
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { BorderRadius, Spacing } from '@/constants/spacing';
+import { Typography } from '@/constants/typography';
 
 interface DisclaimerBannerProps {
   className?: string;
@@ -13,22 +15,23 @@ export function DisclaimerBanner({ className = '' }: DisclaimerBannerProps) {
     <View
       style={{
         backgroundColor: Colors.primaryLight,
-        borderRadius: 12,
-        padding: 12,
+        borderRadius: BorderRadius.button,
+        padding: Spacing.md,
         flexDirection: 'row',
         alignItems: 'flex-start',
-        gap: 8,
+        gap: Spacing.sm,
       }}
       className={className}
     >
       <Ionicons name="information-circle-outline" size={16} color={Colors.primary} />
       <Text
-        style={{
-          fontSize: 12,
-          color: Colors.textMuted,
-          flex: 1,
-          lineHeight: 16,
-        }}
+        style={[
+          Typography.caption,
+          {
+            color: Colors.textMuted,
+            flex: 1,
+          },
+        ]}
       >
         AI interpretation — always consult your veterinarian for medical decisions
       </Text>

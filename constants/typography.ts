@@ -147,7 +147,7 @@ export const Typography: Record<string, TextStyle> = {
     fontFamily: Fonts.bold,
     fontSize: 11,
     lineHeight: 14,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     textTransform: 'uppercase',
   },
 } as const;

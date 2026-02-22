@@ -15,7 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Button } from '@/components/ui/button';
 import { Colors } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { Spacing, Shadows } from '@/constants/spacing';
 
 const ONBOARDING_KEY = 'pawlogix_onboarding_complete';
 
@@ -265,10 +266,10 @@ export default function OnboardingScreen() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <SafeAreaView style={{ flex: 1 }}>
         {/* Skip button — top right */}
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing['2xl'], paddingTop: Spacing.sm, paddingBottom: Spacing.xs }}>
           {activeIndex < 2 ? (
             <Pressable onPress={skipToEnd} hitSlop={12}>
-              <Text style={{ fontSize: 16, color: Colors.textBody }}>Skip</Text>
+              <Text style={[Typography.body, { color: Colors.textBody }]}>Skip</Text>
             </Pressable>
           ) : (
             <View style={{ height: 22 }} />
@@ -298,28 +299,29 @@ export default function OnboardingScreen() {
               </View>
 
               {/* Bottom 40%: Text content */}
-              <View style={{ flex: 1, paddingHorizontal: 32 }}>
+              <View style={{ flex: 1, paddingHorizontal: Spacing['3xl'] }}>
                 <Text
-                  style={{
-                    fontSize: 28,
-                    fontWeight: '700',
-                    color: Colors.textHeading,
-                    textAlign: 'center',
-                    lineHeight: 36,
-                    marginBottom: 12,
-                  }}
+                  style={[
+                    Typography.displayMd,
+                    {
+                      color: Colors.textHeading,
+                      textAlign: 'center',
+                      marginBottom: Spacing.md,
+                    },
+                  ]}
                 >
                   {slide.title}
                 </Text>
                 <Text
-                  style={{
-                    fontSize: 15,
-                    color: Colors.textMuted,
-                    textAlign: 'center',
-                    lineHeight: 22,
-                    maxWidth: 300,
-                    alignSelf: 'center',
-                  }}
+                  style={[
+                    Typography.body,
+                    {
+                      color: Colors.textMuted,
+                      textAlign: 'center',
+                      maxWidth: 300,
+                      alignSelf: 'center',
+                    },
+                  ]}
                 >
                   {slide.subtitle}
                 </Text>
@@ -329,9 +331,9 @@ export default function OnboardingScreen() {
         </ScrollView>
 
         {/* Bottom: Dots + CTA */}
-        <View style={{ paddingHorizontal: 32, paddingBottom: 32 }}>
+        <View style={{ paddingHorizontal: Spacing['3xl'], paddingBottom: Spacing['3xl'] }}>
           {/* Dot indicators */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, marginBottom: Spacing['2xl'] }}>
             {slides.map((_, index) => (
               <Dot key={index} index={index} activeIndex={activeIndex} />
             ))}
@@ -355,7 +357,7 @@ export default function OnboardingScreen() {
                   },
                 ]}
               >
-                <Text style={{ fontSize: 24, color: '#FFFFFF', fontWeight: '600', marginLeft: 2 }}>→</Text>
+                <Text style={[Typography.h1, { color: Colors.textOnPrimary, marginLeft: 2 }]}>→</Text>
               </Pressable>
             </View>
           )}

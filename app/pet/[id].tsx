@@ -17,7 +17,9 @@ import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
 import { calculateAge } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { SectionLabel } from '@/components/ui/section-label';
 import type { PetProfile, HealthRecord } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -141,7 +143,7 @@ export default function PetDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: 20, paddingTop: 60 }}>
+      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.xl, paddingTop: 60 }}>
         <View className="flex-row items-center gap-3 mb-6">
           <Skeleton width={40} height={40} className="rounded-xl" />
           <Skeleton height={20} className="w-1/3" />
@@ -195,8 +197,8 @@ export default function PetDetailScreen() {
           flex: 1,
           backgroundColor: Colors.background,
           marginTop: -32,
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
+          borderTopLeftRadius: BorderRadius.curvedHeader,
+          borderTopRightRadius: BorderRadius.curvedHeader,
         }}
       >
         <View style={{ alignItems: 'center', marginTop: -48 }}>
@@ -204,14 +206,14 @@ export default function PetDetailScreen() {
             {pet.photo_url ? (
               <Image
                 source={{ uri: pet.photo_url }}
-                style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#FFFFFF' }}
+                style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: Colors.textOnPrimary }}
               />
             ) : (
               <LinearGradient
                 colors={[...Gradients.primaryCta]}
-                style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 96, height: 96, borderRadius: 48, borderWidth: 4, borderColor: Colors.textOnPrimary, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name="camera-outline" size={32} color="#FFFFFF" />
+                <Ionicons name="camera-outline" size={32} color={Colors.textOnPrimary} />
               </LinearGradient>
             )}
           </Pressable>
@@ -220,49 +222,47 @@ export default function PetDetailScreen() {
           )}
         </View>
 
-        <ScrollView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 16 }} contentContainerStyle={{ paddingBottom: 32 }}>
+        <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['3xl'] }}>
           {/* Quick Actions */}
           <StaggeredCard index={0}>
             <View className="flex-row gap-3 mb-5">
               <Card onPress={() => router.push('/record/scan')} className="flex-1 items-center py-5">
                 <View
-                  style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}
+                  style={{ width: 44, height: 44, borderRadius: BorderRadius.statTile, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
                 >
                   <Ionicons name="scan-outline" size={24} color={Colors.primary} />
                 </View>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textHeading }}>Scan Record</Text>
+                <Text style={[Typography.caption, { fontFamily: Fonts.bold, color: Colors.textHeading }]}>Scan Record</Text>
               </Card>
               <Card onPress={() => Alert.alert('Coming Soon', 'Health Trends will be available in a future update.')} className="flex-1 items-center py-5">
                 <View
-                  style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.warningLight, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}
+                  style={{ width: 44, height: 44, borderRadius: BorderRadius.statTile, backgroundColor: Colors.warningLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
                 >
                   <Ionicons name="trending-up-outline" size={24} color={Colors.secondary} />
                 </View>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: Colors.textHeading }}>Health Trends</Text>
+                <Text style={[Typography.caption, { fontFamily: Fonts.bold, color: Colors.textHeading }]}>Health Trends</Text>
               </Card>
             </View>
           </StaggeredCard>
 
           {/* Records Section */}
           <StaggeredCard index={1}>
-            <Text
-              style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-            >
+            <SectionLabel style={{ marginBottom: Spacing.md }}>
               Records
-            </Text>
+            </SectionLabel>
           </StaggeredCard>
 
           {records.length === 0 ? (
             <Card>
               <View className="items-center py-6">
-                <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8 }}>
+                <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: Spacing.sm }}>
                   <Image
                     source={require('@/assets/illustrations/mascot-running.png')}
                     style={{ width: 120, height: 120 }}
                     contentFit="cover"
                   />
                 </View>
-                <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 8, textAlign: 'center' }}>
+                <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.sm, textAlign: 'center' }]}>
                   No records yet. Scan your first vet record!
                 </Text>
               </View>
@@ -279,13 +279,13 @@ export default function PetDetailScreen() {
                       colors={[...Gradients.primaryCta]}
                       style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}
                     >
-                      <Ionicons name="document-text" size={18} color="#FFFFFF" />
+                      <Ionicons name="document-text" size={18} color={Colors.textOnPrimary} />
                     </LinearGradient>
                     <View className="flex-1">
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading }}>
+                      <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
                         {record.record_type.replace('_', ' ')}
                       </Text>
-                      <Text style={{ fontSize: 14, color: Colors.textBody }}>{record.record_date}</Text>
+                      <Text style={[Typography.secondary, { color: Colors.textBody }]}>{record.record_date}</Text>
                     </View>
                     {record.processing_status === 'completed' ? (
                       <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
@@ -304,13 +304,11 @@ export default function PetDetailScreen() {
           {/* Notes */}
           {pet.notes && (
             <StaggeredCard index={records.length + 2}>
-              <Text
-                style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12, marginTop: 8 }}
-              >
+              <SectionLabel style={{ marginBottom: Spacing.md, marginTop: Spacing.sm }}>
                 Notes
-              </Text>
+              </SectionLabel>
               <Card>
-                <Text style={{ fontSize: 16, color: Colors.textHeading, lineHeight: 24 }}>{pet.notes}</Text>
+                <Text style={[Typography.body, { color: Colors.textHeading }]}>{pet.notes}</Text>
               </Card>
             </StaggeredCard>
           )}

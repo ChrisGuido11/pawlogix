@@ -1,10 +1,11 @@
-import { Pressable, ActivityIndicator, Text, View } from 'react-native';
+import { Pressable, ActivityIndicator, Text, View, TextStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { usePressAnimation } from '@/hooks/usePressAnimation';
 import { Colors } from '@/constants/Colors';
-import { Shadows, BorderRadius } from '@/constants/spacing';
+import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
 
 interface ButtonProps {
   title: string;
@@ -54,11 +55,11 @@ export function Button({
             backgroundColor: isDisabled ? Colors.disabled : Colors.primaryLight,
             borderRadius: BorderRadius.full,
             paddingVertical: 6,
-            paddingHorizontal: 16,
+            paddingHorizontal: Spacing.lg,
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 4,
+            gap: Spacing.xs,
           },
         ]}
         className={className}
@@ -71,11 +72,13 @@ export function Button({
           />
         )}
         <Text
-          style={{
-            fontSize: 13,
-            fontWeight: '500',
-            color: isDisabled ? Colors.textMuted : Colors.primary,
-          }}
+          style={[
+            Typography.secondary,
+            {
+              fontFamily: Fonts.medium,
+              color: isDisabled ? Colors.textMuted : Colors.primary,
+            },
+          ]}
         >
           {title}
         </Text>
@@ -85,11 +88,23 @@ export function Button({
 
   // --- Size-based dimensions ---
   const sizeConfig = {
-    sm: { height: 40, fontSize: 14, iconSize: 16, px: 20 },
-    md: { height: 50, fontSize: 16, iconSize: 18, px: 24 },
-    lg: { height: 56, fontSize: 18, iconSize: 22, px: 28 },
+    sm: { height: 40, iconSize: 16, px: Spacing.xl },
+    md: { height: 50, iconSize: 18, px: Spacing['2xl'] },
+    lg: { height: 56, iconSize: 22, px: 28 },
   };
   const cfg = sizeConfig[size];
+
+  // Typography presets per size for primary (bold) and secondary/ghost/destructive (semiBold)
+  const primaryTextStyle: Record<string, TextStyle> = {
+    sm: { ...Typography.bodySm, fontFamily: Fonts.bold },
+    md: Typography.buttonPrimary,
+    lg: Typography.buttonLg,
+  };
+  const secondaryTextStyle: Record<string, TextStyle> = {
+    sm: { ...Typography.bodySm, fontFamily: Fonts.semiBold },
+    md: Typography.buttonSecondary,
+    lg: { ...Typography.buttonLg, fontFamily: Fonts.semiBold },
+  };
 
   const baseStyle = {
     height: cfg.height,
@@ -97,7 +112,7 @@ export function Button({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    gap: 8,
+    gap: Spacing.sm,
     paddingHorizontal: cfg.px,
   };
 
@@ -128,11 +143,10 @@ export function Button({
               <Ionicons name={icon} size={cfg.iconSize} color={Colors.textOnPrimary} />
             )}
             <Text
-              style={{
-                fontSize: cfg.fontSize,
-                fontWeight: '700',
-                color: Colors.textOnPrimary,
-              }}
+              style={[
+                primaryTextStyle[size],
+                { color: Colors.textOnPrimary },
+              ]}
             >
               {title}
             </Text>
@@ -174,11 +188,10 @@ export function Button({
               />
             )}
             <Text
-              style={{
-                fontSize: cfg.fontSize,
-                fontWeight: '600',
-                color: isDisabled ? Colors.disabled : Colors.error,
-              }}
+              style={[
+                secondaryTextStyle[size],
+                { color: isDisabled ? Colors.disabled : Colors.error },
+              ]}
             >
               {title}
             </Text>
@@ -220,11 +233,10 @@ export function Button({
               />
             )}
             <Text
-              style={{
-                fontSize: cfg.fontSize,
-                fontWeight: '600',
-                color: isDisabled ? Colors.disabled : Colors.primary,
-              }}
+              style={[
+                secondaryTextStyle[size],
+                { color: isDisabled ? Colors.disabled : Colors.primary },
+              ]}
             >
               {title}
             </Text>
@@ -256,11 +268,10 @@ export function Button({
         <>
           {icon && <Ionicons name={icon} size={cfg.iconSize} color={ghostTextColor} />}
           <Text
-            style={{
-              fontSize: cfg.fontSize,
-              fontWeight: '600',
-              color: ghostTextColor,
-            }}
+            style={[
+              secondaryTextStyle[size],
+              { color: ghostTextColor },
+            ]}
           >
             {title}
           </Text>

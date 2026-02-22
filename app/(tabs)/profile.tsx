@@ -15,7 +15,9 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { SectionLabel } from '@/components/ui/section-label';
 
 function SettingsRow({
   icon,
@@ -60,11 +62,13 @@ function SettingsRow({
         />
       </View>
       <Text
-        style={{
-          fontSize: 16,
-          flex: 1,
-          color: destructive ? Colors.error : Colors.textHeading,
-        }}
+        style={[
+          Typography.body,
+          {
+            flex: 1,
+            color: destructive ? Colors.error : Colors.textHeading,
+          },
+        ]}
       >
         {label}
       </Text>
@@ -223,29 +227,29 @@ export default function ProfileScreen() {
       headerProps={{ title: 'Settings' }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
         {/* Account Section */}
         {isAnonymous ? (
-          <View style={[Shadows.lg, { borderRadius: 16, marginBottom: 20, overflow: 'hidden' }]}>
+          <View style={[Shadows.lg, { borderRadius: BorderRadius.card, marginBottom: Spacing.xl, overflow: 'hidden' }]}>
             <LinearGradient
               colors={[...Gradients.primaryHeader]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={{ borderRadius: 16, padding: 20 }}
+              style={{ borderRadius: BorderRadius.card, padding: Spacing.xl }}
             >
               <View className="items-center py-2">
-                <Ionicons name="person-circle-outline" size={48} color="#FFFFFF" />
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF', marginTop: 8 }}>
+                <Ionicons name="person-circle-outline" size={48} color={Colors.textOnPrimary} />
+                <Text style={[Typography.cardTitle, { color: Colors.textOnPrimary, marginTop: Spacing.sm }]}>
                   Create an Account
                 </Text>
-                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 4, marginBottom: 16 }}>
+                <Text style={[Typography.secondary, { color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: Spacing.xs, marginBottom: Spacing.lg }]}>
                   Back up your data and access it on any device
                 </Text>
                 <Pressable
                   onPress={() => router.push('/auth/signup')}
-                  style={[Shadows.sm, { backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, width: '100%' }]}
+                  style={[Shadows.sm, { backgroundColor: Colors.surface, borderRadius: BorderRadius.button, paddingVertical: 14, paddingHorizontal: Spacing['3xl'], width: '100%' }]}
                 >
-                  <Text style={{ color: Colors.primary, fontWeight: '700', fontSize: 16, textAlign: 'center' }}>
+                  <Text style={[Typography.buttonPrimary, { color: Colors.primary, textAlign: 'center' }]}>
                     Sign Up
                   </Text>
                 </Pressable>
@@ -255,7 +259,7 @@ export default function ProfileScreen() {
                 className="py-3 mt-1"
                 hitSlop={8}
               >
-                <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.9)', textAlign: 'center', fontWeight: '500' }}>
+                <Text style={[Typography.secondary, { fontFamily: Fonts.medium, color: 'rgba(255,255,255,0.9)', textAlign: 'center' }]}>
                   Already have an account? Log In
                 </Text>
               </Pressable>
@@ -266,15 +270,15 @@ export default function ProfileScreen() {
             <View className="flex-row items-center gap-3">
               <LinearGradient
                 colors={[...Gradients.primaryCta]}
-                style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 48, height: 48, borderRadius: BorderRadius.bottomSheet, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Ionicons name="person" size={24} color="#FFFFFF" />
+                <Ionicons name="person" size={24} color={Colors.textOnPrimary} />
               </LinearGradient>
               <View className="flex-1">
-                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>
+                <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
                   {profile?.display_name ?? 'PawLogix User'}
                 </Text>
-                <Text style={{ fontSize: 14, color: Colors.textBody }}>
+                <Text style={[Typography.secondary, { color: Colors.textBody }]}>
                   {profile?.email}
                 </Text>
               </View>
@@ -283,11 +287,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Notifications */}
-        <Text
-          style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8, marginTop: 8 }}
-        >
-          Notifications
-        </Text>
+        <SectionLabel style={{ marginBottom: Spacing.sm, marginTop: Spacing.sm }}>Notifications</SectionLabel>
         <Card className="mb-5">
           <SettingsRow
             icon="medical-outline"
@@ -297,7 +297,7 @@ export default function ProfileScreen() {
                 value={medReminders}
                 onValueChange={toggleMedReminders}
                 trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
-                thumbColor="#FFFFFF"
+                thumbColor={Colors.textOnPrimary}
               />
             }
           />
@@ -310,18 +310,14 @@ export default function ProfileScreen() {
                 value={vaxReminders}
                 onValueChange={toggleVaxReminders}
                 trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
-                thumbColor="#FFFFFF"
+                thumbColor={Colors.textOnPrimary}
               />
             }
           />
         </Card>
 
         {/* Legal */}
-        <Text
-          style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
-        >
-          Legal
-        </Text>
+        <SectionLabel style={{ marginBottom: Spacing.sm }}>Legal</SectionLabel>
         <Card className="mb-5">
           <SettingsRow
             icon="shield-outline"
@@ -343,11 +339,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Data */}
-        <Text
-          style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 8 }}
-        >
-          Data
-        </Text>
+        <SectionLabel style={{ marginBottom: Spacing.sm }}>Data</SectionLabel>
         <Card className="mb-5">
           <SettingsRow
             icon="download-outline"
@@ -373,7 +365,7 @@ export default function ProfileScreen() {
           />
         )}
 
-        <Text style={{ fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginTop: 16, marginBottom: 32 }}>
+        <Text style={[Typography.caption, { color: Colors.textMuted, textAlign: 'center', marginTop: Spacing.lg, marginBottom: Spacing['3xl'] }]}>
           PawLogix v1.0.0 (Beta)
         </Text>
       </ScrollView>
@@ -385,19 +377,19 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => !isDeleting && setShowDeleteConfirm(false)}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 340, alignItems: 'center' }]}>
-            <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: 16 }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}>
+          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: 28, width: '100%', maxWidth: 340, alignItems: 'center' }]}>
+            <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: Spacing.lg }}>
               <Image
                 source={require('@/assets/illustrations/mascot-waving-goodbye.png')}
                 style={{ width: 140, height: 140 }}
                 contentFit="cover"
               />
             </View>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textHeading, textAlign: 'center', marginBottom: 8 }}>
+            <Text style={[Typography.sectionHeading, { color: Colors.textHeading, textAlign: 'center', marginBottom: Spacing.sm }]}>
               We'll miss you!
             </Text>
-            <Text style={{ fontSize: 15, color: Colors.textBody, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+            <Text style={[Typography.body, { color: Colors.textBody, textAlign: 'center', marginBottom: Spacing['2xl'] }]}>
               This will permanently delete your account and all pet data. This action cannot be undone.
             </Text>
             <Button
@@ -408,9 +400,9 @@ export default function ProfileScreen() {
             />
             <Pressable
               onPress={() => !isDeleting && setShowDeleteConfirm(false)}
-              style={{ marginTop: 16, paddingVertical: 8 }}
+              style={{ marginTop: Spacing.lg, paddingVertical: Spacing.sm }}
             >
-              <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textBody }}>
+              <Text style={[Typography.buttonSecondary, { color: Colors.textBody }]}>
                 Never mind, I'll stay
               </Text>
             </Pressable>

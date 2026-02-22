@@ -1,4 +1,4 @@
-import { View, Text } from 'react-native';
+import { View, Text, TextStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,6 +7,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { Colors } from '@/constants/Colors';
+import { BorderRadius, Spacing } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
 
 interface BadgeProps {
   label: string;
@@ -44,9 +46,9 @@ const variantConfig = {
 };
 
 const sizeConfig = {
-  sm: { paddingH: 8, paddingV: 2, fontSize: 10 },
-  md: { paddingH: 12, paddingV: 4, fontSize: 12 },
-  lg: { paddingH: 16, paddingV: 6, fontSize: 14 },
+  sm: { paddingH: Spacing.sm, paddingV: 2, textStyle: { ...Typography.tabLabel, fontFamily: Fonts.semiBold } as TextStyle },
+  md: { paddingH: Spacing.md, paddingV: Spacing.xs, textStyle: { ...Typography.caption, fontFamily: Fonts.semiBold } as TextStyle },
+  lg: { paddingH: Spacing.lg, paddingV: 6, textStyle: { ...Typography.bodySm, fontFamily: Fonts.semiBold } as TextStyle },
 };
 
 export function Badge({ label, variant = 'primary', size = 'md', className = '' }: BadgeProps) {
@@ -74,7 +76,7 @@ export function Badge({ label, variant = 'primary', size = 'md', className = '' 
       style={[
         {
           backgroundColor: config.bg,
-          borderRadius: 9999,
+          borderRadius: BorderRadius.pill,
           paddingHorizontal: sizeStyle.paddingH,
           paddingVertical: sizeStyle.paddingV,
           flexDirection: 'row',
@@ -96,12 +98,13 @@ export function Badge({ label, variant = 'primary', size = 'md', className = '' 
         />
       )}
       <Text
-        style={{
-          fontSize: sizeStyle.fontSize,
-          fontWeight: '600',
-          color: config.text,
-          textAlign: 'center',
-        }}
+        style={[
+          sizeStyle.textStyle,
+          {
+            color: config.text,
+            textAlign: 'center',
+          },
+        ]}
       >
         {label}
       </Text>

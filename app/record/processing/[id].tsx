@@ -16,7 +16,8 @@ import { Image } from 'expo-image';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 
 const PROGRESS_STEPS = [
   'Reading your document...',
@@ -86,7 +87,7 @@ function ProgressSteps() {
   }, []);
 
   return (
-    <View style={{ marginTop: 32, gap: 12, alignItems: 'center' }}>
+    <View style={{ marginTop: Spacing['3xl'], gap: Spacing.md, alignItems: 'center' }}>
       {PROGRESS_STEPS.map((step, index) => {
         const isActive = index === stepIndex;
         const isDone = index < stepIndex;
@@ -106,7 +107,7 @@ function ProgressSteps() {
         }));
 
         return (
-          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
             <Animated.View style={dotAnimStyle}>
               {isDone ? (
                 <LinearGradient
@@ -125,11 +126,10 @@ function ProgressSteps() {
               )}
             </Animated.View>
             <Text
-              style={{
-                fontSize: 14,
-                fontWeight: isActive ? '600' : '400',
+              style={[Typography.secondary, {
+                fontFamily: isActive ? Fonts.semiBold : Fonts.regular,
                 color: isActive ? Colors.textHeading : Colors.textBody,
-              }}
+              }]}
             >
               {isDone ? '\u2713 ' : ''}{step}
             </Text>
@@ -246,7 +246,7 @@ export default function RecordProcessingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+      <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['3xl'] }}>
         {status === 'failed' ? (
           <>
             <View style={{ width: 160, height: 160, borderRadius: 80, overflow: 'hidden' }}>
@@ -256,10 +256,10 @@ export default function RecordProcessingScreen() {
                 contentFit="cover"
               />
             </View>
-            <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textHeading, marginTop: 16, textAlign: 'center' }}>
+            <Text style={[Typography.sectionHeading, { color: Colors.textHeading, marginTop: Spacing.lg, textAlign: 'center' }]}>
               Something went wrong
             </Text>
-            <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 8, textAlign: 'center', marginBottom: 24 }}>
+            <Text style={[Typography.body, { color: Colors.textBody, marginTop: Spacing.sm, textAlign: 'center', marginBottom: Spacing['2xl'] }]}>
               {error || "We couldn't analyze your record. Please try again."}
             </Text>
             <Button
@@ -291,10 +291,10 @@ export default function RecordProcessingScreen() {
               </Animated.View>
             </View>
 
-            <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textHeading, marginTop: 24, textAlign: 'center' }}>
+            <Text style={[Typography.sectionHeading, { color: Colors.textHeading, marginTop: Spacing['2xl'], textAlign: 'center' }]}>
               Analyzing your pet's record...
             </Text>
-            <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 8, textAlign: 'center' }}>
+            <Text style={[Typography.body, { color: Colors.textBody, marginTop: Spacing.sm, textAlign: 'center' }]}>
               This usually takes 10-30 seconds
             </Text>
             <ProgressSteps />

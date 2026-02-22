@@ -12,6 +12,8 @@ import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
+import { Typography, Fonts } from '@/constants/typography';
+import { Spacing, BorderRadius } from '@/constants/spacing';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -51,18 +53,18 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
           {/* Logo icon */}
-          <View style={{ alignItems: 'center', marginBottom: 24 }}>
+          <View style={{ alignItems: 'center', marginBottom: Spacing['2xl'] }}>
             <LinearGradient
               colors={[...Gradients.primaryCta]}
               style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Ionicons name="paw" size={28} color="#FFFFFF" />
+              <Ionicons name="paw" size={28} color={Colors.textOnPrimary} />
             </LinearGradient>
           </View>
 
-          <Text style={{ fontSize: 16, color: Colors.textBody, marginBottom: 32 }}>
+          <Text style={[Typography.body, { color: Colors.textBody, marginBottom: Spacing['3xl'] }]}>
             Log in to access your pet health data
           </Text>
 
@@ -102,8 +104,8 @@ export default function LoginScreen() {
             )}
           />
 
-          <Pressable onPress={() => router.push('/auth/forgot-password')} style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 14, color: Colors.primary, fontWeight: '600' }}>Forgot Password?</Text>
+          <Pressable onPress={() => router.push('/auth/forgot-password')} style={{ marginBottom: Spacing['2xl'] }}>
+            <Text style={[Typography.secondary, { color: Colors.primary, fontFamily: Fonts.semiBold }]}>Forgot Password?</Text>
           </Pressable>
 
           <Button

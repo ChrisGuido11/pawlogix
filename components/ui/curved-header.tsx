@@ -79,8 +79,8 @@ export function CurvedHeader({
             onPress={() => router.back()}
             hitSlop={12}
             style={{
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               borderRadius: 12,
               backgroundColor: 'rgba(255,255,255,0.2)',
               alignItems: 'center',
@@ -89,12 +89,10 @@ export function CurvedHeader({
           >
             <Ionicons name="arrow-back" size={20} color={Colors.textOnPrimary} />
           </Pressable>
-        ) : (
-          <View style={{ width: 40 }} />
-        )}
+        ) : null}
 
         {/* Title (centered between left and right) */}
-        <View style={{ flex: 1, marginHorizontal: 12 }}>
+        <View style={{ flex: 1, marginHorizontal: showBack ? 12 : 0 }}>
           <Text
             style={[
               Typography.screenTitle,
@@ -103,7 +101,7 @@ export function CurvedHeader({
                 textAlign: showBack ? 'center' : 'left',
               },
             ]}
-            numberOfLines={1}
+            numberOfLines={showBack ? 1 : undefined}
           >
             {title}
           </Text>
@@ -115,8 +113,8 @@ export function CurvedHeader({
             onPress={onRightPress}
             hitSlop={12}
             style={{
-              width: 40,
-              height: 40,
+              width: 44,
+              height: 44,
               borderRadius: 12,
               backgroundColor: 'rgba(255,255,255,0.2)',
               alignItems: 'center',
@@ -126,7 +124,7 @@ export function CurvedHeader({
             <Ionicons name={rightIcon} size={20} color={Colors.textOnPrimary} />
           </Pressable>
         ) : (
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         )}
       </View>
 

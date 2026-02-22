@@ -2,7 +2,8 @@ import { View, Text, TextInput, type TextInputProps } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { BorderRadius } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { Spacing, BorderRadius } from '@/constants/spacing';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -42,14 +43,15 @@ export function Input({
     <View className={containerClassName}>
       {label && (
         <Text
-          style={{
-            fontSize: 12,
-            fontWeight: '500',
-            color: Colors.textMuted,
-            marginBottom: 8,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-          }}
+          style={[
+            Typography.caption,
+            {
+              color: Colors.textMuted,
+              marginBottom: Spacing.sm,
+              textTransform: 'uppercase',
+              letterSpacing: 0.5,
+            },
+          ]}
         >
           {label}
         </Text>
@@ -66,12 +68,14 @@ export function Input({
         ]}
       >
         <TextInput
-          style={{
-            fontSize: 15,
-            color: Colors.textBody,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-          }}
+          style={[
+            Typography.body,
+            {
+              color: Colors.textBody,
+              paddingHorizontal: Spacing.lg,
+              paddingVertical: 14,
+            },
+          ]}
           placeholderTextColor={Colors.textMuted}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -81,7 +85,7 @@ export function Input({
       {error && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
           <Ionicons name="alert-circle" size={14} color={Colors.error} />
-          <Text style={{ fontSize: 12, color: Colors.error }}>{error}</Text>
+          <Text style={[Typography.caption, { color: Colors.error }]}>{error}</Text>
         </View>
       )}
     </View>

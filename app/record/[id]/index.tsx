@@ -20,7 +20,9 @@ import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { getRecordTypeLabel, formatDate } from '@/lib/utils';
 import { Colors } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { SectionLabel } from '@/components/ui/section-label';
 import type { HealthRecord, FlaggedItem } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -64,7 +66,7 @@ function PulsingBackground({ color }: { color: string }) {
 
   return (
     <Animated.View
-      style={[animStyle, { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: 16 }]}
+      style={[animStyle, { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, borderRadius: BorderRadius.card }]}
     />
   );
 }
@@ -129,7 +131,7 @@ export default function RecordDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: 20, paddingTop: 60 }}>
+      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.xl, paddingTop: 60 }}>
         <View className="flex-row items-center justify-between mb-4">
           <Skeleton width={40} height={40} className="rounded-xl" />
           <Skeleton height={20} className="w-1/3" />
@@ -172,19 +174,19 @@ export default function RecordDetailScreen() {
       }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
         {/* Image Gallery */}
         {record.image_urls.length > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 20 }}
+            style={{ marginBottom: Spacing.xl }}
           >
             {record.image_urls.map((url, index) => (
-              <View key={index} style={[Shadows.md, { borderRadius: 12, marginRight: 12 }]}>
+              <View key={index} style={[Shadows.md, { borderRadius: BorderRadius.button, marginRight: Spacing.md }]}>
                 <Image
                   source={{ uri: getImageUrl(url) }}
-                  style={{ width: 200, height: 260, borderRadius: 12 }}
+                  style={{ width: 200, height: 260, borderRadius: BorderRadius.button }}
                 />
               </View>
             ))}
@@ -196,10 +198,10 @@ export default function RecordDetailScreen() {
         record.processing_status === 'processing' ? (
           <Card className="mb-5 items-center py-8">
             <Ionicons name="hourglass-outline" size={40} color={Colors.primary} />
-            <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading, marginTop: 12 }}>
+            <Text style={[Typography.cardTitle, { color: Colors.textHeading, marginTop: Spacing.md }]}>
               Still processing...
             </Text>
-            <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 4 }}>
+            <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.xs }]}>
               Check back in a moment
             </Text>
             <Button
@@ -218,10 +220,10 @@ export default function RecordDetailScreen() {
                 contentFit="cover"
               />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading, marginTop: 12 }}>
+            <Text style={[Typography.cardTitle, { color: Colors.textHeading, marginTop: Spacing.md }]}>
               Interpretation failed
             </Text>
-            <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 4, textAlign: 'center' }}>
+            <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.xs, textAlign: 'center' }]}>
               {record.processing_error || 'Something went wrong. Please try again.'}
             </Text>
             <Button title="Retry" onPress={fetchRecord} className="mt-4" />
@@ -235,16 +237,16 @@ export default function RecordDetailScreen() {
                   backgroundColor: Colors.primaryLight,
                   borderLeftWidth: 4,
                   borderLeftColor: Colors.primary,
-                  borderRadius: 16,
-                  padding: 16,
-                  marginBottom: 16,
+                  borderRadius: BorderRadius.card,
+                  padding: Spacing.lg,
+                  marginBottom: Spacing.lg,
                   ...Shadows.sm,
                 }}
               >
-                <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading, marginBottom: 8 }}>
+                <Text style={[Typography.cardTitle, { color: Colors.textHeading, marginBottom: Spacing.sm }]}>
                   Summary
                 </Text>
-                <Text style={{ fontSize: 16, color: Colors.textHeading, lineHeight: 24 }}>
+                <Text style={[Typography.body, { color: Colors.textHeading }]}>
                   {interpretation.summary}
                 </Text>
               </View>
@@ -252,12 +254,10 @@ export default function RecordDetailScreen() {
 
             {/* Detailed Breakdown */}
             {interpretation.interpreted_sections?.length > 0 && (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-                >
+              <View style={{ marginBottom: Spacing.lg }}>
+                <SectionLabel style={{ marginBottom: Spacing.md }}>
                   Detailed Breakdown
-                </Text>
+                </SectionLabel>
                 {interpretation.interpreted_sections.map((section: any, index: number) => {
                   const isExpanded = expandedSections.has(index);
                   return (
@@ -267,21 +267,21 @@ export default function RecordDetailScreen() {
                           onPress={() => toggleSection(index)}
                           className="flex-row items-center justify-between"
                         >
-                          <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading, flex: 1, marginRight: 8 }}>
+                          <Text style={[Typography.buttonPrimary, { color: Colors.textHeading, flex: 1, marginRight: Spacing.sm }]}>
                             {section.title}
                           </Text>
                           <ChevronAnimated isExpanded={isExpanded} />
                         </Pressable>
                         {!isExpanded && section.plain_english_content && (
                           <Text
-                            style={{ fontSize: 14, color: Colors.textBody, marginTop: 8 }}
+                            style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.sm }]}
                             numberOfLines={1}
                           >
                             {section.plain_english_content}
                           </Text>
                         )}
                         {isExpanded && (
-                          <Text style={{ fontSize: 16, color: Colors.textHeading, marginTop: 12, lineHeight: 24 }}>
+                          <Text style={[Typography.body, { color: Colors.textHeading, marginTop: Spacing.md }]}>
                             {section.plain_english_content}
                           </Text>
                         )}
@@ -294,12 +294,10 @@ export default function RecordDetailScreen() {
 
             {/* Flagged Items */}
             {interpretation.flagged_items?.length > 0 && (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{ fontSize: 11, fontWeight: '700', letterSpacing: 1, color: Colors.textMuted, textTransform: 'uppercase', marginBottom: 12 }}
-                >
+              <View style={{ marginBottom: Spacing.lg }}>
+                <SectionLabel style={{ marginBottom: Spacing.md }}>
                   Flagged Items
-                </Text>
+                </SectionLabel>
                 {interpretation.flagged_items.map(
                   (item: FlaggedItem, index: number) => {
                     const borderColor = severityColorMap[item.severity] || Colors.primary;
@@ -310,7 +308,7 @@ export default function RecordDetailScreen() {
                       <StaggeredCard key={index} index={5 + index}>
                         <Card className="mb-2 overflow-hidden">
                           {isUrgent && <PulsingBackground color={Colors.error} />}
-                          <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: borderColor }} />
+                          <View style={{ position: 'absolute', left: 0, top: Spacing.md, bottom: Spacing.md, width: 3, borderRadius: 2, backgroundColor: borderColor }} />
                           <View className="flex-row items-center gap-2 mb-2 ml-1">
                             <Ionicons name={iconName} size={18} color={borderColor} />
                             <Badge
@@ -324,21 +322,21 @@ export default function RecordDetailScreen() {
                               }
                               size="sm"
                             />
-                            <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading, flex: 1 }}>
+                            <Text style={[Typography.buttonPrimary, { color: Colors.textHeading, flex: 1 }]}>
                               {item.item}
                             </Text>
                           </View>
                           {item.value && (
                             <View className="flex-row items-center gap-2 mb-1 ml-1">
-                              <Text style={{ fontFamily: 'monospace', fontSize: 13, color: Colors.textHeading }}>
+                              <Text style={[Typography.secondary, { fontFamily: 'monospace', color: Colors.textHeading }]}>
                                 {item.value}
                               </Text>
-                              <Text style={{ fontSize: 14, color: Colors.textBody }}>
+                              <Text style={[Typography.secondary, { color: Colors.textBody }]}>
                                 (Normal: {item.normal_range})
                               </Text>
                             </View>
                           )}
-                          <Text style={{ fontSize: 16, color: Colors.textHeading, lineHeight: 24, marginLeft: 4 }}>
+                          <Text style={[Typography.body, { color: Colors.textHeading, marginLeft: Spacing.xs }]}>
                             {item.explanation}
                           </Text>
                         </Card>
@@ -353,16 +351,16 @@ export default function RecordDetailScreen() {
             {interpretation.suggested_vet_questions?.length > 0 && (
               <StaggeredCard index={10}>
                 <Card className="mb-4">
-                  <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading, marginBottom: 12 }}>
+                  <Text style={[Typography.cardTitle, { color: Colors.textHeading, marginBottom: Spacing.md }]}>
                     Questions for Your Vet
                   </Text>
                   {interpretation.suggested_vet_questions.map(
                     (question: string, index: number) => (
                       <View key={index} className="flex-row gap-2 mb-2">
-                        <Text style={{ fontSize: 16, color: Colors.primary, fontWeight: '700' }}>
+                        <Text style={[Typography.buttonPrimary, { color: Colors.primary }]}>
                           {index + 1}.
                         </Text>
-                        <Text style={{ fontSize: 16, color: Colors.textHeading, flex: 1, lineHeight: 24 }}>
+                        <Text style={[Typography.body, { color: Colors.textHeading, flex: 1 }]}>
                           {question}
                         </Text>
                       </View>

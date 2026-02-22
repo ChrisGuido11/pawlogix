@@ -18,7 +18,8 @@ import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { Colors } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import type { RecordChat, HealthRecord } from '@/types';
 
 interface ChatMessage {
@@ -67,7 +68,7 @@ function SendButton({ enabled, onPress }: { enabled: boolean; onPress: () => voi
         <View
           style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Ionicons name="send" size={18} color="#FFFFFF" />
+          <Ionicons name="send" size={18} color={Colors.textOnPrimary} />
         </View>
       ) : (
         <View
@@ -90,12 +91,12 @@ function SuggestionPill({ text, onPress, index }: { text: string; onPress: () =>
           backgroundColor: Colors.primaryLight,
           borderWidth: 1,
           borderColor: Colors.primary,
-          borderRadius: 20,
-          paddingHorizontal: 16,
+          borderRadius: BorderRadius.heroCard,
+          paddingHorizontal: Spacing.lg,
           paddingVertical: 10,
         }}
       >
-        <Text style={{ fontSize: 14, color: Colors.primary, fontWeight: '600' }}>{text}</Text>
+        <Text style={[Typography.secondary, { color: Colors.primary, fontFamily: Fonts.semiBold }]}>{text}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -227,18 +228,18 @@ export default function RecordChatScreen() {
     const isUser = item.role === 'user';
 
     return (
-      <View style={{ marginBottom: 12, maxWidth: '85%', alignSelf: isUser ? 'flex-end' : 'flex-start' }}>
+      <View style={{ marginBottom: Spacing.md, maxWidth: '85%', alignSelf: isUser ? 'flex-end' : 'flex-start' }}>
         {!isUser && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.xs }}>
             <Ionicons name="sparkles" size={12} color={Colors.primary} />
-            <Text style={{ fontSize: 10, color: Colors.textMuted }}>AI Assistant</Text>
+            <Text style={[Typography.tabLabel, { color: Colors.textMuted }]}>AI Assistant</Text>
           </View>
         )}
         {isUser ? (
           <View
-            style={{ backgroundColor: Colors.primary, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: 16, paddingVertical: 12 }}
+            style={{ backgroundColor: Colors.primary, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}
           >
-            <Text style={{ fontSize: 16, color: '#FFFFFF', lineHeight: 24 }}>{item.content}</Text>
+            <Text style={[Typography.body, { color: Colors.textOnPrimary }]}>{item.content}</Text>
           </View>
         ) : (
           <View
@@ -248,16 +249,16 @@ export default function RecordChatScreen() {
                 backgroundColor: Colors.surface,
                 borderRadius: 18,
                 borderBottomLeftRadius: 6,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
+                paddingHorizontal: Spacing.lg,
+                paddingVertical: Spacing.md,
               },
             ]}
           >
-            <Text style={{ fontSize: 16, color: Colors.textHeading, lineHeight: 24 }}>{item.content}</Text>
+            <Text style={[Typography.body, { color: Colors.textHeading }]}>{item.content}</Text>
           </View>
         )}
         {!isUser && (
-          <Text style={{ fontSize: 10, color: Colors.textMuted, marginTop: 4, marginLeft: 8 }}>
+          <Text style={[Typography.tabLabel, { color: Colors.textMuted, marginTop: Spacing.xs, marginLeft: Spacing.sm }]}>
             AI interpretation — consult your vet
           </Text>
         )}
@@ -273,8 +274,8 @@ export default function RecordChatScreen() {
           flex: 1,
           backgroundColor: Colors.background,
           marginTop: -32,
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
+          borderTopLeftRadius: BorderRadius.curvedHeader,
+          borderTopRightRadius: BorderRadius.curvedHeader,
         }}
       >
         <KeyboardAvoidingView
@@ -283,7 +284,7 @@ export default function RecordChatScreen() {
           keyboardVerticalOffset={0}
         >
           {/* Messages */}
-          <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24 }}>
+          <View style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing['2xl'] }}>
             {isLoading ? (
               <View className="gap-3">
                 <Skeleton height={60} className="w-2/3 self-start rounded-2xl" />
@@ -292,17 +293,17 @@ export default function RecordChatScreen() {
               </View>
             ) : messages.length === 0 ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: 8 }}>
+                <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: Spacing.sm }}>
                   <Image
                     source={require('@/assets/illustrations/mascot-reading.png')}
                     style={{ width: 140, height: 140 }}
                     contentFit="cover"
                   />
                 </View>
-                <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 12, textAlign: 'center' }}>
+                <Text style={[Typography.body, { color: Colors.textBody, marginTop: Spacing.md, textAlign: 'center' }]}>
                   Ask any question about this record
                 </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 16, paddingHorizontal: 16 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Spacing.sm, marginTop: Spacing.lg, paddingHorizontal: Spacing.lg }}>
                   {[
                     'What do these results mean?',
                     'Is anything concerning?',
@@ -331,17 +332,17 @@ export default function RecordChatScreen() {
           </View>
 
           {/* Input */}
-          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingVertical: 12 }]}>
+          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }]}>
             <DisclaimerBanner className="mb-2" />
             <View className="flex-row items-end gap-2">
               <TextInput
                 style={{
                   flex: 1,
                   backgroundColor: Colors.primaryLight,
-                  borderRadius: 20,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  fontSize: 16,
+                  borderRadius: BorderRadius.heroCard,
+                  paddingHorizontal: Spacing.lg,
+                  paddingVertical: Spacing.md,
+                  ...Typography.body,
                   color: Colors.textHeading,
                   maxHeight: 96,
                 }}

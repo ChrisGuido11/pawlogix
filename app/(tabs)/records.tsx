@@ -1,16 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, Pressable, RefreshControl } from 'react-native';
+import { View, Text, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import Animated from 'react-native-reanimated';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -18,13 +12,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { FilterPills } from '@/components/ui/filter-pills';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
-import { usePressAnimation } from '@/hooks/usePressAnimation';
+
 import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { getRecordTypeLabel, formatDate } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Spacing, BorderRadius } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
 import type { HealthRecord } from '@/types';
 
 const FILTER_OPTIONS = ['All', 'Lab Results', 'Vet Records', 'Prescriptions'] as const;
@@ -34,8 +29,6 @@ const FILTER_MAP: Record<string, string | null> = {
   'Vet Records': 'vet_visit',
   'Prescriptions': 'prescription',
 };
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const severityColor = (record: HealthRecord) => {
   if (record.has_urgent_flags) return Colors.error;
@@ -72,14 +65,14 @@ function RecordCard({ record, onPress, index }: { record: HealthRecord; onPress:
           {/* Gradient icon */}
           <LinearGradient
             colors={[...Gradients.primaryCta]}
-            style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 40, height: 40, borderRadius: BorderRadius.button, alignItems: 'center', justifyContent: 'center' }}
           >
-            <Ionicons name={recordIconMap[record.record_type] || 'document-text'} size={20} color="#FFFFFF" />
+            <Ionicons name={recordIconMap[record.record_type] || 'document-text'} size={20} color={Colors.textOnPrimary} />
           </LinearGradient>
 
           <View className="flex-1">
             <View className="flex-row items-center gap-2">
-              <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textHeading }}>
+              <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
                 {getRecordTypeLabel(record.record_type)}
               </Text>
               {record.flagged_items_count > 0 && (
@@ -90,9 +83,9 @@ function RecordCard({ record, onPress, index }: { record: HealthRecord; onPress:
                 />
               )}
             </View>
-            <Text style={{ fontSize: 14, color: Colors.textBody }}>{formatDate(record.record_date)}</Text>
+            <Text style={[Typography.secondary, { color: Colors.textBody }]}>{formatDate(record.record_date)}</Text>
             {record.interpretation?.summary && (
-              <Text style={{ fontSize: 14, color: Colors.textMuted, marginTop: 2 }} numberOfLines={1}>
+              <Text style={[Typography.secondary, { color: Colors.textMuted, marginTop: 2 }]} numberOfLines={1}>
                 {record.interpretation.summary}
               </Text>
             )}
@@ -117,16 +110,6 @@ export default function RecordsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-  const fabScale = useSharedValue(0);
-  const { onPressIn, onPressOut, animatedStyle: fabPressStyle } = usePressAnimation(0.9);
-
-  useEffect(() => {
-    fabScale.value = withDelay(500, withSpring(1, { damping: 12, stiffness: 150 }));
-  }, []);
-
-  const fabAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: fabScale.value }],
-  }));
 
   const filteredRecords = useMemo(() => {
     const type = FILTER_MAP[activeFilter];
@@ -175,7 +158,7 @@ export default function RecordsScreen() {
         headerProps={{ title: 'Health Records' }}
         contentStyle={{ paddingHorizontal: 0 }}
       >
-        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm }}>
           {[0, 1, 2].map((i) => (
             <Card key={i} className="mb-3">
               <View className="flex-row items-center gap-3">
@@ -207,9 +190,9 @@ export default function RecordsScreen() {
       }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+      <View style={{ flex: 1, paddingHorizontal: Spacing.lg }}>
         {activePet && (
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: Spacing.md }}>
             <Badge label={activePet.name} variant="primary" />
           </View>
         )}
@@ -241,21 +224,6 @@ export default function RecordsScreen() {
         )}
       </View>
 
-      <AnimatedPressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          router.push('/record/scan');
-        }}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        style={[fabAnimStyle, fabPressStyle, Shadows.primaryButton, { position: 'absolute', bottom: 110, right: 20 }]}
-      >
-        <View
-          style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}
-        >
-          <Ionicons name="scan" size={24} color="#FFFFFF" />
-        </View>
-      </AnimatedPressable>
     </CurvedHeaderPage>
   );
 }

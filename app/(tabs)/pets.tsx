@@ -21,17 +21,18 @@ import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { usePressAnimation } from '@/hooks/usePressAnimation';
 import { calculateAge } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
 import type { PetProfile } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function PetCardSkeleton() {
   return (
-    <Card style={{ marginBottom: 12 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+    <Card style={{ marginBottom: Spacing.md }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
         <Skeleton width={64} height={64} />
-        <View style={{ flex: 1, gap: 8 }}>
+        <View style={{ flex: 1, gap: Spacing.sm }}>
           <Skeleton height={18} width="66%" />
           <Skeleton height={14} width="50%" />
         </View>
@@ -45,8 +46,8 @@ function PetCard({ pet, onPress, index }: { pet: PetProfile; onPress: () => void
 
   return (
     <Animated.View style={animStyle}>
-      <Card onPress={onPress} style={{ marginBottom: 12 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Card onPress={onPress} style={{ marginBottom: Spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
           {pet.photo_url ? (
             <View style={[Shadows.sm, { borderRadius: 32 }]}>
               <Image
@@ -62,13 +63,13 @@ function PetCard({ pet, onPress, index }: { pet: PetProfile; onPress: () => void
               <Ionicons
                 name={pet.species === 'dog' ? 'paw' : 'paw-outline'}
                 size={28}
-                color="#FFFFFF"
+                color={Colors.textOnPrimary}
               />
             </LinearGradient>
           )}
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading }}>{pet.name}</Text>
-            <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 2 }}>
+            <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>{pet.name}</Text>
+            <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
               {pet.breed ?? pet.species}
               {pet.date_of_birth ? ` · ${calculateAge(pet.date_of_birth)}` : ''}
             </Text>
@@ -111,7 +112,7 @@ export default function PetsScreen() {
         headerProps={{ title: 'My Pets', subtitle: 'Loading...' }}
         contentStyle={{ paddingHorizontal: 0 }}
       >
-        <View style={{ paddingHorizontal: 16 }}>
+        <View style={{ paddingHorizontal: Spacing.lg }}>
           <PetCardSkeleton />
           <PetCardSkeleton />
           <PetCardSkeleton />
@@ -125,7 +126,7 @@ export default function PetsScreen() {
       headerProps={{ title: 'My Pets', subtitle }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+      <View style={{ flex: 1, paddingHorizontal: Spacing.lg }}>
         {pets.length === 0 ? (
           <EmptyState
             illustration={require('@/assets/illustrations/mascot-sleeping.png')}
@@ -159,12 +160,12 @@ export default function PetsScreen() {
         }}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        style={[fabAnimStyle, fabPressStyle, Shadows.primaryButton, { position: 'absolute', bottom: 110, right: 20 }]}
+        style={[fabAnimStyle, fabPressStyle, Shadows.primaryButton, { position: 'absolute', bottom: 110, right: Spacing.xl }]}
       >
         <View
-          style={{ width: 60, height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}
+          style={{ width: 60, height: 60, borderRadius: BorderRadius.heroCard, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}
         >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
+          <Ionicons name="add" size={28} color={Colors.textOnPrimary} />
         </View>
       </AnimatedPressable>
     </CurvedHeaderPage>

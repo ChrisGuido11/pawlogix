@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Button } from './button';
 import { Colors } from '@/constants/Colors';
+import { Spacing } from '@/constants/spacing';
+import { Typography } from '@/constants/typography';
 
 interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -31,7 +33,7 @@ export function EmptyState({
   const blobSize = 180;
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 48 }}>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['3xl'], paddingVertical: Spacing['5xl'] }}>
       {/* Illustration or placeholder */}
       {illustration ? (
         <View style={{ width: illustrationSize, height: illustrationSize, borderRadius: illustrationSize / 2, overflow: 'hidden' }}>
@@ -58,13 +60,14 @@ export function EmptyState({
 
       {/* Title */}
       <Text
-        style={{
-          fontSize: 20,
-          fontWeight: '600',
-          color: Colors.textHeading,
-          marginTop: 24,
-          textAlign: 'center',
-        }}
+        style={[
+          Typography.sectionHeading,
+          {
+            color: Colors.textHeading,
+            marginTop: Spacing['2xl'],
+            textAlign: 'center',
+          },
+        ]}
       >
         {title}
       </Text>
@@ -72,14 +75,15 @@ export function EmptyState({
       {/* Subtitle */}
       {subtitle && (
         <Text
-          style={{
-            fontSize: 15,
-            color: Colors.textMuted,
-            marginTop: 8,
-            textAlign: 'center',
-            maxWidth: 300,
-            lineHeight: 22,
-          }}
+          style={[
+            Typography.body,
+            {
+              color: Colors.textMuted,
+              marginTop: Spacing.sm,
+              textAlign: 'center',
+              maxWidth: 300,
+            },
+          ]}
         >
           {subtitle}
         </Text>
@@ -87,7 +91,7 @@ export function EmptyState({
 
       {/* CTA */}
       {actionLabel && onAction && (
-        <View style={{ marginTop: 24, width: '100%' }}>
+        <View style={{ marginTop: Spacing['2xl'], width: '100%' }}>
           <Button title={actionLabel} onPress={onAction} />
         </View>
       )}

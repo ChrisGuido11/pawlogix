@@ -7,7 +7,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Colors } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
+import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
+import { Typography, Fonts } from '@/constants/typography';
 
 interface FilterPillsProps {
   options: string[];
@@ -54,8 +55,8 @@ export function FilterPills({
     left: indicatorX.value,
     width: indicatorWidth.value,
     height: '100%',
-    borderRadius: 9999,
-    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.pill,
+    backgroundColor: Colors.surface,
   }));
 
   const handleLayout = useCallback(
@@ -72,15 +73,23 @@ export function FilterPills({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16 }}
+      contentContainerStyle={{ paddingHorizontal: Spacing.lg }}
       className={className}
     >
-      <View style={{ flexDirection: 'row', position: 'relative' }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          position: 'relative',
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          borderRadius: BorderRadius.pill,
+          padding: 3,
+        }}
+      >
         {/* Animated active indicator */}
         <Animated.View
           style={[
             indicatorStyle,
-            Shadows.sm,
+            Shadows.md,
           ]}
         />
         {options.map((option) => (
@@ -92,17 +101,19 @@ export function FilterPills({
               handleLayout(option, x, width);
             }}
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 16,
-              borderRadius: 9999,
+              paddingVertical: Spacing.sm,
+              paddingHorizontal: Spacing.lg,
+              borderRadius: BorderRadius.pill,
             }}
           >
             <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '500',
-                color: selected === option ? Colors.textOnPrimary : Colors.textMuted,
-              }}
+              style={[
+                Typography.secondary,
+                {
+                  fontFamily: selected === option ? Fonts.bold : Fonts.medium,
+                  color: selected === option ? Colors.primary : 'rgba(255,255,255,0.85)',
+                },
+              ]}
             >
               {option}
             </Text>

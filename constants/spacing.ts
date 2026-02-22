@@ -30,6 +30,17 @@ export const BorderRadius = {
   statTile: 14,
 } as const;
 
+export const IconSize = {
+  xs: 12,
+  sm: 16,
+  md: 20,
+  lg: 24,
+  xl: 28,
+  '2xl': 32,
+  '3xl': 40,
+  '4xl': 48,
+} as const;
+
 export const Shadows = {
   // Card shadow (default) — soft and diffused
   sm: Platform.select({
