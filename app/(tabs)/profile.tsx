@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Switch, Alert, Pressable } from 'react-native';
+import { View, Text, ScrollView, Switch, Alert, Pressable, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { writeAsStringAsync, documentDirectory } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
@@ -78,6 +80,7 @@ export default function ProfileScreen() {
   const [vaxReminders, setVaxReminders] = useState(profile?.notification_vax_reminders ?? true);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const toggleMedReminders = async (value: boolean) => {
     setMedReminders(value);
@@ -148,57 +151,50 @@ export default function ProfileScreen() {
   };
 
   const deleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure? This will permanently delete your account and all pet data. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              if (!user?.id) return;
+    setShowDeleteConfirm(true);
+  };
 
-              await supabase.from('pl_record_chats').delete().eq('user_id', user.id);
-              await supabase.from('pl_health_records').delete().eq('user_id', user.id);
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      if (!user?.id) return;
 
-              const { data: petPhotos } = await supabase.storage
-                .from('pl-pet-photos')
-                .list(user.id);
-              if (petPhotos?.length) {
-                await supabase.storage
-                  .from('pl-pet-photos')
-                  .remove(petPhotos.map((f) => `${user.id}/${f.name}`));
-              }
+      await supabase.from('pl_record_chats').delete().eq('user_id', user.id);
+      await supabase.from('pl_health_records').delete().eq('user_id', user.id);
 
-              const { data: recordImages } = await supabase.storage
-                .from('pl-record-images')
-                .list(user.id);
-              if (recordImages?.length) {
-                await supabase.storage
-                  .from('pl-record-images')
-                  .remove(recordImages.map((f) => `${user.id}/${f.name}`));
-              }
+      const { data: petPhotos } = await supabase.storage
+        .from('pl-pet-photos')
+        .list(user.id);
+      if (petPhotos?.length) {
+        await supabase.storage
+          .from('pl-pet-photos')
+          .remove(petPhotos.map((f) => `${user.id}/${f.name}`));
+      }
 
-              await supabase.from('pl_pets').delete().eq('user_id', user.id);
-              await supabase.from('pl_usage_tracking').delete().eq('user_id', user.id);
-              await supabase.from('pl_profiles').delete().eq('id', user.id);
+      const { data: recordImages } = await supabase.storage
+        .from('pl-record-images')
+        .list(user.id);
+      if (recordImages?.length) {
+        await supabase.storage
+          .from('pl-record-images')
+          .remove(recordImages.map((f) => `${user.id}/${f.name}`));
+      }
 
-              await signOut();
+      await supabase.from('pl_pets').delete().eq('user_id', user.id);
+      await supabase.from('pl_usage_tracking').delete().eq('user_id', user.id);
+      await supabase.from('pl_profiles').delete().eq('id', user.id);
 
-              toast({ title: 'Account deleted', preset: 'done' });
-              router.replace('/(tabs)');
-            } catch (error: any) {
-              toast({ title: 'Error', message: error.message, preset: 'error' });
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ]
-    );
+      await AsyncStorage.removeItem('pawlogix_onboarding_complete');
+      await signOut();
+
+      setShowDeleteConfirm(false);
+      toast({ title: 'Account deleted', preset: 'done' });
+      router.replace('/onboarding');
+    } catch (error: any) {
+      toast({ title: 'Error', message: error.message, preset: 'error' });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSignOut = () => {
@@ -381,6 +377,46 @@ export default function ProfileScreen() {
           PawLogix v1.0.0 (Beta)
         </Text>
       </ScrollView>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        visible={showDeleteConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => !isDeleting && setShowDeleteConfirm(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: 24, padding: 28, width: '100%', maxWidth: 340, alignItems: 'center' }]}>
+            <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: 16 }}>
+              <Image
+                source={require('@/assets/illustrations/mascot-waving-goodbye.png')}
+                style={{ width: 140, height: 140 }}
+                contentFit="cover"
+              />
+            </View>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textHeading, textAlign: 'center', marginBottom: 8 }}>
+              We'll miss you!
+            </Text>
+            <Text style={{ fontSize: 15, color: Colors.textBody, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+              This will permanently delete your account and all pet data. This action cannot be undone.
+            </Text>
+            <Button
+              title="Delete Everything"
+              onPress={confirmDelete}
+              variant="destructive"
+              loading={isDeleting}
+            />
+            <Pressable
+              onPress={() => !isDeleting && setShowDeleteConfirm(false)}
+              style={{ marginTop: 16, paddingVertical: 8 }}
+            >
+              <Text style={{ fontSize: 16, fontWeight: '600', color: Colors.textBody }}>
+                Never mind, I'll stay
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </CurvedHeaderPage>
   );
 }

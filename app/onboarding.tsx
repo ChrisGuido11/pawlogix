@@ -154,12 +154,12 @@ function SlideIllustration({
   return (
     <View style={{ width: hasIllustration ? 260 : 180, height: hasIllustration ? 260 : 180, alignItems: 'center', justifyContent: 'center' }}>
       {hasIllustration ? (
-        /* Mascot illustration */
-        <Animated.View style={[mainStyle]}>
+        /* Mascot illustration — clipped to circle so white PNG corners don't show */
+        <Animated.View style={[mainStyle, { width: 240, height: 240, borderRadius: 120, overflow: 'hidden' }]}>
           <Image
             source={slide.illustration}
             style={{ width: 240, height: 240 }}
-            contentFit="contain"
+            contentFit="cover"
             transition={300}
           />
         </Animated.View>
@@ -198,13 +198,13 @@ function SlideIllustration({
           >
             <Ionicons name={slide.mainIcon} size={52} color={slide.mainColor} />
           </Animated.View>
+
+          {/* Floating accents — only for icon-based slides */}
+          {slide.accents.map((accent, i) => (
+            <FloatingAccent key={i} {...accent} />
+          ))}
         </>
       )}
-
-      {/* Floating accents */}
-      {slide.accents.map((accent, i) => (
-        <FloatingAccent key={i} {...accent} />
-      ))}
     </View>
   );
 }
@@ -338,7 +338,7 @@ export default function OnboardingScreen() {
           </View>
 
           {activeIndex === 2 ? (
-            <Button title="Get Started" onPress={completeOnboarding} icon="paw" />
+            <Button title="Get Started" onPress={completeOnboarding} />
           ) : (
             <View style={{ alignItems: 'center' }}>
               <Pressable
@@ -355,7 +355,7 @@ export default function OnboardingScreen() {
                   },
                 ]}
               >
-                <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
+                <Text style={{ fontSize: 24, color: '#FFFFFF', fontWeight: '600', marginLeft: 2 }}>→</Text>
               </Pressable>
             </View>
           )}

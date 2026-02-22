@@ -12,6 +12,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { Colors, Gradients } from '@/constants/Colors';
@@ -248,7 +249,13 @@ export default function RecordProcessingScreen() {
       <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
         {status === 'failed' ? (
           <>
-            <Ionicons name="alert-circle-outline" size={64} color={Colors.error} />
+            <View style={{ width: 160, height: 160, borderRadius: 80, overflow: 'hidden' }}>
+              <Image
+                source={require('@/assets/illustrations/mascot-tangled.png')}
+                style={{ width: 160, height: 160 }}
+                contentFit="cover"
+              />
+            </View>
             <Text style={{ fontSize: 22, fontWeight: '700', color: Colors.textHeading, marginTop: 16, textAlign: 'center' }}>
               Something went wrong
             </Text>
@@ -269,19 +276,18 @@ export default function RecordProcessingScreen() {
           </>
         ) : (
           <>
-            {/* Central icon with glow + orbiting accents */}
-            <View style={{ width: 160, height: 160, alignItems: 'center', justifyContent: 'center' }}>
-              <OrbitingCircle angle={0} radius={65} color={Colors.secondary} size={12} delay={0} />
-              <OrbitingCircle angle={120} radius={65} color={Colors.primary} size={10} delay={200} />
-              <OrbitingCircle angle={240} radius={65} color={Colors.primaryLight} size={8} delay={400} />
+            {/* Mascot illustration with glow + orbiting accents */}
+            <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
+              <OrbitingCircle angle={0} radius={85} color={Colors.secondary} size={12} delay={0} />
+              <OrbitingCircle angle={120} radius={85} color={Colors.primary} size={10} delay={200} />
+              <OrbitingCircle angle={240} radius={85} color={Colors.primaryLight} size={8} delay={400} />
 
-              <Animated.View style={[glowStyle, Shadows.primaryButton, { borderRadius: 48 }]}>
-                <LinearGradient
-                  colors={[...Gradients.primaryCta]}
-                  style={{ width: 96, height: 96, borderRadius: 48, alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Ionicons name="paw" size={44} color="#FFFFFF" />
-                </LinearGradient>
+              <Animated.View style={[glowStyle, { width: 180, height: 180, borderRadius: 90, overflow: 'hidden' }]}>
+                <Image
+                  source={require('@/assets/illustrations/mascot-searching.png')}
+                  style={{ width: 180, height: 180 }}
+                  contentFit="cover"
+                />
               </Animated.View>
             </View>
 

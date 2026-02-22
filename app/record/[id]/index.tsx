@@ -152,7 +152,7 @@ export default function RecordDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.background }}>
         <EmptyState
-          icon="alert-circle-outline"
+          illustration={require('@/assets/illustrations/mascot-tangled.png')}
           title="Record not found"
           actionLabel="Go Back"
           onAction={() => router.back()}
@@ -211,7 +211,13 @@ export default function RecordDetailScreen() {
           </Card>
         ) : record.processing_status === 'failed' ? (
           <Card className="mb-5 items-center py-8">
-            <Ionicons name="alert-circle-outline" size={40} color={Colors.error} />
+            <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden' }}>
+              <Image
+                source={require('@/assets/illustrations/mascot-tangled.png')}
+                style={{ width: 120, height: 120 }}
+                contentFit="cover"
+              />
+            </View>
             <Text style={{ fontSize: 18, fontWeight: '700', color: Colors.textHeading, marginTop: 12 }}>
               Interpretation failed
             </Text>

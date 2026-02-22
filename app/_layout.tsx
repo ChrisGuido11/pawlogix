@@ -87,7 +87,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontError) {
-      // If fonts fail to load, still allow the app to render with system fonts
       console.warn('Font loading error:', fontError);
     }
   }, [fontError]);

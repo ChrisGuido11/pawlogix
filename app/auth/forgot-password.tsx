@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
@@ -52,14 +53,24 @@ export default function ForgotPasswordScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
-          {/* Logo icon */}
+          {/* Logo icon or success mascot */}
           <View style={{ alignItems: 'center', marginBottom: 24 }}>
-            <LinearGradient
-              colors={[...Gradients.primaryCta]}
-              style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Ionicons name="paw" size={28} color="#FFFFFF" />
-            </LinearGradient>
+            {sent ? (
+              <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden' }}>
+                <Image
+                  source={require('@/assets/illustrations/mascot-celebrating.png')}
+                  style={{ width: 140, height: 140 }}
+                  contentFit="cover"
+                />
+              </View>
+            ) : (
+              <LinearGradient
+                colors={[...Gradients.primaryCta]}
+                style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="paw" size={28} color="#FFFFFF" />
+              </LinearGradient>
+            )}
           </View>
 
           <Text style={{ fontSize: 16, color: Colors.textBody, marginBottom: 32 }}>

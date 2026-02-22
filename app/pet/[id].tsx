@@ -169,7 +169,7 @@ export default function PetDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: Colors.background }}>
         <EmptyState
-          icon="alert-circle-outline"
+          illustration={require('@/assets/illustrations/mascot-tangled.png')}
           title="Pet not found"
           actionLabel="Go Back"
           onAction={() => router.back()}
@@ -255,7 +255,13 @@ export default function PetDetailScreen() {
           {records.length === 0 ? (
             <Card>
               <View className="items-center py-6">
-                <Ionicons name="document-text-outline" size={40} color={Colors.primary} />
+                <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8 }}>
+                  <Image
+                    source={require('@/assets/illustrations/mascot-running.png')}
+                    style={{ width: 120, height: 120 }}
+                    contentFit="cover"
+                  />
+                </View>
                 <Text style={{ fontSize: 14, color: Colors.textBody, marginTop: 8, textAlign: 'center' }}>
                   No records yet. Scan your first vet record!
                 </Text>

@@ -128,7 +128,7 @@ export default function PetsScreen() {
       <View style={{ flex: 1, paddingHorizontal: 16 }}>
         {pets.length === 0 ? (
           <EmptyState
-            icon="paw-outline"
+            illustration={require('@/assets/illustrations/mascot-sleeping.png')}
             title="No pets yet!"
             subtitle="Add your first furry friend to get started."
             actionLabel="Add Pet"

@@ -216,6 +216,7 @@ export default function RecordsScreen() {
 
         {filteredRecords.length === 0 ? (
           <EmptyState
+            illustration={activeFilter === 'All' ? require('@/assets/illustrations/mascot-confused.png') : undefined}
             icon="document-text-outline"
             title={activeFilter === 'All' ? 'No records yet' : `No ${activeFilter.toLowerCase()} found`}
             subtitle={activeFilter === 'All' ? "Scan your pet's vet records to get AI-powered health insights." : 'Try selecting a different filter.'}

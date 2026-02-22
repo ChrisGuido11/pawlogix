@@ -22,7 +22,7 @@ interface EmptyStateProps {
 export function EmptyState({
   icon = 'paw-outline',
   illustration,
-  illustrationSize = 140,
+  illustrationSize = 180,
   title,
   subtitle,
   actionLabel,
@@ -33,27 +33,28 @@ export function EmptyState({
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingVertical: 48 }}>
       {/* Illustration or placeholder */}
-      <View
-        style={{
-          width: blobSize,
-          height: blobSize,
-          borderRadius: blobSize / 2,
-          backgroundColor: Colors.primaryLight,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {illustration ? (
+      {illustration ? (
+        <View style={{ width: illustrationSize, height: illustrationSize, borderRadius: illustrationSize / 2, overflow: 'hidden' }}>
           <Image
             source={illustration}
             style={{ width: illustrationSize, height: illustrationSize }}
-            contentFit="contain"
+            contentFit="cover"
           />
-        ) : (
-          // {/* TODO: Replace with 3D mascot illustration — mascot-[pose].png */}
+        </View>
+      ) : (
+        <View
+          style={{
+            width: blobSize,
+            height: blobSize,
+            borderRadius: blobSize / 2,
+            backgroundColor: Colors.primaryLight,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Ionicons name={icon} size={64} color={Colors.primary} />
-        )}
-      </View>
+        </View>
+      )}
 
       {/* Title */}
       <Text

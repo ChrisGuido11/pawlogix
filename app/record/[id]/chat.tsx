@@ -9,6 +9,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { Card } from '@/components/ui/card';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -291,7 +292,13 @@ export default function RecordChatScreen() {
               </View>
             ) : messages.length === 0 ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="chatbubbles-outline" size={48} color={Colors.primary} />
+                <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: 8 }}>
+                  <Image
+                    source={require('@/assets/illustrations/mascot-reading.png')}
+                    style={{ width: 140, height: 140 }}
+                    contentFit="cover"
+                  />
+                </View>
                 <Text style={{ fontSize: 16, color: Colors.textBody, marginTop: 12, textAlign: 'center' }}>
                   Ask any question about this record
                 </Text>

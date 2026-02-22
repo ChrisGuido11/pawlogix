@@ -300,11 +300,13 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  <Image
-                    source={require('@/assets/illustrations/mascot-stethoscope.png')}
-                    style={{ width: 110, height: 110 }}
-                    contentFit="contain"
-                  />
+                  <View style={{ width: 110, height: 110, borderRadius: 55, overflow: 'hidden' }}>
+                    <Image
+                      source={require('@/assets/illustrations/mascot-stethoscope.png')}
+                      style={{ width: 110, height: 110 }}
+                      contentFit="cover"
+                    />
+                  </View>
                 </LinearGradient>
               </Pressable>
             </StaggeredCard>
@@ -408,9 +410,12 @@ export default function HomeScreen() {
             ) : recentRecords.length === 0 ? (
               <Card>
                 <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-                  {/* TODO: Replace with 3D mascot illustration — mascot-confused.png */}
-                  <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                    <Ionicons name="search-outline" size={28} color={Colors.primary} />
+                  <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 12 }}>
+                    <Image
+                      source={require('@/assets/illustrations/mascot-confused.png')}
+                      style={{ width: 120, height: 120 }}
+                      contentFit="cover"
+                    />
                   </View>
                   <Text style={{ fontSize: 15, fontWeight: '600', color: Colors.textHeading, marginBottom: 4 }}>
                     No records yet
