@@ -83,11 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile]);
 
   const linkAccount = async (email: string, password: string, displayName?: string) => {
-    const { data, error } = await supabase.auth.updateUser({
+    // Race updateUser against a timeout — Supabase email-change confirmation
+    // settings can cause this call to hang in some configurations.
+    const updatePromise = supabase.auth.updateUser({
       email: scopeEmail(email),
       password,
       data: { app: 'pawlogix' },
     });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Account creation timed out. Please try again.')), 12000)
+    );
+
+    const { data, error } = await Promise.race([updatePromise, timeoutPromise]);
     if (error) throw error;
 
     const userId = data.user?.id ?? user?.id;

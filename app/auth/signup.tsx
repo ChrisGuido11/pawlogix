@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '@/components/ui/button';
@@ -15,45 +12,55 @@ import { Colors, Gradients } from '@/constants/Colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 
-const signupSchema = z.object({
-  email: z.string().email('Please enter a valid email'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string(),
-  displayName: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-type SignupForm = z.infer<typeof signupSchema>;
-
 export default function SignupScreen() {
   const router = useRouter();
   const { linkAccount } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { control, trigger, getValues, formState: { errors } } = useForm<SignupForm>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { email: '', password: '', confirmPassword: '', displayName: '' },
-  });
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    if (!password || password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const onPressCreate = () => {
-    trigger().then((isValid) => {
-      if (!isValid) return;
-      const data = getValues();
-      setIsSubmitting(true);
-      linkAccount(data.email, data.password, data.displayName || undefined)
-        .then(() => {
-          toast({ title: 'Account created!', message: 'Your data is now backed up.', preset: 'done' });
-          router.back();
-        })
-        .catch((error: any) => {
-          toast({ title: 'Error', message: error.message || 'Failed to create account', preset: 'error' });
-        })
-        .finally(() => {
-          setIsSubmitting(false);
-        });
-    });
+  const handleCreateAccount = () => {
+    if (!validate()) return;
+    setIsSubmitting(true);
+
+    // Safety: force spinner off after 15s no matter what
+    const safetyTimeout = setTimeout(() => {
+      setIsSubmitting(false);
+      toast({ title: 'Timeout', message: 'Request took too long. Please try again.', preset: 'error' });
+    }, 15000);
+
+    linkAccount(email, password, displayName || undefined)
+      .then(() => {
+        clearTimeout(safetyTimeout);
+        toast({ title: 'Account created!', message: 'Your data is now backed up.', preset: 'done' });
+        router.back();
+      })
+      .catch((error: any) => {
+        clearTimeout(safetyTimeout);
+        toast({ title: 'Error', message: error.message || 'Failed to create account', preset: 'error' });
+      })
+      .finally(() => {
+        clearTimeout(safetyTimeout);
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -65,7 +72,6 @@ export default function SignupScreen() {
         style={{ flex: 1 }}
       >
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
-          {/* Logo icon */}
           <View style={{ alignItems: 'center', marginBottom: Spacing['2xl'] }}>
             <LinearGradient
               colors={[...Gradients.primaryCta]}
@@ -79,78 +85,50 @@ export default function SignupScreen() {
             Back up your data and access it on any device
           </Text>
 
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Email"
-                placeholder="you@example.com"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.email?.message}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                containerClassName="mb-4"
-              />
-            )}
+          <Input
+            label="Email"
+            placeholder="you@example.com"
+            value={email}
+            onChangeText={setEmail}
+            error={errors.email}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
+            containerClassName="mb-4"
           />
 
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Password"
-                placeholder="At least 8 characters"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.password?.message}
-                secureTextEntry
-                containerClassName="mb-4"
-              />
-            )}
+          <Input
+            label="Password"
+            placeholder="At least 8 characters"
+            value={password}
+            onChangeText={setPassword}
+            error={errors.password}
+            secureTextEntry
+            containerClassName="mb-4"
           />
 
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Confirm Password"
-                placeholder="Re-enter your password"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.confirmPassword?.message}
-                secureTextEntry
-                containerClassName="mb-4"
-              />
-            )}
+          <Input
+            label="Confirm Password"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            error={errors.confirmPassword}
+            secureTextEntry
+            containerClassName="mb-4"
           />
 
-          <Controller
-            control={control}
-            name="displayName"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Display Name (optional)"
-                placeholder="Your name"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                autoCapitalize="words"
-                containerClassName="mb-6"
-              />
-            )}
+          <Input
+            label="Display Name (optional)"
+            placeholder="Your name"
+            value={displayName}
+            onChangeText={setDisplayName}
+            autoCapitalize="words"
+            containerClassName="mb-6"
           />
 
           <Button
             title="Create Account"
-            onPress={onPressCreate}
+            onPress={handleCreateAccount}
             loading={isSubmitting}
           />
         </ScrollView>
