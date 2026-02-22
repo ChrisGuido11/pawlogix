@@ -82,25 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
-  const linkAccount = async (email: string, password: string, displayName?: string) => {
-    const { data, error } = await supabase.auth.updateUser({
-      email: scopeEmail(email),
-      password,
-      data: { app: 'pawlogix' },
-    });
-    if (error) throw error;
-
-    const userId = data.user?.id ?? user?.id;
-    if (userId) {
-      await supabase
-        .from('pl_profiles')
-        .upsert({
-          id: userId,
-          display_name: displayName || null,
-          email,
-        }, { onConflict: 'id' });
-      await refreshProfile();
-    }
+  const linkAccount = async (_email: string, _password: string, _displayName?: string) => {
+    // DEBUG: empty function to test if spinner resolves
+    return;
   };
 
   const signIn = async (email: string, password: string) => {
