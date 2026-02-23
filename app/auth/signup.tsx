@@ -64,13 +64,13 @@ export default function SignupScreen() {
   };
 
   return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
     <CurvedHeaderPage
       headerProps={{ title: 'Create Account', showBack: true }}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
           <View style={{ alignItems: 'center', marginBottom: Spacing['2xl'] }}>
             <LinearGradient
@@ -132,7 +132,7 @@ export default function SignupScreen() {
             loading={isSubmitting}
           />
         </ScrollView>
-      </KeyboardAvoidingView>
     </CurvedHeaderPage>
+    </KeyboardAvoidingView>
   );
 }

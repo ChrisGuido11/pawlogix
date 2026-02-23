@@ -47,13 +47,13 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
     <CurvedHeaderPage
       headerProps={{ title: 'Reset Password', showBack: true }}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
           {/* Logo icon or success mascot */}
           <View style={{ alignItems: 'center', marginBottom: Spacing['2xl'] }}>
@@ -117,7 +117,7 @@ export default function ForgotPasswordScreen() {
             />
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
     </CurvedHeaderPage>
+    </KeyboardAvoidingView>
   );
 }

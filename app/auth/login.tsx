@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,13 +52,13 @@ export default function LoginScreen() {
   };
 
   return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
     <CurvedHeaderPage
       headerProps={{ title: 'Welcome Back', showBack: true }}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
           {/* Logo icon */}
           <View style={{ alignItems: 'center', marginBottom: Spacing['2xl'] }}>
@@ -120,7 +120,7 @@ export default function LoginScreen() {
             loading={isSubmitting}
           />
         </ScrollView>
-      </KeyboardAvoidingView>
     </CurvedHeaderPage>
+    </KeyboardAvoidingView>
   );
 }
