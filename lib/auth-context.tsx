@@ -47,9 +47,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         if (existingSession) {
-          setSession(existingSession);
-          setUser(existingSession.user);
-          await fetchProfile(existingSession.user.id);
+          // Validate the cached session against the server — getSession only
+          // reads from local storage and won't catch expired refresh tokens.
+          const { error: userError } = await supabase.auth.getUser();
+          if (userError) {
+            // Stale or revoked session — sign out and start fresh
+            await supabase.auth.signOut();
+            const { data: { session: freshSession } } = await supabase.auth.signInAnonymously();
+            if (freshSession) {
+              setSession(freshSession);
+              setUser(freshSession.user);
+              await fetchProfile(freshSession.user.id);
+            }
+          } else {
+            setSession(existingSession);
+            setUser(existingSession.user);
+            await fetchProfile(existingSession.user.id);
+          }
         } else {
           const { data: { session: anonSession } } = await supabase.auth.signInAnonymously();
           if (anonSession) {
@@ -60,6 +74,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Auth init error:', error);
+        // Last resort: try to create a fresh anonymous session
+        try {
+          await supabase.auth.signOut();
+          const { data: { session: fallbackSession } } = await supabase.auth.signInAnonymously();
+          if (fallbackSession) {
+            setSession(fallbackSession);
+            setUser(fallbackSession.user);
+          }
+        } catch {
+          // Nothing more we can do
+        }
       } finally {
         setIsLoading(false);
       }
