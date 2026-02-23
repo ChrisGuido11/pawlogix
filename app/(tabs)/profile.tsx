@@ -16,7 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
-import { Typography, Fonts } from '@/constants/typography';
+import { Typography } from '@/constants/typography';
 import { SectionLabel } from '@/components/ui/section-label';
 
 function SettingsRow({
@@ -229,43 +229,7 @@ export default function ProfileScreen() {
     >
       <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
         {/* Account Section */}
-        {isAnonymous ? (
-          <View style={[Shadows.lg, { borderRadius: BorderRadius.card, marginBottom: Spacing.xl, overflow: 'hidden' }]}>
-            <LinearGradient
-              colors={[...Gradients.primaryHeader]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ borderRadius: BorderRadius.card, padding: Spacing.xl }}
-            >
-              <View className="items-center py-2">
-                <Ionicons name="person-circle-outline" size={48} color={Colors.textOnPrimary} />
-                <Text style={[Typography.cardTitle, { color: Colors.textOnPrimary, marginTop: Spacing.sm }]}>
-                  Create an Account
-                </Text>
-                <Text style={[Typography.secondary, { color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: Spacing.xs, marginBottom: Spacing.lg }]}>
-                  Back up your data and access it on any device
-                </Text>
-                <Pressable
-                  onPress={() => router.push('/auth/signup')}
-                  style={[Shadows.sm, { backgroundColor: Colors.surface, borderRadius: BorderRadius.button, paddingVertical: 14, paddingHorizontal: Spacing['3xl'], width: '100%' }]}
-                >
-                  <Text style={[Typography.buttonPrimary, { color: Colors.primary, textAlign: 'center' }]}>
-                    Sign Up
-                  </Text>
-                </Pressable>
-              </View>
-              <Pressable
-                onPress={() => router.push('/auth/login')}
-                className="py-3 mt-1"
-                hitSlop={8}
-              >
-                <Text style={[Typography.secondary, { fontFamily: Fonts.medium, color: 'rgba(255,255,255,0.9)', textAlign: 'center' }]}>
-                  Already have an account? Log In
-                </Text>
-              </Pressable>
-            </LinearGradient>
-          </View>
-        ) : (
+        {!isAnonymous && (
           <Card className="mb-5" variant="elevated">
             <View className="flex-row items-center gap-3">
               <LinearGradient

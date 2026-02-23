@@ -68,7 +68,6 @@ function RootLayoutNav() {
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="pet" />
         <Stack.Screen name="record" />
-        <Stack.Screen name="auth" />
       </Stack>
       <StatusBar style="light" />
     </>
