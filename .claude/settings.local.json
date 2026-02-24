@@ -22,7 +22,21 @@
       "Bash(curl:*)",
       "Bash(echo test:*)",
       "Bash(head:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase functions list 2>&1)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase secrets list 2>&1)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase functions logs pl-interpret-record --limit 50 2>&1)",
+      "Bash(grep:*)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase functions logs pl-interpret-record 2>&1)",
+      "Bash(supabase help:*)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase inspect --help 2>&1)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase inspect db --help 2>&1)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && supabase status 2>&1)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && npx supabase functions logs pl-interpret-record --limit 30 2>&1)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && npx supabase functions download pl-interpret-record --output /tmp/pl-interpret-check 2>&1)",
+      "WebFetch(domain:docs.claude.com)",
+      "Bash(cd /c/Users/cguid/pawlogix-1 && npx supabase functions deploy pl-interpret-record --no-verify-jwt 2>&1)",
+      "Bash(grep pl-interpret-record:*)"
     ]
   }
 }

@@ -22,6 +22,7 @@ import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import { SectionLabel } from '@/components/ui/section-label';
 import * as Crypto from 'expo-crypto';
+import { File as ExpoFile } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 
 const petSchema = z.object({
@@ -72,13 +73,12 @@ export default function PetCreateScreen() {
     try {
       const filePath = `${user.id}/${petId}.jpg`;
 
-      // Convert URI to blob (same pattern as record image upload in scan.tsx)
-      const response = await fetch(photoUri);
-      const blob = await response.blob();
+      const file = new ExpoFile(photoUri);
+      const arrayBuffer = await file.arrayBuffer();
 
       const { error } = await supabase.storage
         .from('pl-pet-photos')
-        .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
+        .upload(filePath, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
 
       if (error) throw error;
 

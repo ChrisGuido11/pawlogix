@@ -21,6 +21,7 @@ import { Typography, Fonts } from '@/constants/typography';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { SectionLabel } from '@/components/ui/section-label';
 import * as Crypto from 'expo-crypto';
+import { File as ExpoFile } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 
 const RECORD_TYPES = [
@@ -95,14 +96,16 @@ export default function RecordScanScreen() {
 
     for (let i = 0; i < images.length; i++) {
       const uri = images[i];
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      const fileExt = uri.split('.').pop() || 'jpg';
+      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
       const filePath = `${user.id}/${recordId}/${i}.${fileExt}`;
+
+      const file = new ExpoFile(uri);
+      const arrayBuffer = await file.arrayBuffer();
+      const contentType = fileExt === 'png' ? 'image/png' : 'image/jpeg';
 
       const { error } = await supabase.storage
         .from('pl-record-images')
-        .upload(filePath, blob, { contentType: `image/${fileExt}` });
+        .upload(filePath, arrayBuffer, { contentType });
 
       if (error) throw error;
       urls.push(filePath);
@@ -134,34 +137,42 @@ export default function RecordScanScreen() {
       } = await supabase.auth.getSession();
       const pet = pets.find((p) => p.id === selectedPetId);
 
-      try {
-        const fnResponse = await fetch(
-          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session?.access_token}`,
-            },
-            body: JSON.stringify({
-              record_id: recordId,
-              image_urls: imageUrls,
-              pet_species: pet?.species ?? 'dog',
-              pet_breed: pet?.breed ?? 'unknown',
-              record_type: selectedType,
-            }),
-          }
-        );
-        if (!fnResponse.ok) {
-          await supabase.from('pl_health_records')
-            .update({ processing_status: 'failed', processing_error: 'Failed to start analysis.' })
-            .eq('id', recordId);
+      // Fire and forget — don't block navigation to the processing screen.
+      // The edge function updates DB status directly; the processing screen polls for it.
+      fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            record_id: recordId,
+            image_urls: imageUrls,
+            pet_species: pet?.species ?? 'dog',
+            pet_breed: pet?.breed ?? 'unknown',
+            record_type: selectedType,
+          }),
         }
-      } catch (e) {
-        await supabase.from('pl_health_records')
-          .update({ processing_status: 'failed', processing_error: 'Could not reach analysis service.' })
-          .eq('id', recordId);
-      }
+      )
+        .then(async (fnResponse) => {
+          if (!fnResponse.ok) {
+            let errorMsg = 'Failed to start analysis.';
+            try {
+              const body = await fnResponse.json();
+              if (body?.error) errorMsg = body.error;
+            } catch {}
+            await supabase.from('pl_health_records')
+              .update({ processing_status: 'failed', processing_error: errorMsg })
+              .eq('id', recordId);
+          }
+        })
+        .catch(async () => {
+          await supabase.from('pl_health_records')
+            .update({ processing_status: 'failed', processing_error: 'Could not reach analysis service.' })
+            .eq('id', recordId);
+        });
 
       router.replace(`/record/processing/${recordId}` as any);
     } catch (error: any) {

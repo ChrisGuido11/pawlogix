@@ -30,14 +30,22 @@ serve(async (req) => {
 
     const { record_id, image_urls, pet_species, pet_breed, record_type } = await req.json();
     recordId = record_id;
+    console.log(`[pl-interpret] Starting for record: ${record_id}, images: ${image_urls?.length}`);
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
 
     if (!anthropicKey) {
       throw new Error('ANTHROPIC_API_KEY not configured');
     }
 
+    // Use admin client for storage & DB — the forwarded user JWT doesn't reliably
+    // resolve auth.uid() for storage RLS in the Deno edge function runtime.
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
     // Update status to processing
-    await supabase
+    await adminClient
       .from('pl_health_records')
       .update({ processing_status: 'processing' })
       .eq('id', record_id);
@@ -45,7 +53,7 @@ serve(async (req) => {
     // Download images and convert to base64
     const imageContents = [];
     for (const imagePath of image_urls) {
-      const { data: imageData, error: downloadError } = await supabase.storage
+      const { data: imageData, error: downloadError } = await adminClient.storage
         .from('pl-record-images')
         .download(imagePath);
 
@@ -53,6 +61,10 @@ serve(async (req) => {
 
       const buffer = await imageData.arrayBuffer();
       const bytes = new Uint8Array(buffer);
+      console.log(`[pl-interpret] Image ${imagePath}: ${bytes.length} bytes`);
+      if (bytes.length === 0) {
+        throw new Error(`Downloaded image is empty: ${imagePath}`);
+      }
       let binary = '';
       const chunkSize = 8192;
       for (let i = 0; i < bytes.length; i += chunkSize) {
@@ -104,6 +116,8 @@ Respond ONLY with valid JSON matching this exact schema:
   "suggested_vet_questions": ["Question 1", "Question 2"]
 }`;
 
+    console.log(`[pl-interpret] Downloaded ${imageContents.length} images, calling Anthropic API...`);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -112,7 +126,7 @@ Respond ONLY with valid JSON matching this exact schema:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250514',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 4000,
         system: systemPrompt,
         messages: [
@@ -128,6 +142,7 @@ Respond ONLY with valid JSON matching this exact schema:
     });
 
     const aiData = await response.json();
+    console.log(`[pl-interpret] API responded: status=${response.status}`);
 
     if (!response.ok) {
       throw new Error(aiData.error?.message || 'AI API request failed');
@@ -153,7 +168,7 @@ Respond ONLY with valid JSON matching this exact schema:
     ) ?? false;
 
     // Update record with interpretation
-    await supabase
+    await adminClient
       .from('pl_health_records')
       .update({
         interpretation,
@@ -164,6 +179,8 @@ Respond ONLY with valid JSON matching this exact schema:
       })
       .eq('id', record_id);
 
+    console.log(`[pl-interpret] Record ${record_id} completed successfully`);
+
     return new Response(JSON.stringify({ success: true, interpretation }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -171,6 +188,7 @@ Respond ONLY with valid JSON matching this exact schema:
     console.error('Interpretation error:', error);
 
     // Try to update record as failed
+    console.log(`[pl-interpret] Error recovery: updating record ${recordId} to failed`);
     try {
       if (recordId) {
         const adminClient = createClient(
