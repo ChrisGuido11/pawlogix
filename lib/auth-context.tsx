@@ -93,11 +93,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      (_event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
         if (newSession?.user?.id) {
-          await fetchProfile(newSession.user.id);
+          // Fire without awaiting — the gotrue-js SDK awaits this callback
+          // inside _notifyAllSubscribers while holding the session lock.
+          // Awaiting fetchProfile here would deadlock because the Supabase
+          // query needs getSession() which tries to acquire the same lock.
+          fetchProfile(newSession.user.id);
         } else {
           setProfile(null);
         }
@@ -108,10 +112,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile]);
 
   const linkAccount = async (email: string, password: string, displayName?: string) => {
-    // Race updateUser against a timeout — Supabase email-change confirmation
-    // settings can cause this call to hang in some configurations.
+    // --- DEBUG: gather evidence for network failure ---
+    const scopedEmail = scopeEmail(email);
+    console.log('[linkAccount] start', {
+      scopedEmail,
+      hasSession: !!session,
+      hasUser: !!user,
+      userId: user?.id?.slice(0, 8),
+      isAnon: user?.is_anonymous,
+    });
+
+    // Quick connectivity check — bypasses SDK session/lock machinery
+    try {
+      const healthResp = await fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`,
+        { headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY! } },
+      );
+      console.log('[linkAccount] health check:', healthResp.status);
+    } catch (healthErr: any) {
+      console.error('[linkAccount] health check FAILED:', healthErr.message);
+      throw new Error(
+        'Cannot reach the server. Please check your internet connection and try again.',
+      );
+    }
+    // --- END DEBUG ---
+
     const updatePromise = supabase.auth.updateUser({
-      email: scopeEmail(email),
+      email: scopedEmail,
       password,
       data: { app: 'pawlogix' },
     });
@@ -120,6 +147,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     const { data, error } = await Promise.race([updatePromise, timeoutPromise]);
+
+    console.log('[linkAccount] updateUser result', {
+      hasData: !!data,
+      hasUser: !!data?.user,
+      hasError: !!error,
+      errorMsg: error?.message,
+      errorName: error?.name,
+    });
+
     if (error) throw error;
 
     const userId = data.user?.id ?? user?.id;

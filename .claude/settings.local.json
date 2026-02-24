@@ -18,7 +18,8 @@
       "Bash(echo EXIT_CODE: $?:*)",
       "Bash(find C:\\\\Users\\\\cguid\\\\pawlogix-1\\\\app\\\\\\(tabs\\):*)",
       "Bash(ls:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(curl:*)"
     ]
   }
 }

@@ -167,22 +167,23 @@ export default function RecordScanScreen() {
   // Camera View
   if (step === 'camera') {
     return (
-      <View className="flex-1 bg-black">
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
         <CameraView
           ref={(ref) => setCameraRef(ref)}
-          className="flex-1"
+          style={{ flex: 1 }}
           facing="back"
+          responsiveOrientationWhenOrientationLocked
         >
-          <SafeAreaView className="flex-1 justify-between">
-            <Pressable onPress={() => setStep('choose')} className="p-4">
+          <SafeAreaView style={{ flex: 1, justifyContent: 'space-between' }}>
+            <Pressable onPress={() => setStep('choose')} style={{ padding: Spacing.lg }}>
               <Ionicons name="close" size={28} color={Colors.textOnPrimary} />
             </Pressable>
-            <View className="items-center pb-8">
+            <View style={{ alignItems: 'center', paddingBottom: Spacing['2xl'] }}>
               <Pressable
                 onPress={takePhoto}
-                className="w-20 h-20 rounded-full border-4 border-white items-center justify-center"
+                style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}
               >
-                <View className="w-16 h-16 rounded-full bg-white" />
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff' }} />
               </Pressable>
             </View>
           </SafeAreaView>
