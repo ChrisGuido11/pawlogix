@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Switch, Alert, Pressable, Modal, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, Switch, Alert, Pressable, Modal, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -290,10 +290,6 @@ export default function ProfileScreen() {
       headerProps={{ title: 'Settings' }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
       <ScrollView
         style={{ flex: 1, paddingHorizontal: Spacing.lg }}
         contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}
@@ -573,7 +569,6 @@ export default function ProfileScreen() {
           PawLogix v1.0.0 (Beta)
         </Text>
       </ScrollView>
-      </KeyboardAvoidingView>
 
       {/* Delete Account Confirmation Modal */}
       <Modal
