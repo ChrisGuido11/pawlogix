@@ -1,31 +1,22 @@
-import { useState, useCallback, useEffect } from 'react';
-import { View, Text, Pressable, RefreshControl } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withDelay,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import Animated from 'react-native-reanimated';
 import { usePets } from '@/lib/pet-context';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
-import { usePressAnimation } from '@/hooks/usePressAnimation';
 import { calculateAge } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
-import { Typography, Fonts } from '@/constants/typography';
+import { Shadows, Spacing } from '@/constants/spacing';
+import { Typography } from '@/constants/typography';
 import type { PetProfile } from '@/types';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function PetCardSkeleton() {
   return (
@@ -85,17 +76,6 @@ export default function PetsScreen() {
   const router = useRouter();
   const { pets, isLoading, refreshPets } = usePets();
   const [refreshing, setRefreshing] = useState(false);
-  const fabScale = useSharedValue(0);
-  const { onPressIn, onPressOut, animatedStyle: fabPressStyle } = usePressAnimation(0.9);
-
-  useEffect(() => {
-    fabScale.value = withDelay(500, withSpring(1, { damping: 12, stiffness: 150 }));
-  }, []);
-
-  const fabAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: fabScale.value }],
-  }));
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await refreshPets();
@@ -153,21 +133,6 @@ export default function PetsScreen() {
         )}
       </View>
 
-      <AnimatedPressable
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          router.push('/pet/create');
-        }}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        style={[fabAnimStyle, fabPressStyle, Shadows.primaryButton, { position: 'absolute', bottom: 110, right: Spacing.xl }]}
-      >
-        <View
-          style={{ width: 60, height: 60, borderRadius: BorderRadius.heroCard, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.primary }}
-        >
-          <Ionicons name="add" size={28} color={Colors.textOnPrimary} />
-        </View>
-      </AnimatedPressable>
     </CurvedHeaderPage>
   );
 }
