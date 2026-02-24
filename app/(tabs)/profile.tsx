@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Switch, Alert, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, Switch, Alert, Pressable, Modal, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,13 +10,14 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
-import { Typography } from '@/constants/typography';
+import { Typography, Fonts } from '@/constants/typography';
 import { SectionLabel } from '@/components/ui/section-label';
 
 function SettingsRow({
@@ -79,12 +80,74 @@ function SettingsRow({
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, isAnonymous, profile, signOut, refreshProfile } = useAuth();
+  const { user, isAnonymous, profile, signOut, refreshProfile, linkAccount, signIn } = useAuth();
   const [medReminders, setMedReminders] = useState(profile?.notification_med_reminders ?? true);
   const [vaxReminders, setVaxReminders] = useState(profile?.notification_vax_reminders ?? true);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Auth form state
+  const [showAuthForm, setShowAuthForm] = useState(false);
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup');
+  const [formEmail, setFormEmail] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+  const [formDisplayName, setFormDisplayName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const validate = () => {
+    const errors: { email?: string; password?: string } = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formEmail.trim() || !emailRegex.test(formEmail.trim())) {
+      errors.email = 'Please enter a valid email';
+    }
+    if (!formPassword || formPassword.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAuthSubmit = async () => {
+    if (!validate()) return;
+    Keyboard.dismiss();
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    const timeout = setTimeout(() => {
+      setIsSubmitting(false);
+      setSubmitError('Request timed out. Please try again.');
+    }, 15000);
+
+    try {
+      if (authMode === 'signup') {
+        await linkAccount(formEmail.trim(), formPassword, formDisplayName.trim() || undefined);
+        toast({ title: 'Account created!', preset: 'done' });
+      } else {
+        await signIn(formEmail.trim(), formPassword);
+        toast({ title: 'Welcome back!', preset: 'done' });
+      }
+      clearTimeout(timeout);
+      resetForm();
+    } catch (error: any) {
+      clearTimeout(timeout);
+      setSubmitError(error.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setShowAuthForm(false);
+    setAuthMode('signup');
+    setFormEmail('');
+    setFormPassword('');
+    setFormDisplayName('');
+    setFormErrors({});
+    setSubmitError(null);
+  };
 
   const toggleMedReminders = async (value: boolean) => {
     setMedReminders(value);
@@ -227,9 +290,15 @@ export default function ProfileScreen() {
       headerProps={{ title: 'Settings' }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
+      <ScrollView
+        style={{ flex: 1, paddingHorizontal: Spacing.lg }}
+        contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Account Section */}
-        {!isAnonymous && (
+        <SectionLabel style={{ marginBottom: Spacing.sm, marginTop: Spacing.sm }}>Account</SectionLabel>
+
+        {!isAnonymous ? (
           <Card className="mb-5" variant="elevated">
             <View className="flex-row items-center gap-3">
               <LinearGradient
@@ -247,6 +316,173 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
+          </Card>
+        ) : !showAuthForm ? (
+          /* Anonymous — collapsed CTA */
+          <Card className="mb-5" variant="elevated">
+            <View className="flex-row items-center gap-3 mb-4">
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: Colors.primaryLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Ionicons name="cloud-upload-outline" size={22} color={Colors.primary} />
+              </View>
+              <View className="flex-1">
+                <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
+                  Back up your data
+                </Text>
+                <Text style={[Typography.secondary, { color: Colors.textBody }]}>
+                  Create an account to keep your pets and records safe
+                </Text>
+              </View>
+            </View>
+            <Button
+              title="Create Account"
+              onPress={() => {
+                setAuthMode('signup');
+                setShowAuthForm(true);
+              }}
+              variant="primary"
+              size="md"
+            />
+            <Pressable
+              onPress={() => {
+                setAuthMode('login');
+                setShowAuthForm(true);
+              }}
+              style={{ alignSelf: 'center', marginTop: Spacing.md, paddingVertical: Spacing.xs }}
+            >
+              <Text style={[Typography.secondary, { color: Colors.textBody }]}>
+                Already have an account?{' '}
+                <Text style={{ fontFamily: Fonts.semiBold, color: Colors.primary }}>Log In</Text>
+              </Text>
+            </Pressable>
+          </Card>
+        ) : (
+          /* Anonymous — expanded inline form */
+          <Card className="mb-5" variant="elevated">
+            {/* Segmented control */}
+            <View
+              style={{
+                flexDirection: 'row',
+                backgroundColor: Colors.background,
+                borderRadius: BorderRadius.pill,
+                padding: 3,
+                marginBottom: Spacing.lg,
+              }}
+            >
+              {(['signup', 'login'] as const).map((mode) => (
+                <Pressable
+                  key={mode}
+                  onPress={() => {
+                    setAuthMode(mode);
+                    setFormErrors({});
+                    setSubmitError(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: Spacing.sm,
+                    borderRadius: BorderRadius.pill,
+                    backgroundColor: authMode === mode ? Colors.surface : 'transparent',
+                    alignItems: 'center',
+                    ...(authMode === mode ? Shadows.sm : {}),
+                  }}
+                >
+                  <Text
+                    style={[
+                      Typography.secondary,
+                      {
+                        fontFamily: authMode === mode ? Fonts.semiBold : Fonts.regular,
+                        color: authMode === mode ? Colors.textHeading : Colors.textBody,
+                      },
+                    ]}
+                  >
+                    {mode === 'signup' ? 'Create Account' : 'Log In'}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            {/* Display Name (signup only) */}
+            {authMode === 'signup' && (
+              <Input
+                label="Display Name"
+                placeholder="Your name (optional)"
+                value={formDisplayName}
+                onChangeText={setFormDisplayName}
+                autoCapitalize="words"
+                containerClassName="mb-3"
+              />
+            )}
+
+            <Input
+              label="Email"
+              placeholder="you@example.com"
+              value={formEmail}
+              onChangeText={(text) => {
+                setFormEmail(text);
+                if (formErrors.email) setFormErrors((e) => ({ ...e, email: undefined }));
+              }}
+              error={formErrors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              containerClassName="mb-3"
+            />
+
+            <Input
+              label="Password"
+              placeholder="Min 6 characters"
+              value={formPassword}
+              onChangeText={(text) => {
+                setFormPassword(text);
+                if (formErrors.password) setFormErrors((e) => ({ ...e, password: undefined }));
+              }}
+              error={formErrors.password}
+              secureTextEntry
+              autoCapitalize="none"
+              containerClassName="mb-3"
+            />
+
+            {/* Submission error banner */}
+            {submitError && (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: Spacing.sm,
+                  backgroundColor: Colors.errorLight,
+                  borderRadius: BorderRadius.card,
+                  padding: Spacing.md,
+                  marginBottom: Spacing.md,
+                }}
+              >
+                <Ionicons name="alert-circle" size={18} color={Colors.error} />
+                <Text style={[Typography.secondary, { color: Colors.error, flex: 1 }]}>
+                  {submitError}
+                </Text>
+              </View>
+            )}
+
+            <Button
+              title={authMode === 'signup' ? 'Create Account' : 'Log In'}
+              onPress={handleAuthSubmit}
+              variant="primary"
+              loading={isSubmitting}
+            />
+
+            <Pressable
+              onPress={resetForm}
+              style={{ alignSelf: 'center', marginTop: Spacing.md, paddingVertical: Spacing.xs }}
+            >
+              <Text style={[Typography.secondary, { color: Colors.textBody }]}>Cancel</Text>
+            </Pressable>
           </Card>
         )}
 
