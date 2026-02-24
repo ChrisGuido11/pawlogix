@@ -72,33 +72,15 @@ export default function PetCreateScreen() {
     try {
       const filePath = `${user.id}/${petId}.jpg`;
 
-      const formData = new FormData();
-      formData.append('', {
-        uri: photoUri,
-        name: `${petId}.jpg`,
-        type: 'image/jpeg',
-      } as any);
+      // Convert URI to blob (same pattern as record image upload in scan.tsx)
+      const response = await fetch(photoUri);
+      const blob = await response.blob();
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const { error } = await supabase.storage
+        .from('pl-pet-photos')
+        .upload(filePath, blob, { contentType: 'image/jpeg', upsert: true });
 
-      const uploadRes = await fetch(
-        `${supabaseUrl}/storage/v1/object/pl-pet-photos/${filePath}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'x-upsert': 'true',
-          },
-          body: formData,
-        }
-      );
-
-      if (!uploadRes.ok) {
-        const errBody = await uploadRes.text();
-        throw new Error(`Upload failed: ${errBody}`);
-      }
+      if (error) throw error;
 
       const { data: urlData } = supabase.storage
         .from('pl-pet-photos')
