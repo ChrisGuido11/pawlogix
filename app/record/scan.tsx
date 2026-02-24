@@ -134,23 +134,34 @@ export default function RecordScanScreen() {
       } = await supabase.auth.getSession();
       const pet = pets.find((p) => p.id === selectedPetId);
 
-      fetch(
-        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            record_id: recordId,
-            image_urls: imageUrls,
-            pet_species: pet?.species ?? 'dog',
-            pet_breed: pet?.breed ?? 'unknown',
-            record_type: selectedType,
-          }),
+      try {
+        const fnResponse = await fetch(
+          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session?.access_token}`,
+            },
+            body: JSON.stringify({
+              record_id: recordId,
+              image_urls: imageUrls,
+              pet_species: pet?.species ?? 'dog',
+              pet_breed: pet?.breed ?? 'unknown',
+              record_type: selectedType,
+            }),
+          }
+        );
+        if (!fnResponse.ok) {
+          await supabase.from('pl_health_records')
+            .update({ processing_status: 'failed', processing_error: 'Failed to start analysis.' })
+            .eq('id', recordId);
         }
-      ).catch(console.error);
+      } catch (e) {
+        await supabase.from('pl_health_records')
+          .update({ processing_status: 'failed', processing_error: 'Could not reach analysis service.' })
+          .eq('id', recordId);
+      }
 
       router.replace(`/record/processing/${recordId}` as any);
     } catch (error: any) {

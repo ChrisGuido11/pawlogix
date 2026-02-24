@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -148,6 +148,7 @@ export default function RecordProcessingScreen() {
   >('pending');
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const glowScale = useSharedValue(1);
 
   useEffect(() => {
@@ -171,9 +172,11 @@ export default function RecordProcessingScreen() {
         setStatus(data.processing_status);
         if (data.processing_status === 'completed') {
           if (intervalRef.current) clearInterval(intervalRef.current);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
           router.replace(`/record/${id}` as any);
         } else if (data.processing_status === 'failed') {
           if (intervalRef.current) clearInterval(intervalRef.current);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
           setError(data.processing_error || 'Something went wrong.');
         }
       }
@@ -182,8 +185,15 @@ export default function RecordProcessingScreen() {
     intervalRef.current = setInterval(pollStatus, 2000);
     pollStatus();
 
+    timeoutRef.current = setTimeout(() => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setStatus('failed');
+      setError('Processing is taking longer than expected. Please try again.');
+    }, 90000);
+
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [id]);
 
@@ -298,6 +308,12 @@ export default function RecordProcessingScreen() {
               This usually takes 10-30 seconds
             </Text>
             <ProgressSteps />
+            <Pressable
+              onPress={() => router.replace('/(tabs)')}
+              style={{ marginTop: Spacing['3xl'] }}
+            >
+              <Text style={[Typography.secondary, { color: Colors.textMuted }]}>Cancel</Text>
+            </Pressable>
           </>
         )}
       </SafeAreaView>

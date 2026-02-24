@@ -19,7 +19,10 @@
       "Bash(find C:\\\\Users\\\\cguid\\\\pawlogix-1\\\\app\\\\\\(tabs\\):*)",
       "Bash(ls:*)",
       "Bash(git:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(echo test:*)",
+      "Bash(head:*)",
+      "Bash(cd:*)"
     ]
   }
 }
