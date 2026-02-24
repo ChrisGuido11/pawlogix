@@ -11,6 +11,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let recordId: string | undefined;
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -27,6 +29,7 @@ serve(async (req) => {
     }
 
     const { record_id, image_urls, pet_species, pet_breed, record_type } = await req.json();
+    recordId = record_id;
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
 
     if (!anthropicKey) {
@@ -49,7 +52,13 @@ serve(async (req) => {
       if (downloadError) throw downloadError;
 
       const buffer = await imageData.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+      }
+      const base64 = btoa(binary);
       const ext = imagePath.split('.').pop()?.toLowerCase() || 'jpeg';
       const mediaType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
@@ -103,7 +112,7 @@ Respond ONLY with valid JSON matching this exact schema:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5-20250929',
+        model: 'claude-sonnet-4-5-20250514',
         max_tokens: 4000,
         system: systemPrompt,
         messages: [
@@ -163,19 +172,18 @@ Respond ONLY with valid JSON matching this exact schema:
 
     // Try to update record as failed
     try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
-      const body = await req.clone().json().catch(() => ({}));
-      if (body.record_id) {
-        await supabase
+      if (recordId) {
+        const adminClient = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        await adminClient
           .from('pl_health_records')
           .update({
             processing_status: 'failed',
             processing_error: error.message,
           })
-          .eq('id', body.record_id);
+          .eq('id', recordId);
       }
     } catch {}
 
