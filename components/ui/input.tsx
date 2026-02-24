@@ -29,16 +29,6 @@ export function Input({
       ? Colors.primary
       : Colors.border;
 
-  const focusRingShadow = isFocused && !error
-    ? {
-        shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-        elevation: 0,
-      }
-    : {};
-
   return (
     <View className={containerClassName}>
       {label && (
@@ -57,15 +47,12 @@ export function Input({
         </Text>
       )}
       <View
-        style={[
-          {
-            backgroundColor: Colors.surface,
-            borderWidth: 1.5,
-            borderColor,
-            borderRadius: BorderRadius.input, // 14px
-          },
-          focusRingShadow,
-        ]}
+        style={{
+          backgroundColor: Colors.surface,
+          borderWidth: 1.5,
+          borderColor,
+          borderRadius: BorderRadius.input, // 14px
+        }}
       >
         <TextInput
           style={[

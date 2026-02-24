@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Keyboard } from 'react-native';
+import { View, Text, ScrollView, Pressable, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
@@ -76,11 +76,14 @@ export default function AccountScreen() {
         showBack: true,
       }}
     >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}
           keyboardShouldPersistTaps="handled"
-          automaticallyAdjustKeyboardInsets
         >
           {/* Segmented control */}
           <View
@@ -192,6 +195,7 @@ export default function AccountScreen() {
             loading={isSubmitting}
           />
         </ScrollView>
+      </KeyboardAvoidingView>
     </CurvedHeaderPage>
   );
 }
