@@ -175,8 +175,23 @@ export default function RecordDetailScreen() {
       contentStyle={{ paddingHorizontal: 0 }}
     >
       <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
-        {/* Image Gallery */}
-        {record.image_urls.length > 0 && (
+        {/* Mascot illustration — shown for interpreted records */}
+        {interpretation && (
+          <StaggeredCard index={0}>
+            <View style={{ alignItems: 'center', paddingVertical: Spacing.lg }}>
+              <View style={{ width: 200, height: 200, borderRadius: 100, overflow: 'hidden' }}>
+                <Image
+                  source={require('@/assets/illustrations/mascot-summary.png')}
+                  style={{ width: 200, height: 200 }}
+                  contentFit="cover"
+                />
+              </View>
+            </View>
+          </StaggeredCard>
+        )}
+
+        {/* Image Gallery — only for records with images, hidden during interpreted view to avoid blank broken-image space */}
+        {record.image_urls.length > 0 && !interpretation && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -231,7 +246,7 @@ export default function RecordDetailScreen() {
         ) : interpretation ? (
           <>
             {/* Summary */}
-            <StaggeredCard index={0}>
+            <StaggeredCard index={1}>
               <View
                 style={{
                   backgroundColor: Colors.primaryLight,

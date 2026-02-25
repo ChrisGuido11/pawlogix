@@ -36,7 +36,9 @@
       "Bash(cd /c/Users/cguid/pawlogix-1 && npx supabase functions download pl-interpret-record --output /tmp/pl-interpret-check 2>&1)",
       "WebFetch(domain:docs.claude.com)",
       "Bash(cd /c/Users/cguid/pawlogix-1 && npx supabase functions deploy pl-interpret-record --no-verify-jwt 2>&1)",
-      "Bash(grep pl-interpret-record:*)"
+      "Bash(grep pl-interpret-record:*)",
+      "Bash(tail:*)",
+      "Bash(python:*)"
     ]
   }
 }
