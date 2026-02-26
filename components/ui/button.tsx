@@ -88,7 +88,7 @@ export function Button({
 
   // --- Size-based dimensions ---
   const sizeConfig = {
-    sm: { height: 40, iconSize: 16, px: Spacing.xl },
+    sm: { height: 44, iconSize: 16, px: Spacing.xl },
     md: { height: 50, iconSize: 18, px: Spacing['2xl'] },
     lg: { height: 56, iconSize: 22, px: 28 },
   };
@@ -117,7 +117,6 @@ export function Button({
   };
 
   // --- Primary variant ---
-  // Spec: bg-primary (#5BC5F2), white text, bold, brand-tinted shadow
   if (variant === 'primary') {
     return (
       <AnimatedPressable

@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
-import { Fonts } from '@/constants/typography';
+import { Typography, Fonts } from '@/constants/typography';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -154,7 +154,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           flexDirection: 'row',
           backgroundColor: Colors.surface,
           borderTopWidth: 0.5,
-          borderTopColor: 'rgba(0,0,0,0.06)',
+          borderTopColor: Colors.tabBarBorder,
           paddingBottom: insets.bottom || 8,
           paddingTop: 8,
           alignItems: 'flex-end',
@@ -169,8 +169,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               <ScanButton onPress={() => router.push('/record/scan')} />
               <Text
                 style={{
-                  fontSize: 10,
-                  fontFamily: Fonts.medium,
+                  ...Typography.tabLabel,
                   color: Colors.primary,
                   marginTop: 2,
                 }}
@@ -239,8 +238,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             />
             <Text
               style={{
-                fontSize: 10,
-                fontFamily: Fonts.medium,
+                ...Typography.tabLabel,
                 color,
                 marginTop: 2,
               }}

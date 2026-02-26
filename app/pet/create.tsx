@@ -234,7 +234,7 @@ export default function PetCreateScreen() {
                 </SectionLabel>
                 <Pressable
                   onPress={() => setShowBreedPicker(!showBreedPicker)}
-                  style={[Shadows.sm, { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.lg, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
+                  style={[Shadows.sm, { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}
                 >
                   <Text style={[Typography.body, { color: value ? Colors.textHeading : Colors.textMuted }]}>
                     {value || 'Select breed'}
@@ -244,7 +244,7 @@ export default function PetCreateScreen() {
                 {showBreedPicker && (
                   <Card variant="elevated" className="mt-2 max-h-56">
                     <TextInput
-                      style={[Typography.secondary, { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.md, paddingVertical: 10, color: Colors.textHeading, marginBottom: Spacing.sm }]}
+                      style={[Typography.secondary, { backgroundColor: Colors.primaryLight, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md, color: Colors.textHeading, marginBottom: Spacing.sm }]}
                       placeholder="Search breeds..."
                       placeholderTextColor={Colors.textMuted}
                       value={breedSearch}
@@ -259,7 +259,7 @@ export default function PetCreateScreen() {
                             setShowBreedPicker(false);
                             setBreedSearch('');
                           }}
-                          style={{ paddingVertical: 10, paddingHorizontal: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                          style={{ paddingVertical: Spacing.md, paddingHorizontal: Spacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
                         >
                           <Text style={[Typography.secondary, { color: value === breed ? Colors.primary : Colors.textHeading, fontFamily: value === breed ? Fonts.bold : Fonts.regular }]}>
                             {breed}

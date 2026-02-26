@@ -65,7 +65,7 @@ function PetSelectorBar({
                 {
                   width: 48,
                   height: 48,
-                  borderRadius: 16,
+                  borderRadius: BorderRadius.card,
                   borderWidth: isActive ? 2.5 : 0,
                   borderColor: isActive ? Colors.primary : 'transparent',
                   padding: isActive ? 2 : 0,
@@ -79,7 +79,7 @@ function PetSelectorBar({
                   style={{
                     width: isActive ? 39 : 48,
                     height: isActive ? 39 : 48,
-                    borderRadius: isActive ? 12 : 16,
+                    borderRadius: isActive ? BorderRadius.button : BorderRadius.card,
                   }}
                 />
               ) : (
@@ -87,7 +87,7 @@ function PetSelectorBar({
                   style={{
                     width: isActive ? 39 : 48,
                     height: isActive ? 39 : 48,
-                    borderRadius: isActive ? 12 : 16,
+                    borderRadius: isActive ? BorderRadius.button : BorderRadius.card,
                     backgroundColor: Colors.primaryLight,
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -125,7 +125,7 @@ function PetSelectorBar({
           style={{
             width: 48,
             height: 48,
-            borderRadius: 16,
+            borderRadius: BorderRadius.card,
             borderWidth: 2,
             borderStyle: 'dashed',
             borderColor: Colors.border,
@@ -291,12 +291,12 @@ export default function HomeScreen() {
                       style={{
                         backgroundColor: Colors.surface,
                         paddingHorizontal: Spacing['2xl'],
-                        paddingVertical: 10,
+                        paddingVertical: Spacing.md,
                         borderRadius: BorderRadius.pill,
                         flexDirection: 'row',
                         alignItems: 'center',
                         alignSelf: 'flex-start',
-                        gap: 6,
+                        gap: Spacing.sm,
                       }}
                     >
                       <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>
@@ -322,7 +322,7 @@ export default function HomeScreen() {
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
                 <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>Recent Records</SectionLabel>
                 {recentRecords.length > 0 && (
-                  <Pressable onPress={() => router.push('/(tabs)/records' as any)}>
+                  <Pressable onPress={() => router.push('/(tabs)/records' as any)} hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}>
                     <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>See all</Text>
                   </Pressable>
                 )}
@@ -330,10 +330,10 @@ export default function HomeScreen() {
             </StaggeredCard>
 
             {isLoading ? (
-              <View style={{ gap: 10 }}>
+              <View style={{ gap: Spacing.md }}>
                 {[0, 1].map((i) => (
                   <Card key={i}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
                       <Skeleton width={40} height={40} />
                       <View style={{ flex: 1, gap: 8 }}>
                         <Skeleton height={16} width="75%" />
@@ -368,7 +368,7 @@ export default function HomeScreen() {
                   <StaggeredCard key={record.id} index={3 + idx}>
                     <SwipeableRow onDelete={() => handleDeleteRecord(record)}>
                       <Card onPress={() => router.push(`/record/${record.id}` as any)}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
                           {/* Severity accent strip */}
                           <View
                             style={{
@@ -403,44 +403,9 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* E. Health Snapshot — stat tiles */}
-            <StaggeredCard index={6}>
-              <SectionLabel style={{ marginBottom: Spacing.md }}>Health Snapshot</SectionLabel>
-              <View style={{ flexDirection: 'row', gap: Spacing.md }}>
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: Colors.primaryLight,
-                    borderRadius: BorderRadius.statTile,
-                    padding: Spacing.lg,
-                  }}
-                >
-                  <Ionicons name="scale-outline" size={20} color={Colors.primary} style={{ marginBottom: Spacing.sm }} />
-                  <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: 2 }]}>Weight</Text>
-                  <Text style={[Typography.sectionHeading, { color: Colors.textHeading }]}>
-                    {activePet.weight_kg ? `${activePet.weight_kg} kg` : '—'}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: Colors.primaryLight,
-                    borderRadius: BorderRadius.statTile,
-                    padding: Spacing.lg,
-                  }}
-                >
-                  <Ionicons name="calendar-outline" size={20} color={Colors.primary} style={{ marginBottom: Spacing.sm }} />
-                  <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: 2 }]}>Recent</Text>
-                  <Text style={[Typography.sectionHeading, { color: Colors.textHeading }]}>
-                    {recentRecords.length}
-                  </Text>
-                </View>
-              </View>
-            </StaggeredCard>
-
-            {/* F. Flagged items alert */}
+            {/* E. Flagged items alert */}
             {recentRecords.some((r) => r.has_urgent_flags) && (
-              <StaggeredCard index={7}>
+              <StaggeredCard index={6}>
                 <Card style={{ marginTop: Spacing.xl }} variant="elevated">
                   <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm, marginLeft: Spacing.xs }}>

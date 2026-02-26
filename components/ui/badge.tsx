@@ -23,11 +23,7 @@ const variantConfig = {
     text: Colors.primary,
     dot: Colors.primary,
   },
-  info: {
-    bg: Colors.primaryLight,
-    text: Colors.primary,
-    dot: Colors.primary,
-  },
+  get info() { return variantConfig.primary; },
   watch: {
     bg: Colors.warningLight,
     text: Colors.warning,

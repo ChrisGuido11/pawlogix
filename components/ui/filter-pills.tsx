@@ -101,7 +101,7 @@ export function FilterPills({
               handleLayout(option, x, width);
             }}
             style={{
-              paddingVertical: Spacing.sm,
+              paddingVertical: Spacing.md,
               paddingHorizontal: Spacing.lg,
               borderRadius: BorderRadius.pill,
             }}

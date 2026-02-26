@@ -7,7 +7,7 @@ import { Shadows, BorderRadius } from '@/constants/spacing';
 interface CardProps {
   children: React.ReactNode;
   onPress?: () => void;
-  variant?: 'default' | 'elevated';
+  variant?: 'default' | 'elevated' | 'subtle';
   className?: string;
   style?: any;
 }
@@ -23,7 +23,7 @@ export function Card({
 }: CardProps) {
   const { onPressIn, onPressOut, animatedStyle } = usePressAnimation(0.97);
 
-  const shadowStyle = variant === 'elevated' ? Shadows.lg : Shadows.md;
+  const shadowStyle = variant === 'elevated' ? Shadows.lg : variant === 'subtle' ? Shadows.sm : Shadows.md;
 
   // Spec: bg-surface (#FFFFFF), rounded-2xl (16px), p-4 (16px), no border, shadow only
   const baseStyles = 'bg-surface rounded-2xl p-4';

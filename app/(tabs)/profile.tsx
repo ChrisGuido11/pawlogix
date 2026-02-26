@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
+import { Shadows, Spacing, BorderRadius, IconTile } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import { SectionLabel } from '@/components/ui/section-label';
 
@@ -311,7 +311,7 @@ export default function ProfileScreen() {
               />
             }
           />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="shield-checkmark-outline"
             label="Vaccine Reminders"
@@ -334,13 +334,13 @@ export default function ProfileScreen() {
             label="Privacy Policy"
             onPress={() => showToastPlaceholder('Privacy Policy')}
           />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="document-text-outline"
             label="Terms of Service"
             onPress={() => showToastPlaceholder('Terms of Service')}
           />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="help-circle-outline"
             label="Support & FAQ"
@@ -356,7 +356,7 @@ export default function ProfileScreen() {
             label="Export My Data"
             onPress={exportData}
           />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: 48 }} />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="trash-outline"
             label="Delete Account"
@@ -387,8 +387,8 @@ export default function ProfileScreen() {
         animationType="fade"
         onRequestClose={() => !isDeleting && setShowDeleteConfirm(false)}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}>
-          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: 28, width: '100%', maxWidth: 340, alignItems: 'center' }]}>
+        <View style={{ flex: 1, backgroundColor: Colors.modalScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}>
+          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing['3xl'], width: '100%', maxWidth: 340, alignItems: 'center' }]}>
             <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: Spacing.lg }}>
               <Image
                 source={require('@/assets/illustrations/mascot-waving-goodbye.png')}
@@ -410,7 +410,7 @@ export default function ProfileScreen() {
             />
             <Pressable
               onPress={() => !isDeleting && setShowDeleteConfirm(false)}
-              style={{ marginTop: Spacing.lg, paddingVertical: Spacing.sm }}
+              style={{ marginTop: Spacing.lg, paddingVertical: Spacing.md }}
             >
               <Text style={[Typography.buttonSecondary, { color: Colors.textBody }]}>
                 Never mind, I'll stay

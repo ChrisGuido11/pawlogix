@@ -70,6 +70,53 @@ function OrbitingCircle({ angle, radius, color, size, delay }: {
   );
 }
 
+function ProgressStepRow({ step, isActive, isDone }: { step: string; isActive: boolean; isDone: boolean }) {
+  const dotScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (isDone) {
+      dotScale.value = withSpring(1.2, { damping: 8, stiffness: 200 });
+      setTimeout(() => {
+        dotScale.value = withSpring(1, { damping: 12, stiffness: 150 });
+      }, 200);
+    }
+  }, [isDone]);
+
+  const dotAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dotScale.value }],
+  }));
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
+      <Animated.View style={dotAnimStyle}>
+        {isDone ? (
+          <LinearGradient
+            colors={[...Gradients.primaryCta]}
+            style={{ width: 8, height: 8, borderRadius: 4 }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: isActive ? Colors.primary : Colors.border,
+            }}
+          />
+        )}
+      </Animated.View>
+      <Text
+        style={[Typography.secondary, {
+          fontFamily: isActive ? Fonts.semiBold : Fonts.regular,
+          color: isActive ? Colors.textHeading : Colors.textBody,
+        }]}
+      >
+        {isDone ? '\u2713 ' : ''}{step}
+      </Text>
+    </View>
+  );
+}
+
 function ProgressSteps() {
   const [stepIndex, setStepIndex] = useState(0);
 
@@ -88,54 +135,14 @@ function ProgressSteps() {
 
   return (
     <View style={{ marginTop: Spacing['3xl'], gap: Spacing.md, alignItems: 'center' }}>
-      {PROGRESS_STEPS.map((step, index) => {
-        const isActive = index === stepIndex;
-        const isDone = index < stepIndex;
-        const dotScale = useSharedValue(1);
-
-        useEffect(() => {
-          if (isDone) {
-            dotScale.value = withSpring(1.2, { damping: 8, stiffness: 200 });
-            setTimeout(() => {
-              dotScale.value = withSpring(1, { damping: 12, stiffness: 150 });
-            }, 200);
-          }
-        }, [isDone]);
-
-        const dotAnimStyle = useAnimatedStyle(() => ({
-          transform: [{ scale: dotScale.value }],
-        }));
-
-        return (
-          <View key={index} style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
-            <Animated.View style={dotAnimStyle}>
-              {isDone ? (
-                <LinearGradient
-                  colors={[...Gradients.primaryCta]}
-                  style={{ width: 8, height: 8, borderRadius: 4 }}
-                />
-              ) : (
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: isActive ? Colors.primary : Colors.border,
-                  }}
-                />
-              )}
-            </Animated.View>
-            <Text
-              style={[Typography.secondary, {
-                fontFamily: isActive ? Fonts.semiBold : Fonts.regular,
-                color: isActive ? Colors.textHeading : Colors.textBody,
-              }]}
-            >
-              {isDone ? '\u2713 ' : ''}{step}
-            </Text>
-          </View>
-        );
-      })}
+      {PROGRESS_STEPS.map((step, index) => (
+        <ProgressStepRow
+          key={index}
+          step={step}
+          isActive={index === stepIndex}
+          isDone={index < stepIndex}
+        />
+      ))}
     </View>
   );
 }
@@ -290,7 +297,7 @@ export default function RecordProcessingScreen() {
             <View style={{ width: 200, height: 200, alignItems: 'center', justifyContent: 'center' }}>
               <OrbitingCircle angle={0} radius={85} color={Colors.secondary} size={12} delay={0} />
               <OrbitingCircle angle={120} radius={85} color={Colors.primary} size={10} delay={200} />
-              <OrbitingCircle angle={240} radius={85} color={Colors.primaryLight} size={8} delay={400} />
+              <OrbitingCircle angle={240} radius={85} color={Colors.secondary} size={8} delay={400} />
 
               <Animated.View style={[glowStyle, { width: 180, height: 180, borderRadius: 90, overflow: 'hidden' }]}>
                 <Image

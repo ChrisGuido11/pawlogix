@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography } from '@/constants/typography';
 
 interface CurvedHeaderProps {
@@ -59,9 +60,9 @@ export function CurvedHeader({
     <View
       style={{
         backgroundColor: Colors.primary,
-        paddingTop: insets.top + 16,
-        paddingBottom: 48 + extraPaddingBottom,
-        paddingHorizontal: 20,
+        paddingTop: insets.top + Spacing.lg,
+        paddingBottom: Spacing['5xl'] + extraPaddingBottom,
+        paddingHorizontal: Spacing.xl,
       }}
     >
       {/* Top row: back button + right action */}
@@ -70,7 +71,7 @@ export function CurvedHeader({
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: subtitle || children ? 8 : 4,
+          marginBottom: subtitle || children ? Spacing.sm : Spacing.xs,
         }}
       >
         {/* Left side */}
@@ -81,8 +82,8 @@ export function CurvedHeader({
             style={{
               width: 44,
               height: 44,
-              borderRadius: 12,
-              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: BorderRadius.button,
+              backgroundColor: Colors.headerButtonBg,
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -92,7 +93,7 @@ export function CurvedHeader({
         ) : null}
 
         {/* Title (centered between left and right) */}
-        <View style={{ flex: 1, marginHorizontal: showBack ? 12 : 0 }}>
+        <View style={{ flex: 1, marginHorizontal: showBack ? Spacing.md : 0 }}>
           <Text
             style={[
               Typography.screenTitle,
@@ -115,8 +116,8 @@ export function CurvedHeader({
             style={{
               width: 44,
               height: 44,
-              borderRadius: 12,
-              backgroundColor: 'rgba(255,255,255,0.2)',
+              borderRadius: BorderRadius.button,
+              backgroundColor: Colors.headerButtonBg,
               alignItems: 'center',
               justifyContent: 'center',
             }}
@@ -134,7 +135,7 @@ export function CurvedHeader({
           style={[
             Typography.body,
             {
-              color: 'rgba(255,255,255,0.8)',
+              color: Colors.headerSubtitle,
               textAlign: showBack ? 'center' : 'left',
               marginTop: 2,
             },
@@ -182,10 +183,10 @@ export function CurvedHeaderPage({
             flex: 1,
             backgroundColor: Colors.background,
             marginTop: -32,
-            borderTopLeftRadius: 30,
-            borderTopRightRadius: 30,
-            paddingTop: 24,
-            paddingHorizontal: 16,
+            borderTopLeftRadius: BorderRadius.curvedHeader,
+            borderTopRightRadius: BorderRadius.curvedHeader,
+            paddingTop: Spacing['2xl'],
+            paddingHorizontal: Spacing.lg,
           },
           contentStyle,
         ]}

@@ -105,7 +105,7 @@ export default function AccountScreen() {
                 }}
                 style={{
                   flex: 1,
-                  paddingVertical: Spacing.sm,
+                  paddingVertical: Spacing.md,
                   borderRadius: BorderRadius.pill,
                   backgroundColor: authMode === mode ? Colors.surface : 'transparent',
                   alignItems: 'center',

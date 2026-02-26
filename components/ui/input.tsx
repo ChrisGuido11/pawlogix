@@ -54,7 +54,7 @@ export function Input({
           borderRadius: BorderRadius.input, // 14px
           ...(isFocused && Platform.OS === 'ios'
             ? {
-                shadowColor: '#5BC5F2',
+                shadowColor: Colors.primary,
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: 0.15,
                 shadowRadius: 3,
@@ -68,7 +68,7 @@ export function Input({
             {
               color: Colors.textBody,
               paddingHorizontal: Spacing.lg,
-              paddingVertical: 14,
+              paddingVertical: Spacing.lg,
             },
           ]}
           placeholderTextColor={Colors.textMuted}
@@ -78,7 +78,7 @@ export function Input({
         />
       </View>
       {error && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.sm }}>
           <Ionicons name="alert-circle" size={14} color={Colors.error} />
           <Text style={[Typography.caption, { color: Colors.error }]}>{error}</Text>
         </View>

@@ -93,7 +93,7 @@ function SuggestionPill({ text, onPress, index }: { text: string; onPress: () =>
           borderColor: Colors.primary,
           borderRadius: BorderRadius.heroCard,
           paddingHorizontal: Spacing.lg,
-          paddingVertical: 10,
+          paddingVertical: Spacing.md,
         }}
       >
         <Text style={[Typography.secondary, { color: Colors.primary, fontFamily: Fonts.semiBold }]}>{text}</Text>
@@ -237,7 +237,7 @@ export default function RecordChatScreen() {
         )}
         {isUser ? (
           <View
-            style={{ backgroundColor: Colors.primary, borderRadius: 18, borderBottomRightRadius: 6, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}
+            style={{ backgroundColor: Colors.primary, borderRadius: BorderRadius.messageBubble, borderBottomRightRadius: BorderRadius.messageTail, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}
           >
             <Text style={[Typography.body, { color: Colors.textOnPrimary }]}>{item.content}</Text>
           </View>
@@ -247,8 +247,8 @@ export default function RecordChatScreen() {
               Shadows.sm,
               {
                 backgroundColor: Colors.surface,
-                borderRadius: 18,
-                borderBottomLeftRadius: 6,
+                borderRadius: BorderRadius.messageBubble,
+                borderBottomLeftRadius: BorderRadius.messageTail,
                 paddingHorizontal: Spacing.lg,
                 paddingVertical: Spacing.md,
               },

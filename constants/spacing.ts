@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { Colors } from './Colors';
 
 export const Spacing = {
   xs: 4,
@@ -28,6 +29,8 @@ export const BorderRadius = {
   bottomSheet: 24,
   curvedHeader: 30,
   statTile: 14,
+  messageBubble: 18,
+  messageTail: 6,
 } as const;
 
 export const IconSize = {
@@ -103,7 +106,7 @@ export const Shadows = {
   // Primary button — brand-tinted glow
   primaryButton: Platform.select({
     ios: {
-      shadowColor: '#5BC5F2',
+      shadowColor: Colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 12,
@@ -129,7 +132,7 @@ export const Shadows = {
   // Elevated scan button in tab bar
   scanButton: Platform.select({
     ios: {
-      shadowColor: '#5BC5F2',
+      shadowColor: Colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.35,
       shadowRadius: 14,

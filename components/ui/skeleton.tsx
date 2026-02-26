@@ -41,7 +41,6 @@ export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) 
           width: width as number,
           height,
           backgroundColor: Colors.border,
-          borderRadius: 16,
         },
       ]}
       className={className}

@@ -139,7 +139,7 @@ export default function RecordDetailScreen() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.xl, paddingTop: 60 }}>
+      <View style={{ flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing.xl, paddingTop: Spacing['5xl'] + Spacing.md }}>
         <View className="flex-row items-center justify-between mb-4">
           <Skeleton width={40} height={40} className="rounded-xl" />
           <Skeleton height={20} className="w-1/3" />
@@ -330,7 +330,7 @@ export default function RecordDetailScreen() {
                             style={{
                               width: 40,
                               height: 40,
-                              borderRadius: 12,
+                              borderRadius: BorderRadius.button,
                               backgroundColor: Colors.successLight,
                               alignItems: 'center',
                               justifyContent: 'center',

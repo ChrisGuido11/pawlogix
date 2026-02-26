@@ -302,7 +302,7 @@ export default function OnboardingScreen() {
               <View style={{ flex: 1, paddingHorizontal: Spacing['3xl'] }}>
                 <Text
                   style={[
-                    Typography.displayMd,
+                    Typography.contentTitle,
                     {
                       color: Colors.textHeading,
                       textAlign: 'center',

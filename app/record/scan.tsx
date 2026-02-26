@@ -189,7 +189,7 @@ export default function RecordScanScreen() {
   // Camera View
   if (step === 'camera') {
     return (
-      <View style={{ flex: 1, backgroundColor: '#000' }}>
+      <View style={{ flex: 1, backgroundColor: Colors.cameraBackground }}>
         <CameraView
           ref={(ref) => setCameraRef(ref)}
           style={{ flex: 1 }}
@@ -203,9 +203,9 @@ export default function RecordScanScreen() {
             <View style={{ alignItems: 'center', paddingBottom: Spacing['2xl'] }}>
               <Pressable
                 onPress={takePhoto}
-                style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: Colors.textOnPrimary, alignItems: 'center', justifyContent: 'center' }}
               >
-                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff' }} />
+                <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.textOnPrimary }} />
               </Pressable>
             </View>
           </SafeAreaView>
@@ -295,7 +295,8 @@ export default function RecordScanScreen() {
                   </View>
                   <Pressable
                     onPress={() => removeImage(index)}
-                    style={[Shadows.sm, { position: 'absolute', top: -8, right: -8, width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center' }]}
+                    hitSlop={8}
+                    style={[Shadows.sm, { position: 'absolute', top: -8, right: -8, width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.error, alignItems: 'center', justifyContent: 'center' }]}
                   >
                     <Ionicons name="close" size={16} color={Colors.textOnPrimary} />
                   </Pressable>
