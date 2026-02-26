@@ -4,6 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import {
   useFonts,
   Nunito_400Regular,
@@ -97,10 +98,12 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <PetProvider>
-        <RootLayoutNav />
-      </PetProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <PetProvider>
+          <RootLayoutNav />
+        </PetProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

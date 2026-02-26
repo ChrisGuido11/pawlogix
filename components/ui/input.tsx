@@ -1,4 +1,4 @@
-import { View, Text, TextInput, type TextInputProps } from 'react-native';
+import { View, Text, TextInput, Platform, type TextInputProps } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
@@ -52,6 +52,14 @@ export function Input({
           borderWidth: 1.5,
           borderColor,
           borderRadius: BorderRadius.input, // 14px
+          ...(isFocused && Platform.OS === 'ios'
+            ? {
+                shadowColor: '#5BC5F2',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.15,
+                shadowRadius: 3,
+              }
+            : {}),
         }}
       >
         <TextInput

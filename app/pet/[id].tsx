@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,10 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurvedHeader } from '@/components/ui/curved-header';
+import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
+import { SwipeableRow } from '@/components/ui/swipeable-row';
+import { usePetMedications } from '@/hooks/usePetMedications';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
-import { calculateAge } from '@/lib/utils';
+import { calculateAge, getRecordTypeLabel, formatDate } from '@/lib/utils';
+import { useDeleteRecord } from '@/hooks/useDeleteRecord';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
@@ -34,6 +38,7 @@ export default function PetDetailScreen() {
   const [pet, setPet] = useState<PetProfile | null>(null);
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchPet = useCallback(async () => {
     if (!id) return;
@@ -66,6 +71,9 @@ export default function PetDetailScreen() {
     fetchPet();
   }, [fetchPet]);
 
+  const { medications, isLoading: medsLoading, refresh } = usePetMedications(id);
+  const handleDeleteRecord = useDeleteRecord(setRecords);
+
   const handleDelete = () => {
     Alert.alert(
       'Remove Pet',
@@ -84,6 +92,13 @@ export default function PetDetailScreen() {
         },
       ]
     );
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchPet();
+    await refresh();
+    setRefreshing(false);
   };
 
   const updatePhoto = async () => {
@@ -222,13 +237,19 @@ export default function PetDetailScreen() {
           )}
         </View>
 
-        <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['3xl'] }}>
+        <ScrollView
+          style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg }}
+          contentContainerStyle={{ paddingBottom: Spacing['3xl'] }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
+        >
           {/* Quick Actions */}
           <StaggeredCard index={0}>
             <View className="flex-row gap-3 mb-5">
               <Card onPress={() => router.push('/record/scan')} className="flex-1 items-center py-5">
                 <View
-                  style={{ width: 44, height: 44, borderRadius: BorderRadius.statTile, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
+                  style={{ width: 48, height: 48, borderRadius: BorderRadius.statTile, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
                 >
                   <Ionicons name="scan-outline" size={24} color={Colors.primary} />
                 </View>
@@ -236,7 +257,7 @@ export default function PetDetailScreen() {
               </Card>
               <Card onPress={() => Alert.alert('Coming Soon', 'Health Trends will be available in a future update.')} className="flex-1 items-center py-5">
                 <View
-                  style={{ width: 44, height: 44, borderRadius: BorderRadius.statTile, backgroundColor: Colors.warningLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
+                  style={{ width: 48, height: 48, borderRadius: BorderRadius.statTile, backgroundColor: Colors.warningLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
                 >
                   <Ionicons name="trending-up-outline" size={24} color={Colors.secondary} />
                 </View>
@@ -245,9 +266,85 @@ export default function PetDetailScreen() {
             </View>
           </StaggeredCard>
 
-          {/* Records Section */}
+          {/* Medications Section */}
           <StaggeredCard index={1}>
-            <SectionLabel style={{ marginBottom: Spacing.md }}>
+            <SectionLabel>
+              Medications
+            </SectionLabel>
+          </StaggeredCard>
+          {medsLoading ? (
+            <Card className="mb-5">
+              <View className="flex-row items-center gap-3 py-2">
+                <Skeleton width={36} height={36} className="rounded-xl" />
+                <View style={{ flex: 1 }}>
+                  <Skeleton height={16} className="w-2/3 mb-1" />
+                  <Skeleton height={12} className="w-1/2" />
+                </View>
+              </View>
+            </Card>
+          ) : medications.length === 0 ? (
+            <Card className="mb-5">
+              <View className="flex-row items-center gap-3 py-2">
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    backgroundColor: Colors.successLight,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="medkit-outline" size={20} color={Colors.success} />
+                </View>
+                <Text style={[Typography.secondary, { color: Colors.textBody, flex: 1 }]}>
+                  No medications found in scanned records
+                </Text>
+              </View>
+            </Card>
+          ) : (
+            <View style={{ gap: Spacing.sm, marginBottom: Spacing.lg }}>
+              {medications.map((med, idx) => (
+                <StaggeredCard key={`${med.sourceRecordId}-${med.name}`} index={2 + idx}>
+                  <Card onPress={() => router.push(`/record/${med.sourceRecordId}` as any)}>
+                    <View className="flex-row items-center gap-3">
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 12,
+                          backgroundColor: Colors.successLight,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons name="medkit" size={20} color={Colors.success} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
+                          {med.name}
+                        </Text>
+                        {(med.dosage || med.frequency) && (
+                          <Text style={[Typography.secondary, { color: Colors.textBody }]}>
+                            {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
+                          </Text>
+                        )}
+                        <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: 2 }]}>
+                          {getRecordTypeLabel(med.sourceRecordType)} · {formatDate(med.sourceRecordDate)}
+                        </Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                    </View>
+                  </Card>
+                </StaggeredCard>
+              ))}
+              <DisclaimerBanner />
+            </View>
+          )}
+
+          {/* Records Section */}
+          <StaggeredCard index={2 + medications.length}>
+            <SectionLabel>
               Records
             </SectionLabel>
           </StaggeredCard>
@@ -269,42 +366,43 @@ export default function PetDetailScreen() {
             </Card>
           ) : (
             records.map((record, idx) => (
-              <StaggeredCard key={record.id} index={2 + idx}>
-                <Card
-                  onPress={() => router.push(`/record/${record.id}` as any)}
-                  className="mb-3"
-                >
-                  <View className="flex-row items-center gap-3">
-                    <LinearGradient
-                      colors={[...Gradients.primaryCta]}
-                      style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <Ionicons name="document-text" size={18} color={Colors.textOnPrimary} />
-                    </LinearGradient>
-                    <View className="flex-1">
-                      <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
-                        {record.record_type.replace('_', ' ')}
-                      </Text>
-                      <Text style={[Typography.secondary, { color: Colors.textBody }]}>{record.record_date}</Text>
+              <StaggeredCard key={record.id} index={3 + medications.length + idx}>
+                <SwipeableRow onDelete={() => handleDeleteRecord(record)}>
+                  <Card
+                    onPress={() => router.push(`/record/${record.id}` as any)}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <LinearGradient
+                        colors={[...Gradients.primaryCta]}
+                        style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Ionicons name="document-text" size={20} color={Colors.textOnPrimary} />
+                      </LinearGradient>
+                      <View className="flex-1">
+                        <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
+                          {record.record_type.replace('_', ' ')}
+                        </Text>
+                        <Text style={[Typography.secondary, { color: Colors.textBody }]}>{record.record_date}</Text>
+                      </View>
+                      {record.processing_status === 'completed' ? (
+                        <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
+                      ) : (
+                        <Badge
+                          label={record.processing_status}
+                          variant="primary"
+                        />
+                      )}
                     </View>
-                    {record.processing_status === 'completed' ? (
-                      <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
-                    ) : (
-                      <Badge
-                        label={record.processing_status}
-                        variant="primary"
-                      />
-                    )}
-                  </View>
-                </Card>
+                  </Card>
+                </SwipeableRow>
               </StaggeredCard>
             ))
           )}
 
           {/* Notes */}
           {pet.notes && (
-            <StaggeredCard index={records.length + 2}>
-              <SectionLabel style={{ marginBottom: Spacing.md, marginTop: Spacing.sm }}>
+            <StaggeredCard index={records.length + 3 + medications.length}>
+              <SectionLabel>
                 Notes
               </SectionLabel>
               <Card>

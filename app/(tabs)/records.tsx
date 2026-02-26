@@ -11,12 +11,14 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { FilterPills } from '@/components/ui/filter-pills';
+import { SwipeableRow } from '@/components/ui/swipeable-row';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 
 import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { getRecordTypeLabel, formatDate } from '@/lib/utils';
+import { useDeleteRecord } from '@/hooks/useDeleteRecord';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
@@ -44,60 +46,62 @@ const recordIconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
   other: 'document-text',
 };
 
-function RecordCard({ record, onPress, index }: { record: HealthRecord; onPress: () => void; index: number }) {
+function RecordCard({ record, onPress, onDelete, index }: { record: HealthRecord; onPress: () => void; onDelete: (record: HealthRecord) => void; index: number }) {
   const animStyle = useStaggeredEntrance(index);
 
   return (
     <Animated.View style={animStyle}>
-      <Card onPress={onPress} className="mb-3">
-        <View className="flex-row items-center gap-3">
-          {/* Severity accent strip */}
-          <View style={{
-            position: 'absolute',
-            left: -16,
-            top: 8,
-            bottom: 8,
-            width: 3,
-            borderRadius: 2,
-            backgroundColor: severityColor(record),
-          }} />
+      <SwipeableRow onDelete={() => onDelete(record)}>
+        <Card onPress={onPress}>
+          <View className="flex-row items-center gap-3">
+            {/* Severity accent strip */}
+            <View style={{
+              position: 'absolute',
+              left: -16,
+              top: 8,
+              bottom: 8,
+              width: 3,
+              borderRadius: 2,
+              backgroundColor: severityColor(record),
+            }} />
 
-          {/* Gradient icon */}
-          <LinearGradient
-            colors={[...Gradients.primaryCta]}
-            style={{ width: 40, height: 40, borderRadius: BorderRadius.button, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Ionicons name={recordIconMap[record.record_type] || 'document-text'} size={20} color={Colors.textOnPrimary} />
-          </LinearGradient>
+            {/* Gradient icon */}
+            <LinearGradient
+              colors={[...Gradients.primaryCta]}
+              style={{ width: 40, height: 40, borderRadius: BorderRadius.button, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name={recordIconMap[record.record_type] || 'document-text'} size={20} color={Colors.textOnPrimary} />
+            </LinearGradient>
 
-          <View className="flex-1">
-            <View className="flex-row items-center gap-2">
-              <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
-                {getRecordTypeLabel(record.record_type)}
-              </Text>
-              {record.flagged_items_count > 0 && (
-                <Badge
-                  label={`${record.flagged_items_count} flagged`}
-                  variant={record.has_urgent_flags ? 'urgent' : 'watch'}
-                  size="sm"
-                />
+            <View className="flex-1">
+              <View className="flex-row items-center gap-2">
+                <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
+                  {getRecordTypeLabel(record.record_type)}
+                </Text>
+                {record.flagged_items_count > 0 && (
+                  <Badge
+                    label={`${record.flagged_items_count} flagged`}
+                    variant={record.has_urgent_flags ? 'urgent' : 'watch'}
+                    size="sm"
+                  />
+                )}
+              </View>
+              <Text style={[Typography.secondary, { color: Colors.textBody }]}>{formatDate(record.record_date)}</Text>
+              {record.interpretation?.summary && (
+                <Text style={[Typography.secondary, { color: Colors.textMuted, marginTop: 2 }]} numberOfLines={1}>
+                  {record.interpretation.summary}
+                </Text>
               )}
             </View>
-            <Text style={[Typography.secondary, { color: Colors.textBody }]}>{formatDate(record.record_date)}</Text>
-            {record.interpretation?.summary && (
-              <Text style={[Typography.secondary, { color: Colors.textMuted, marginTop: 2 }]} numberOfLines={1}>
-                {record.interpretation.summary}
-              </Text>
+
+            {record.processing_status === 'completed' ? (
+              <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
+            ) : (
+              <Badge label={record.processing_status} variant={record.processing_status === 'failed' ? 'urgent' : 'primary'} />
             )}
           </View>
-
-          {record.processing_status === 'completed' ? (
-            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
-          ) : (
-            <Badge label={record.processing_status} variant={record.processing_status === 'failed' ? 'urgent' : 'primary'} />
-          )}
-        </View>
-      </Card>
+        </Card>
+      </SwipeableRow>
     </Animated.View>
   );
 }
@@ -151,6 +155,8 @@ export default function RecordsScreen() {
     await fetchRecords();
     setRefreshing(false);
   };
+
+  const handleDeleteRecord = useDeleteRecord(setRecords);
 
   if (isLoading) {
     return (
@@ -213,6 +219,7 @@ export default function RecordsScreen() {
               <RecordCard
                 record={item}
                 onPress={() => router.push(`/record/${item.id}` as any)}
+                onDelete={handleDeleteRecord}
                 index={index}
               />
             )}

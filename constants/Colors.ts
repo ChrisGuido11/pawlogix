@@ -36,6 +36,8 @@ export const Colors = {
   border: '#EAEAEA',
   disabled: '#D0D0D8',
   tabInactive: '#B0B0C0',
+  // Switch track off-state
+  switchTrackOff: '#D0D0D8',
 } as const;
 
 export const Gradients = {

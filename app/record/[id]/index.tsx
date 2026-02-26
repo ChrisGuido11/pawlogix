@@ -91,7 +91,7 @@ export default function RecordDetailScreen() {
   const [record, setRecord] = useState<HealthRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
-    new Set([0])
+    new Set()
   );
 
   const fetchRecord = useCallback(async () => {
@@ -114,6 +114,14 @@ export default function RecordDetailScreen() {
   useEffect(() => {
     fetchRecord();
   }, [fetchRecord]);
+
+  useEffect(() => {
+    if (record?.interpretation?.interpreted_sections) {
+      setExpandedSections(
+        new Set(record.interpretation.interpreted_sections.map((_: any, i: number) => i))
+      );
+    }
+  }, [record?.interpretation]);
 
   const toggleSection = (index: number) => {
     const next = new Set(expandedSections);
@@ -254,7 +262,7 @@ export default function RecordDetailScreen() {
                   borderLeftColor: Colors.primary,
                   borderRadius: BorderRadius.card,
                   padding: Spacing.lg,
-                  marginBottom: Spacing.lg,
+                  marginBottom: Spacing['2xl'],
                   ...Shadows.sm,
                 }}
               >
@@ -269,8 +277,8 @@ export default function RecordDetailScreen() {
 
             {/* Detailed Breakdown */}
             {interpretation.interpreted_sections?.length > 0 && (
-              <View style={{ marginBottom: Spacing.lg }}>
-                <SectionLabel style={{ marginBottom: Spacing.md }}>
+              <View style={{ marginBottom: Spacing['2xl'] }}>
+                <SectionLabel>
                   Detailed Breakdown
                 </SectionLabel>
                 {interpretation.interpreted_sections.map((section: any, index: number) => {
@@ -307,10 +315,51 @@ export default function RecordDetailScreen() {
               </View>
             )}
 
+            {/* Medications */}
+            {(interpretation.extracted_values?.medications ?? []).length > 0 && (
+              <View style={{ marginBottom: Spacing['2xl'] }}>
+                <SectionLabel>
+                  Medications
+                </SectionLabel>
+                {(interpretation.extracted_values?.medications ?? []).map(
+                  (med, index) => (
+                    <StaggeredCard key={index} index={4 + index}>
+                      <Card className="mb-2">
+                        <View className="flex-row items-center gap-3">
+                          <View
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 12,
+                              backgroundColor: Colors.successLight,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name="medkit" size={20} color={Colors.success} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
+                              {med.name}
+                            </Text>
+                            {(med.dosage || med.frequency) && (
+                              <Text style={[Typography.secondary, { color: Colors.textBody }]}>
+                                {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </Card>
+                    </StaggeredCard>
+                  )
+                )}
+              </View>
+            )}
+
             {/* Flagged Items */}
             {interpretation.flagged_items?.length > 0 && (
-              <View style={{ marginBottom: Spacing.lg }}>
-                <SectionLabel style={{ marginBottom: Spacing.md }}>
+              <View style={{ marginBottom: Spacing['2xl'] }}>
+                <SectionLabel>
                   Flagged Items
                 </SectionLabel>
                 {interpretation.flagged_items.map(

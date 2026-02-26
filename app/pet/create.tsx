@@ -185,7 +185,7 @@ export default function PetCreateScreen() {
           />
 
           {/* Species Selector */}
-          <SectionLabel style={{ marginBottom: Spacing.sm }}>
+          <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
             Species *
           </SectionLabel>
           <View className="flex-row gap-3 mb-4">
@@ -229,7 +229,7 @@ export default function PetCreateScreen() {
             name="breed"
             render={({ field: { value } }) => (
               <View style={{ marginBottom: Spacing.lg }}>
-                <SectionLabel style={{ marginBottom: Spacing.sm }}>
+                <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
                   Breed
                 </SectionLabel>
                 <Pressable

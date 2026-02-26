@@ -277,7 +277,7 @@ export default function RecordScanScreen() {
         {/* Step: Preview Images */}
         {(step === 'preview' || step === 'details') && (
           <>
-            <SectionLabel style={{ marginBottom: Spacing.md }}>
+            <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.md }}>
               Selected Images ({images.length})
             </SectionLabel>
             <ScrollView
@@ -323,7 +323,7 @@ export default function RecordScanScreen() {
         {/* Step: Details */}
         {step === 'details' && (
           <>
-            <SectionLabel style={{ marginBottom: Spacing.md }}>
+            <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.md }}>
               Record Type
             </SectionLabel>
             <View className="flex-row flex-wrap gap-2 mb-5">
@@ -360,7 +360,7 @@ export default function RecordScanScreen() {
 
             {pets.length > 1 && (
               <>
-                <SectionLabel style={{ marginBottom: Spacing.md }}>
+                <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.md }}>
                   Which Pet?
                 </SectionLabel>
                 <View style={{ gap: Spacing.sm, marginBottom: Spacing.xl }}>

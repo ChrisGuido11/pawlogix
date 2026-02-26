@@ -357,7 +357,7 @@ export default function OnboardingScreen() {
                   },
                 ]}
               >
-                <Text style={[Typography.h1, { color: Colors.textOnPrimary, marginLeft: 2 }]}>→</Text>
+                <Ionicons name="arrow-forward" size={24} color={Colors.textOnPrimary} />
               </Pressable>
             </View>
           )}

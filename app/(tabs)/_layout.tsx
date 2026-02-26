@@ -171,8 +171,8 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
                 style={{
                   fontSize: 10,
                   fontFamily: Fonts.medium,
-                  color: Colors.tabInactive,
-                  marginTop: 4,
+                  color: Colors.primary,
+                  marginTop: 2,
                 }}
               >
                 {tab.label}

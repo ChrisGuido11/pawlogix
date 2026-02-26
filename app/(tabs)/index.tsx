@@ -12,11 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
+import { SwipeableRow } from '@/components/ui/swipeable-row';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { getRecordTypeLabel, formatDate, calculateAge } from '@/lib/utils';
+import { useDeleteRecord } from '@/hooks/useDeleteRecord';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
@@ -218,6 +220,8 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const handleDeleteRecord = useDeleteRecord(setRecentRecords);
+
   const greeting = new Date().getHours() < 12
     ? 'Good morning'
     : new Date().getHours() < 18
@@ -231,8 +235,6 @@ export default function HomeScreen() {
       headerProps={{
         title: `Welcome back! 👋`,
         subtitle: subtitleText,
-        rightIcon: 'notifications-outline',
-        onRightPress: () => {},
       }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
@@ -261,7 +263,7 @@ export default function HomeScreen() {
             <StaggeredCard index={1}>
               <Pressable
                 onPress={() => router.push('/record/scan')}
-                style={{ marginBottom: Spacing.xl }}
+                style={{ marginBottom: Spacing['2xl'] }}
               >
                 <LinearGradient
                   colors={Gradients.primaryCta}
@@ -315,75 +317,10 @@ export default function HomeScreen() {
               </Pressable>
             </StaggeredCard>
 
-            {/* C. Active Pet Card */}
-            <StaggeredCard index={2}>
-              <Card
-                onPress={() => router.push(`/pet/${activePet.id}` as any)}
-                variant="elevated"
-                style={{ marginBottom: Spacing.xl }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-                  {activePet.photo_url ? (
-                    <View style={[Shadows.md, { borderRadius: 32 }]}>
-                      <Image
-                        source={{ uri: activePet.photo_url }}
-                        style={{
-                          width: 64,
-                          height: 64,
-                          borderRadius: 32,
-                          borderWidth: 2,
-                          borderColor: Colors.primaryLight,
-                        }}
-                      />
-                    </View>
-                  ) : (
-                    <View
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 32,
-                        backgroundColor: Colors.primaryLight,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Ionicons name="paw" size={28} color={Colors.primary} />
-                    </View>
-                  )}
-
-                  <View style={{ flex: 1 }}>
-                    <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
-                      {activePet.name}
-                    </Text>
-                    <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
-                      {activePet.breed ?? activePet.species}
-                      {activePet.date_of_birth ? ` · ${calculateAge(activePet.date_of_birth)}` : ''}
-                    </Text>
-
-                    {/* Quick stats row */}
-                    <View style={{ flexDirection: 'row', gap: Spacing.sm, marginTop: Spacing.sm }}>
-                      {activePet.weight_kg && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: Colors.primaryLight, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
-                          <Ionicons name="scale-outline" size={12} color={Colors.primary} />
-                          <Text style={[Typography.caption, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>{activePet.weight_kg} kg</Text>
-                        </View>
-                      )}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, backgroundColor: Colors.successLight, paddingHorizontal: Spacing.sm, paddingVertical: 3, borderRadius: BorderRadius.pill }}>
-                        <Ionicons name="shield-checkmark-outline" size={12} color={Colors.success} />
-                        <Text style={[Typography.caption, { fontFamily: Fonts.semiBold, color: Colors.success }]}>Active</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
-                </View>
-              </Card>
-            </StaggeredCard>
-
             {/* D. Recent Records */}
-            <StaggeredCard index={3}>
+            <StaggeredCard index={2}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
-                <SectionLabel>Recent Records</SectionLabel>
+                <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>Recent Records</SectionLabel>
                 {recentRecords.length > 0 && (
                   <Pressable onPress={() => router.push('/(tabs)/records' as any)}>
                     <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>See all</Text>
@@ -426,46 +363,48 @@ export default function HomeScreen() {
                 </View>
               </Card>
             ) : (
-              <View style={{ gap: 10, marginBottom: Spacing.xl }}>
+              <View style={{ marginBottom: Spacing['2xl'] }}>
                 {recentRecords.map((record, idx) => (
-                  <StaggeredCard key={record.id} index={4 + idx}>
-                    <Card onPress={() => router.push(`/record/${record.id}` as any)}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                        {/* Severity accent strip */}
-                        <View
-                          style={{
-                            position: 'absolute',
-                            left: -16,
-                            top: 8,
-                            bottom: 8,
-                            width: 3,
-                            borderRadius: 2,
-                            backgroundColor: record.has_urgent_flags
-                              ? Colors.error
-                              : record.processing_status === 'completed'
-                                ? Colors.success
-                                : Colors.secondary,
-                          }}
-                        />
-                        <RecordIcon type={record.record_type} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
-                            {getRecordTypeLabel(record.record_type)}
-                          </Text>
-                          <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
-                            {formatDate(record.record_date)}
-                          </Text>
+                  <StaggeredCard key={record.id} index={3 + idx}>
+                    <SwipeableRow onDelete={() => handleDeleteRecord(record)}>
+                      <Card onPress={() => router.push(`/record/${record.id}` as any)}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                          {/* Severity accent strip */}
+                          <View
+                            style={{
+                              position: 'absolute',
+                              left: -16,
+                              top: 8,
+                              bottom: 8,
+                              width: 3,
+                              borderRadius: 2,
+                              backgroundColor: record.has_urgent_flags
+                                ? Colors.error
+                                : record.processing_status === 'completed'
+                                  ? Colors.success
+                                  : Colors.secondary,
+                            }}
+                          />
+                          <RecordIcon type={record.record_type} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
+                              {getRecordTypeLabel(record.record_type)}
+                            </Text>
+                            <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
+                              {formatDate(record.record_date)}
+                            </Text>
+                          </View>
+                          <StatusBadge record={record} />
                         </View>
-                        <StatusBadge record={record} />
-                      </View>
-                    </Card>
+                      </Card>
+                    </SwipeableRow>
                   </StaggeredCard>
                 ))}
               </View>
             )}
 
             {/* E. Health Snapshot — stat tiles */}
-            <StaggeredCard index={7}>
+            <StaggeredCard index={6}>
               <SectionLabel style={{ marginBottom: Spacing.md }}>Health Snapshot</SectionLabel>
               <View style={{ flexDirection: 'row', gap: Spacing.md }}>
                 <View
@@ -491,7 +430,7 @@ export default function HomeScreen() {
                   }}
                 >
                   <Ionicons name="calendar-outline" size={20} color={Colors.primary} style={{ marginBottom: Spacing.sm }} />
-                  <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: 2 }]}>Records</Text>
+                  <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: 2 }]}>Recent</Text>
                   <Text style={[Typography.sectionHeading, { color: Colors.textHeading }]}>
                     {recentRecords.length}
                   </Text>
@@ -501,7 +440,7 @@ export default function HomeScreen() {
 
             {/* F. Flagged items alert */}
             {recentRecords.some((r) => r.has_urgent_flags) && (
-              <StaggeredCard index={8}>
+              <StaggeredCard index={7}>
                 <Card style={{ marginTop: Spacing.xl }} variant="elevated">
                   <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm, marginLeft: Spacing.xs }}>

@@ -38,7 +38,8 @@
       "Bash(cd /c/Users/cguid/pawlogix-1 && npx supabase functions deploy pl-interpret-record --no-verify-jwt 2>&1)",
       "Bash(grep pl-interpret-record:*)",
       "Bash(tail:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npx skills:*)"
     ]
   }
 }

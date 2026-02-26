@@ -47,9 +47,9 @@ function SettingsRow({
     >
       <View
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
+          width: 40,
+          height: 40,
+          borderRadius: BorderRadius.button,
           backgroundColor: destructive ? Colors.errorLight : Colors.primaryLight,
           alignItems: 'center',
           justifyContent: 'center',
@@ -232,14 +232,14 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}
       >
         {/* Account Section */}
-        <SectionLabel style={{ marginBottom: Spacing.sm, marginTop: Spacing.sm }}>Account</SectionLabel>
+        <SectionLabel style={{ marginTop: Spacing.sm }}>Account</SectionLabel>
 
         {!isAnonymous ? (
           <Card className="mb-5" variant="elevated">
             <View className="flex-row items-center gap-3">
               <LinearGradient
                 colors={[...Gradients.primaryCta]}
-                style={{ width: 48, height: 48, borderRadius: BorderRadius.bottomSheet, alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 48, height: 48, borderRadius: BorderRadius.statTile, alignItems: 'center', justifyContent: 'center' }}
               >
                 <Ionicons name="person" size={24} color={Colors.textOnPrimary} />
               </LinearGradient>
@@ -259,9 +259,9 @@ export default function ProfileScreen() {
             <View className="flex-row items-center gap-3 mb-4">
               <View
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
+                  width: 48,
+                  height: 48,
+                  borderRadius: BorderRadius.statTile,
                   backgroundColor: Colors.primaryLight,
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -297,7 +297,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Notifications */}
-        <SectionLabel style={{ marginBottom: Spacing.sm, marginTop: Spacing.sm }}>Notifications</SectionLabel>
+        <SectionLabel>Notifications</SectionLabel>
         <Card className="mb-5">
           <SettingsRow
             icon="medical-outline"
@@ -306,7 +306,7 @@ export default function ProfileScreen() {
               <Switch
                 value={medReminders}
                 onValueChange={toggleMedReminders}
-                trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
+                trackColor={{ false: Colors.disabled, true: Colors.secondary }}
                 thumbColor={Colors.textOnPrimary}
               />
             }
@@ -319,7 +319,7 @@ export default function ProfileScreen() {
               <Switch
                 value={vaxReminders}
                 onValueChange={toggleVaxReminders}
-                trackColor={{ false: '#D1D5DB', true: Colors.secondary }}
+                trackColor={{ false: Colors.disabled, true: Colors.secondary }}
                 thumbColor={Colors.textOnPrimary}
               />
             }
@@ -327,7 +327,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Legal */}
-        <SectionLabel style={{ marginBottom: Spacing.sm }}>Legal</SectionLabel>
+        <SectionLabel>Legal</SectionLabel>
         <Card className="mb-5">
           <SettingsRow
             icon="shield-outline"
@@ -349,7 +349,7 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Data */}
-        <SectionLabel style={{ marginBottom: Spacing.sm }}>Data</SectionLabel>
+        <SectionLabel>Data</SectionLabel>
         <Card className="mb-5">
           <SettingsRow
             icon="download-outline"

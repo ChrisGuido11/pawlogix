@@ -70,6 +70,15 @@ export interface ExtractedValues {
   }>;
 }
 
+export interface AggregatedMedication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  sourceRecordId: string;
+  sourceRecordType: HealthRecord['record_type'];
+  sourceRecordDate: string;
+}
+
 export interface RecordChat {
   id: string;
   health_record_id: string;

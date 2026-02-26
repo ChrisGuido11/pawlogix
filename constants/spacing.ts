@@ -41,6 +41,13 @@ export const IconSize = {
   '4xl': 48,
 } as const;
 
+export const IconTile = {
+  /** Standard list items, settings rows, medication rows */
+  standard: 40,
+  /** Hero cards, feature tiles, quick actions */
+  large: 48,
+} as const;
+
 export const Shadows = {
   // Card shadow (default) — soft and diffused
   sm: Platform.select({

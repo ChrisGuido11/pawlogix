@@ -25,8 +25,8 @@ export function Card({
 
   const shadowStyle = variant === 'elevated' ? Shadows.lg : Shadows.md;
 
-  // Spec: bg-surface (#FFFFFF), rounded-2xl (16px), p-5 (20px), no border, shadow only
-  const baseStyles = 'bg-surface rounded-2xl p-5';
+  // Spec: bg-surface (#FFFFFF), rounded-2xl (16px), p-4 (16px), no border, shadow only
+  const baseStyles = 'bg-surface rounded-2xl p-4';
 
   if (onPress) {
     const handlePress = () => {
