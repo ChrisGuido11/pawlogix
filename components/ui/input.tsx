@@ -63,6 +63,8 @@ export function Input({
         }}
       >
         <TextInput
+          accessibilityLabel={label}
+          accessibilityHint={error || undefined}
           style={[
             Typography.body,
             {

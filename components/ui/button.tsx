@@ -49,6 +49,9 @@ export function Button({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={isDisabled}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={[
           animatedStyle,
           {
@@ -124,6 +127,9 @@ export function Button({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={isDisabled}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={[
           animatedStyle,
           baseStyle,
@@ -164,6 +170,9 @@ export function Button({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={isDisabled}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={[
           animatedStyle,
           baseStyle,
@@ -209,6 +218,9 @@ export function Button({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         disabled={isDisabled}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={[
           animatedStyle,
           baseStyle,
@@ -254,6 +266,9 @@ export function Button({
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={[
         animatedStyle,
         baseStyle,

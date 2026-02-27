@@ -189,19 +189,23 @@ export default function HomeScreen() {
   const [recentRecords, setRecentRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchRecent = useCallback(async () => {
     if (!user?.id || !activePet) return;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('pl_health_records')
         .select('*')
         .eq('pet_id', activePet.id)
         .order('created_at', { ascending: false })
         .limit(3);
+      if (error) throw error;
       setRecentRecords((data ?? []) as HealthRecord[]);
+      setFetchError(null);
     } catch (error) {
       console.error('Error fetching records:', error);
+      setFetchError("Couldn't load recent records. Pull down to try again.");
     }
   }, [user?.id, activePet?.id]);
 
@@ -255,6 +259,25 @@ export default function HomeScreen() {
               onAdd={() => router.push('/pet/create')}
             />
           </StaggeredCard>
+        )}
+
+        {fetchError && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: Spacing.sm,
+              backgroundColor: Colors.errorLight,
+              borderRadius: BorderRadius.button,
+              padding: Spacing.md,
+              marginBottom: Spacing.lg,
+            }}
+          >
+            <Ionicons name="alert-circle" size={20} color={Colors.error} />
+            <Text style={[Typography.secondary, { color: Colors.error, flex: 1 }]}>
+              {fetchError}
+            </Text>
+          </View>
         )}
 
         {activePet ? (

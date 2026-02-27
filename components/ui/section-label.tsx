@@ -10,7 +10,7 @@ interface SectionLabelProps {
 
 export function SectionLabel({ children, style }: SectionLabelProps) {
   return (
-    <Text style={[Typography.overline, { color: Colors.textMuted, marginTop: Spacing.xl, marginBottom: Spacing.md }, style]}>
+    <Text accessibilityRole="header" style={[Typography.overline, { color: Colors.textMuted, marginTop: Spacing.xl, marginBottom: Spacing.md }, style]}>
       {children}
     </Text>
   );

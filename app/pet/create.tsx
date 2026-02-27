@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable, TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable, TextInput, Alert } from 'react-native';
+import { useRouter, useNavigation } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,11 +25,40 @@ import * as Crypto from 'expo-crypto';
 import { File as ExpoFile } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 
+function formatDateInput(text: string): string {
+  const digits = text.replace(/\D/g, '');
+  const limited = digits.slice(0, 8);
+  if (limited.length <= 4) return limited;
+  if (limited.length <= 6) return `${limited.slice(0, 4)}-${limited.slice(4)}`;
+  return `${limited.slice(0, 4)}-${limited.slice(4, 6)}-${limited.slice(6)}`;
+}
+
+function validateDateOfBirth(value: string | undefined): string | undefined {
+  if (!value || value.length === 0) return undefined;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Use format YYYY-MM-DD';
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return 'Not a valid date';
+  }
+  const now = new Date();
+  if (date > now) return 'Date cannot be in the future';
+  const thirtyYearsAgo = new Date();
+  thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+  if (date < thirtyYearsAgo) return 'Date cannot be more than 30 years ago';
+  return undefined;
+}
+
 const petSchema = z.object({
   name: z.string().min(1, 'Pet name is required'),
   species: z.enum(['dog', 'cat']),
   breed: z.string().optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().optional().superRefine((val, ctx) => {
+    const error = validateDateOfBirth(val);
+    if (error) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+    }
+  }),
   weightKg: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -45,10 +74,30 @@ export default function PetCreateScreen() {
   const [breedSearch, setBreedSearch] = useState('');
   const [showBreedPicker, setShowBreedPicker] = useState(false);
 
-  const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<PetForm>({
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const navigation = useNavigation();
+
+  const { control, handleSubmit, watch, setValue, formState: { errors, isDirty } } = useForm<PetForm>({
     resolver: zodResolver(petSchema),
     defaultValues: { name: '', species: 'dog', breed: '', dateOfBirth: '', weightKg: '', notes: '' },
   });
+
+  useEffect(() => {
+    if (submitSuccess) return;
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      Alert.alert(
+        'Discard Changes?',
+        'You have unsaved changes. Are you sure you want to go back?',
+        [
+          { text: 'Keep Editing', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
+        ],
+      );
+    });
+    return unsubscribe;
+  }, [navigation, isDirty, submitSuccess]);
 
   const species = watch('species');
   const breeds = getBreedsBySpecies(species);
@@ -116,6 +165,7 @@ export default function PetCreateScreen() {
       if (error) throw error;
 
       await refreshPets();
+      setSubmitSuccess(true);
       toast({ title: `${data.name} added!`, preset: 'done' });
       router.replace('/(tabs)');
     } catch (error: any) {
@@ -282,10 +332,13 @@ export default function PetCreateScreen() {
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
                 label="Date of Birth"
-                placeholder="YYYY-MM-DD (approximate is fine)"
+                placeholder="YYYY-MM-DD"
                 value={value}
-                onChangeText={onChange}
+                onChangeText={(text: string) => onChange(formatDateInput(text))}
                 onBlur={onBlur}
+                keyboardType="number-pad"
+                maxLength={10}
+                error={errors.dateOfBirth?.message}
                 containerClassName="mb-4"
               />
             )}

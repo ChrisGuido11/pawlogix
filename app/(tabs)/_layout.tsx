@@ -13,6 +13,7 @@ import Animated, {
 import { Colors } from '@/constants/Colors';
 import { Shadows } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -111,6 +112,8 @@ function ScanButton({ onPress }: { onPress: () => void }) {
       onPressOut={() => {
         scale.value = withSpring(1, { damping: 12, stiffness: 200 });
       }}
+      accessibilityLabel="Scan new record"
+      accessibilityRole="button"
       style={[
         animStyle,
         Shadows.scanButton,
@@ -255,16 +258,18 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
 // --- Tab Layout ---
 export default function TabLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="pets" />
-      <Tabs.Screen name="records" />
-      <Tabs.Screen name="profile" />
-    </Tabs>
+    <ErrorBoundary>
+      <Tabs
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="pets" />
+        <Tabs.Screen name="records" />
+        <Tabs.Screen name="profile" />
+      </Tabs>
+    </ErrorBoundary>
   );
 }

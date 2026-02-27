@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Alert, Pressable, View, type AccessibilityActionEvent } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -74,21 +74,31 @@ export function SwipeableRow({ onDelete, children, enabled = true }: SwipeableRo
   }
 
   return (
-    <ReanimatedSwipeable
-      ref={swipeableRef}
-      friction={2}
-      rightThreshold={40}
-      overshootRight={false}
-      overshootFriction={8}
-      renderRightActions={(_progress, drag) => (
-        <DeleteAction progress={_progress} onPress={handleDelete} />
-      )}
-      onSwipeableWillOpen={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    <View
+      accessibilityActions={[{ name: 'delete', label: 'Delete' }]}
+      onAccessibilityAction={(event: AccessibilityActionEvent) => {
+        if (event.nativeEvent.actionName === 'delete') {
+          handleDelete();
+        }
       }}
-      containerStyle={{ overflow: 'visible' }}
+      accessibilityHint="Swipe left to delete"
     >
-      {children}
-    </ReanimatedSwipeable>
+      <ReanimatedSwipeable
+        ref={swipeableRef}
+        friction={2}
+        rightThreshold={40}
+        overshootRight={false}
+        overshootFriction={8}
+        renderRightActions={(_progress, drag) => (
+          <DeleteAction progress={_progress} onPress={handleDelete} />
+        )}
+        onSwipeableWillOpen={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        containerStyle={{ overflow: 'visible' }}
+      >
+        {children}
+      </ReanimatedSwipeable>
+    </View>
   );
 }

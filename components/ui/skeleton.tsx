@@ -35,6 +35,8 @@ export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) 
 
   return (
     <Animated.View
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
       style={[
         animatedStyle,
         {

@@ -13,6 +13,8 @@ interface DisclaimerBannerProps {
 export function DisclaimerBanner({ className = '' }: DisclaimerBannerProps) {
   return (
     <View
+      accessible={true}
+      accessibilityRole="text"
       style={{
         backgroundColor: Colors.primaryLight,
         borderRadius: BorderRadius.button,

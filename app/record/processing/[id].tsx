@@ -224,6 +224,22 @@ export default function RecordProcessingScreen() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
+      // Fetch actual pet species/breed instead of hardcoding
+      let petSpecies = 'dog';
+      let petBreed = 'unknown';
+      if (record.pet_id) {
+        const { data: pet } = await supabase
+          .from('pl_pets')
+          .select('species, breed')
+          .eq('id', record.pet_id)
+          .single();
+        if (pet) {
+          petSpecies = pet.species || 'dog';
+          petBreed = pet.breed || 'unknown';
+        }
+      }
+
       fetch(
         `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
         {
@@ -235,8 +251,8 @@ export default function RecordProcessingScreen() {
           body: JSON.stringify({
             record_id: id,
             image_urls: record.image_urls,
-            pet_species: 'dog',
-            pet_breed: 'unknown',
+            pet_species: petSpecies,
+            pet_breed: petBreed,
             record_type: record.record_type,
           }),
         }

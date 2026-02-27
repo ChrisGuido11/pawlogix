@@ -16,6 +16,7 @@ import {
 } from '@expo-google-fonts/nunito';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { PetProvider } from '@/lib/pet-context';
+import { ErrorBoundary as AppErrorBoundary } from '@/components/ui/error-boundary';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -99,11 +100,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <PetProvider>
-          <RootLayoutNav />
-        </PetProvider>
-      </AuthProvider>
+      <AppErrorBoundary>
+        <AuthProvider>
+          <PetProvider>
+            <RootLayoutNav />
+          </PetProvider>
+        </AuthProvider>
+      </AppErrorBoundary>
     </GestureHandlerRootView>
   );
 }

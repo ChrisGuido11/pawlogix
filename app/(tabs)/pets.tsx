@@ -14,7 +14,7 @@ import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { calculateAge } from '@/lib/utils';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Shadows, Spacing } from '@/constants/spacing';
+import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography } from '@/constants/typography';
 import type { PetProfile } from '@/types';
 
@@ -76,9 +76,16 @@ export default function PetsScreen() {
   const router = useRouter();
   const { pets, isLoading, refreshPets } = usePets();
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refreshPets();
+    try {
+      await refreshPets();
+      setFetchError(null);
+    } catch (error) {
+      console.error('Error refreshing pets:', error);
+      setFetchError("Couldn't load your pets. Pull down to try again.");
+    }
     setRefreshing(false);
   }, [refreshPets]);
 
@@ -107,6 +114,25 @@ export default function PetsScreen() {
       contentStyle={{ paddingHorizontal: 0 }}
     >
       <View style={{ flex: 1, paddingHorizontal: Spacing.lg }}>
+        {fetchError && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: Spacing.sm,
+              backgroundColor: Colors.errorLight,
+              borderRadius: BorderRadius.button,
+              padding: Spacing.md,
+              marginBottom: Spacing.md,
+            }}
+          >
+            <Ionicons name="alert-circle" size={20} color={Colors.error} />
+            <Text style={[Typography.secondary, { color: Colors.error, flex: 1 }]}>
+              {fetchError}
+            </Text>
+          </View>
+        )}
+
         {pets.length === 0 ? (
           <EmptyState
             illustration={require('@/assets/illustrations/mascot-sleeping.png')}

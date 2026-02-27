@@ -39,6 +39,8 @@ export function Card({
         onPress={handlePress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
+        accessible={true}
+        accessibilityRole="button"
         className={`${baseStyles} ${className}`}
         style={[shadowStyle, animatedStyle, style]}
       >
@@ -48,7 +50,7 @@ export function Card({
   }
 
   return (
-    <View className={`${baseStyles} ${className}`} style={[shadowStyle, style]}>
+    <View accessible={true} className={`${baseStyles} ${className}`} style={[shadowStyle, style]}>
       {children}
     </View>
   );

@@ -90,6 +90,7 @@ serve(async (req) => {
 7. Extract vaccination dates and medication schedules
 8. Write a "Summary for Pet Parent" in warm, reassuring but honest language
 9. Suggest 2-4 specific questions the owner could ask their vet
+10. Detect the primary record type from the document content. Choose one of: "lab_results", "vet_visit", "vaccine", "prescription", "other"
 
 CRITICAL RULES:
 - NEVER diagnose conditions. Only interpret what the document says.
@@ -113,7 +114,8 @@ Respond ONLY with valid JSON matching this exact schema:
     "vaccines": [],
     "medications": []
   },
-  "suggested_vet_questions": ["Question 1", "Question 2"]
+  "suggested_vet_questions": ["Question 1", "Question 2"],
+  "detected_record_type": "lab_results|vet_visit|vaccine|prescription|other"
 }`;
 
     console.log(`[pl-interpret] Downloaded ${imageContents.length} images, calling Anthropic API...`);
@@ -167,16 +169,28 @@ Respond ONLY with valid JSON matching this exact schema:
       (item: any) => item.severity === 'urgent'
     ) ?? false;
 
+    // Auto-correct record_type if AI detected a different type
+    const allowedTypes = ['lab_results', 'vet_visit', 'vaccine', 'prescription', 'other'];
+    const detectedType = interpretation.detected_record_type;
+    delete interpretation.detected_record_type;
+
+    const updatePayload: Record<string, any> = {
+      interpretation,
+      raw_text_extracted: responseText,
+      processing_status: 'completed',
+      flagged_items_count: flaggedCount,
+      has_urgent_flags: hasUrgent,
+    };
+
+    if (detectedType && allowedTypes.includes(detectedType)) {
+      updatePayload.record_type = detectedType;
+      console.log(`[pl-interpret] Auto-correcting record_type to: ${detectedType}`);
+    }
+
     // Update record with interpretation
     await adminClient
       .from('pl_health_records')
-      .update({
-        interpretation,
-        raw_text_extracted: responseText,
-        processing_status: 'completed',
-        flagged_items_count: flaggedCount,
-        has_urgent_flags: hasUrgent,
-      })
+      .update(updatePayload)
       .eq('id', record_id);
 
     console.log(`[pl-interpret] Record ${record_id} completed successfully`);

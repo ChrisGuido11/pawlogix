@@ -147,12 +147,14 @@ export default function PetDetailScreen() {
         .from('pl-pet-photos')
         .getPublicUrl(filePath);
 
-      await supabase.from('pl_pets').update({ photo_url: urlData.publicUrl }).eq('id', pet.id);
+      const { error: updateError } = await supabase.from('pl_pets').update({ photo_url: urlData.publicUrl }).eq('id', pet.id);
+      if (updateError) throw updateError;
+
       setPet({ ...pet, photo_url: urlData.publicUrl });
       await refreshPets();
     } catch (error: any) {
       console.error('Photo update error:', error);
-      Alert.alert('Error', error.message || 'Failed to update photo.');
+      Alert.alert('Photo Upload Failed', 'Could not update the photo. Please try again.');
     }
   };
 

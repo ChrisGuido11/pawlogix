@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -23,6 +23,8 @@ import { SectionLabel } from '@/components/ui/section-label';
 import * as Crypto from 'expo-crypto';
 import { File as ExpoFile } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
+
+const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB bucket limit
 
 const RECORD_TYPES = [
   { key: 'lab_results', label: 'Lab Results', icon: 'flask-outline' },
@@ -50,6 +52,53 @@ export default function RecordScanScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraRef, setCameraRef] = useState<CameraView | null>(null);
+  const navigation = useNavigation();
+  const submittedRef = useRef(false);
+
+  // Track whether the user has made changes worth warning about
+  const hasUnsavedWork = images.length > 0 || step !== 'choose';
+
+  // Form abandonment warning
+  useEffect(() => {
+    if (!hasUnsavedWork) return;
+
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      // Allow navigation after successful submission
+      if (submittedRef.current) return;
+      e.preventDefault();
+      Alert.alert(
+        'Discard changes?',
+        "You'll lose your selected images and details.",
+        [
+          { text: 'Keep Editing', style: 'cancel' },
+          {
+            text: 'Discard',
+            style: 'destructive',
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+        ]
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, hasUnsavedWork]);
+
+  // Validate image file sizes (max 10MB per image)
+  const validateImageSizes = async (uris: string[]): Promise<boolean> => {
+    for (let i = 0; i < uris.length; i++) {
+      const file = new ExpoFile(uris[i]);
+      const info = await file.info();
+      if (info.size && info.size > MAX_IMAGE_SIZE_BYTES) {
+        const sizeMB = (info.size / (1024 * 1024)).toFixed(1);
+        Alert.alert(
+          'Image too large',
+          `Image ${i + 1} is ${sizeMB}MB. The maximum allowed size is 10MB. Please choose a smaller image.`
+        );
+        return false;
+      }
+    }
+    return true;
+  };
 
   const takePhoto = async () => {
     if (!cameraRef) return;
@@ -92,6 +141,11 @@ export default function RecordScanScreen() {
 
   const uploadImages = async (recordId: string): Promise<string[]> => {
     if (!user) return [];
+
+    // Validate image sizes before uploading
+    const sizesValid = await validateImageSizes(images);
+    if (!sizesValid) throw new Error('Image size validation failed.');
+
     const urls: string[] = [];
 
     for (let i = 0; i < images.length; i++) {
@@ -137,8 +191,13 @@ export default function RecordScanScreen() {
       } = await supabase.auth.getSession();
       const pet = pets.find((p) => p.id === selectedPetId);
 
-      // Fire and forget — don't block navigation to the processing screen.
-      // The edge function updates DB status directly; the processing screen polls for it.
+      // Navigate to processing screen immediately — it polls for completion.
+      submittedRef.current = true;
+      router.replace(`/record/processing/${recordId}` as any);
+
+      // Fire-and-forget: kick off the edge function in background.
+      // The processing screen polls the DB for status updates.
+      // Errors are written to the DB so the processing screen can display them.
       fetch(
         `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
         {
@@ -155,26 +214,27 @@ export default function RecordScanScreen() {
             record_type: selectedType,
           }),
         }
-      )
-        .then(async (fnResponse) => {
-          if (!fnResponse.ok) {
-            let errorMsg = 'Failed to start analysis.';
-            try {
-              const body = await fnResponse.json();
-              if (body?.error) errorMsg = body.error;
-            } catch {}
-            await supabase.from('pl_health_records')
-              .update({ processing_status: 'failed', processing_error: errorMsg })
-              .eq('id', recordId);
-          }
-        })
-        .catch(async () => {
-          await supabase.from('pl_health_records')
-            .update({ processing_status: 'failed', processing_error: 'Could not reach analysis service.' })
+      ).then(async (fnResponse) => {
+        if (!fnResponse.ok) {
+          let errorMsg = 'Failed to start analysis.';
+          try {
+            const body = await fnResponse.json();
+            if (body?.error) errorMsg = body.error;
+          } catch {}
+          await supabase
+            .from('pl_health_records')
+            .update({ processing_status: 'failed', processing_error: errorMsg })
             .eq('id', recordId);
-        });
-
-      router.replace(`/record/processing/${recordId}` as any);
+        }
+      }).catch(async () => {
+        await supabase
+          .from('pl_health_records')
+          .update({
+            processing_status: 'failed',
+            processing_error: 'Could not reach analysis service. Check your connection.',
+          })
+          .eq('id', recordId);
+      });
     } catch (error: any) {
       toast({
         title: 'Upload failed',
@@ -314,7 +374,14 @@ export default function RecordScanScreen() {
             {step === 'preview' && (
               <Button
                 title="Continue"
-                onPress={() => setStep('details')}
+                onPress={() => {
+                  if (images.length === 0) {
+                    Alert.alert('No images selected', 'Please add at least one image of your record before continuing.');
+                    return;
+                  }
+                  setStep('details');
+                }}
+                disabled={images.length === 0}
                 className="mb-4"
               />
             )}
@@ -324,9 +391,12 @@ export default function RecordScanScreen() {
         {/* Step: Details */}
         {step === 'details' && (
           <>
-            <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.md }}>
-              Record Type
+            <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.xs }}>
+              What type of record is this?
             </SectionLabel>
+            <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: Spacing.md }]}>
+              Our AI will auto-detect the content, so don't worry if you're unsure.
+            </Text>
             <View className="flex-row flex-wrap gap-2 mb-5">
               {RECORD_TYPES.map((type) => {
                 const isSelected = selectedType === type.key;

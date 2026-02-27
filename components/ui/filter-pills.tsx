@@ -100,6 +100,9 @@ export function FilterPills({
               const { x, width } = e.nativeEvent.layout;
               handleLayout(option, x, width);
             }}
+            accessibilityRole="tab"
+            accessibilityLabel={option}
+            accessibilityState={{ selected: selected === option }}
             style={{
               paddingVertical: Spacing.md,
               paddingHorizontal: Spacing.lg,

@@ -87,24 +87,34 @@ export default function ProfileScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const toggleMedReminders = async (value: boolean) => {
+    const previous = medReminders;
     setMedReminders(value);
     Haptics.selectionAsync();
     if (user?.id) {
-      await supabase
+      const { error } = await supabase
         .from('pl_profiles')
         .update({ notification_med_reminders: value })
         .eq('id', user.id);
+      if (error) {
+        setMedReminders(previous);
+        toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
+      }
     }
   };
 
   const toggleVaxReminders = async (value: boolean) => {
+    const previous = vaxReminders;
     setVaxReminders(value);
     Haptics.selectionAsync();
     if (user?.id) {
-      await supabase
+      const { error } = await supabase
         .from('pl_profiles')
         .update({ notification_vax_reminders: value })
         .eq('id', user.id);
+      if (error) {
+        setVaxReminders(previous);
+        toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
+      }
     }
   };
 
@@ -160,33 +170,96 @@ export default function ProfileScreen() {
 
   const confirmDelete = async () => {
     setIsDeleting(true);
+    const completed: string[] = [];
+    const failed: string[] = [];
+
     try {
       if (!user?.id) return;
 
-      await supabase.from('pl_record_chats').delete().eq('user_id', user.id);
-      await supabase.from('pl_health_records').delete().eq('user_id', user.id);
+      // 1. Delete chat messages
+      try {
+        const { error } = await supabase.from('pl_record_chats').delete().eq('user_id', user.id);
+        if (error) throw error;
+        completed.push('chat messages');
+      } catch {
+        failed.push('chat messages');
+      }
 
-      const { data: petPhotos } = await supabase.storage
-        .from('pl-pet-photos')
-        .list(user.id);
-      if (petPhotos?.length) {
-        await supabase.storage
+      // 2. Delete health records
+      try {
+        const { error } = await supabase.from('pl_health_records').delete().eq('user_id', user.id);
+        if (error) throw error;
+        completed.push('health records');
+      } catch {
+        failed.push('health records');
+      }
+
+      // 3. Delete pet photos from storage
+      try {
+        const { data: petPhotos } = await supabase.storage
           .from('pl-pet-photos')
-          .remove(petPhotos.map((f) => `${user.id}/${f.name}`));
+          .list(user.id);
+        if (petPhotos?.length) {
+          const { error } = await supabase.storage
+            .from('pl-pet-photos')
+            .remove(petPhotos.map((f) => `${user.id}/${f.name}`));
+          if (error) throw error;
+        }
+        completed.push('pet photos');
+      } catch {
+        failed.push('pet photos');
       }
 
-      const { data: recordImages } = await supabase.storage
-        .from('pl-record-images')
-        .list(user.id);
-      if (recordImages?.length) {
-        await supabase.storage
+      // 4. Delete record images from storage
+      try {
+        const { data: recordImages } = await supabase.storage
           .from('pl-record-images')
-          .remove(recordImages.map((f) => `${user.id}/${f.name}`));
+          .list(user.id);
+        if (recordImages?.length) {
+          const { error } = await supabase.storage
+            .from('pl-record-images')
+            .remove(recordImages.map((f) => `${user.id}/${f.name}`));
+          if (error) throw error;
+        }
+        completed.push('record images');
+      } catch {
+        failed.push('record images');
       }
 
-      await supabase.from('pl_pets').delete().eq('user_id', user.id);
-      await supabase.from('pl_usage_tracking').delete().eq('user_id', user.id);
-      await supabase.from('pl_profiles').delete().eq('id', user.id);
+      // 5. Delete pets
+      try {
+        const { error } = await supabase.from('pl_pets').delete().eq('user_id', user.id);
+        if (error) throw error;
+        completed.push('pets');
+      } catch {
+        failed.push('pets');
+      }
+
+      // 6. Delete usage tracking
+      try {
+        const { error } = await supabase.from('pl_usage_tracking').delete().eq('user_id', user.id);
+        if (error) throw error;
+        completed.push('usage data');
+      } catch {
+        failed.push('usage data');
+      }
+
+      // 7. Delete profile
+      try {
+        const { error } = await supabase.from('pl_profiles').delete().eq('id', user.id);
+        if (error) throw error;
+        completed.push('profile');
+      } catch {
+        failed.push('profile');
+      }
+
+      if (failed.length > 0) {
+        Alert.alert(
+          'Partial Deletion',
+          `Some data could not be deleted: ${failed.join(', ')}. Please contact support for help removing the remaining data.`
+        );
+        return;
+      }
 
       await AsyncStorage.removeItem('pawlogix_onboarding_complete');
       await signOut();
@@ -195,7 +268,7 @@ export default function ProfileScreen() {
       toast({ title: 'Account deleted', preset: 'done' });
       router.replace('/onboarding');
     } catch (error: any) {
-      toast({ title: 'Error', message: error.message, preset: 'error' });
+      toast({ title: 'Deletion failed', message: error.message, preset: 'error' });
     } finally {
       setIsDeleting(false);
     }
@@ -214,12 +287,11 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const showToastPlaceholder = (item: string) => {
-    toast({
-      title: item,
-      message: 'Link not configured — will be updated before launch',
-      preset: 'none',
-    });
+  const showComingSoon = (item: string) => {
+    Alert.alert(
+      'Coming Soon',
+      `${item} will be available when PawLogix launches.`
+    );
   };
 
   return (
@@ -332,19 +404,19 @@ export default function ProfileScreen() {
           <SettingsRow
             icon="shield-outline"
             label="Privacy Policy"
-            onPress={() => showToastPlaceholder('Privacy Policy')}
+            onPress={() => showComingSoon('Privacy Policy')}
           />
           <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="document-text-outline"
             label="Terms of Service"
-            onPress={() => showToastPlaceholder('Terms of Service')}
+            onPress={() => showComingSoon('Terms of Service')}
           />
           <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="help-circle-outline"
             label="Support & FAQ"
-            onPress={() => showToastPlaceholder('Support & FAQ')}
+            onPress={() => showComingSoon('Support & FAQ')}
           />
         </Card>
 

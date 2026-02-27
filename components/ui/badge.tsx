@@ -69,6 +69,8 @@ export function Badge({ label, variant = 'primary', size = 'md', className = '' 
 
   return (
     <Animated.View
+      accessibilityRole="text"
+      accessibilityLabel={variant === 'urgent' ? `Urgent: ${label}` : variant === 'watch' ? `Watch: ${label}` : label}
       style={[
         {
           backgroundColor: config.bg,

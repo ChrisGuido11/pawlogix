@@ -167,10 +167,12 @@ export default function RecordChatScreen() {
         .single();
 
       const { data: { session } } = await supabase.auth.getSession();
-      const chatHistory = messages.map((m) => ({
+      const MAX_CHAT_HISTORY = 20;
+      const allHistory = messages.map((m) => ({
         role: m.role,
         content: m.content,
       }));
+      const chatHistory = allHistory.slice(-MAX_CHAT_HISTORY);
 
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-health-chat`,

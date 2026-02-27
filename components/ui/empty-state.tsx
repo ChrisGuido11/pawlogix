@@ -33,7 +33,11 @@ export function EmptyState({
   const blobSize = 180;
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['3xl'], paddingVertical: Spacing['5xl'] }}>
+    <View
+      accessible={true}
+      accessibilityLabel={subtitle ? `${title}. ${subtitle}` : title}
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['3xl'], paddingVertical: Spacing['5xl'] }}
+    >
       {/* Illustration or placeholder */}
       {illustration ? (
         <View style={{ width: illustrationSize, height: illustrationSize, borderRadius: illustrationSize / 2, overflow: 'hidden' }}>
