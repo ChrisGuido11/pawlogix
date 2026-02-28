@@ -67,26 +67,14 @@ const TAB_CONFIG = [
     iconFilled: 'home' as const,
   },
   {
-    name: 'pets',
-    label: 'Health',
-    iconOutline: 'heart-outline' as const,
-    iconFilled: 'heart' as const,
-  },
-  {
     name: 'scan', // Special elevated button
     label: 'Scan',
     iconOutline: 'camera-outline' as const,
     iconFilled: 'camera' as const,
   },
   {
-    name: 'records',
-    label: 'Records',
-    iconOutline: 'document-text-outline' as const,
-    iconFilled: 'document-text' as const,
-  },
-  {
     name: 'profile',
-    label: 'Profile',
+    label: 'Settings',
     iconOutline: 'person-outline' as const,
     iconFilled: 'person' as const,
   },
@@ -184,12 +172,10 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         }
 
         // Map tab config name to actual route index
-        // Routes in state: index(0)=index, index(1)=pets, index(2)=records, index(3)=profile
+        // Routes in state: index(0)=index, index(1)=profile
         const routeNameMap: Record<string, number> = {
           index: 0,
-          pets: 1,
-          records: 2,
-          profile: 3,
+          profile: 1,
         };
         const routeIndex = routeNameMap[tab.name];
         const isFocused = routeIndex !== undefined && state.index === routeIndex;
@@ -266,8 +252,6 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen name="index" />
-        <Tabs.Screen name="pets" />
-        <Tabs.Screen name="records" />
         <Tabs.Screen name="profile" />
       </Tabs>
     </ErrorBoundary>

@@ -97,9 +97,10 @@ CRITICAL RULES:
 - ALWAYS recommend consulting the veterinarian for medical decisions.
 - Use warm, empowering language — not clinical or scary.
 - If you cannot read part of the document, say so clearly.
+- You MUST populate extracted_values with ALL medications, lab values, and vaccines found in the document. Do NOT leave these arrays/objects empty if the document contains relevant data. Every medication mentioned must appear in medications, every numeric lab result in lab_values, and every vaccine in vaccines.
 - Species: ${pet_species}, Breed: ${pet_breed}, Record Type: ${record_type}
 
-Respond ONLY with valid JSON matching this exact schema:
+Respond ONLY with valid JSON matching this exact schema (example values shown — replace with actual data from the document):
 {
   "summary": "Plain English summary paragraph for the pet parent",
   "interpreted_sections": [
@@ -109,10 +110,17 @@ Respond ONLY with valid JSON matching this exact schema:
     { "item": "Item name", "value": "measured value", "normal_range": "expected range", "severity": "info|watch|urgent", "explanation": "What this means..." }
   ],
   "extracted_values": {
-    "weight_kg": null,
-    "lab_values": {},
-    "vaccines": [],
-    "medications": []
+    "weight_kg": 12.5,
+    "lab_values": {
+      "BUN": { "value": 18, "unit": "mg/dL", "date": "2025-01-15" },
+      "ALT": { "value": 45, "unit": "U/L", "date": "2025-01-15" }
+    },
+    "vaccines": [
+      { "name": "Rabies", "date_given": "2025-01-15", "next_due": "2026-01-15" }
+    ],
+    "medications": [
+      { "name": "Carprofen", "dosage": "25mg", "frequency": "Twice daily" }
+    ]
   },
   "suggested_vet_questions": ["Question 1", "Question 2"],
   "detected_record_type": "lab_results|vet_visit|vaccine|prescription|other"

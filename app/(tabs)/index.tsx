@@ -1,28 +1,37 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
-import { SwipeableRow } from '@/components/ui/swipeable-row';
+import { FilterPills } from '@/components/ui/filter-pills';
+import { SectionLabel } from '@/components/ui/section-label';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
-import { getRecordTypeLabel, formatDate, calculateAge } from '@/lib/utils';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
+import { RecordCard } from '@/components/records/record-card';
+import { MedicationCard, LabValueCard, VaccineCard } from '@/components/records/content-cards';
+import {
+  FILTER_OPTIONS,
+  CONTENT_FILTERS,
+  FILTER_EMPTY_STATES,
+  recordMatchesFilter,
+  flattenContentItems,
+} from '@/lib/record-filters';
+import type { ContentItem } from '@/lib/record-filters';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
-import { SectionLabel } from '@/components/ui/section-label';
 import type { HealthRecord } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -35,11 +44,13 @@ function PetSelectorBar({
   pets,
   activePet,
   onSelect,
+  onLongPress,
   onAdd,
 }: {
   pets: any[];
   activePet: any;
   onSelect: (pet: any) => void;
+  onLongPress: (pet: any) => void;
   onAdd: () => void;
 }) {
   return (
@@ -57,6 +68,10 @@ function PetSelectorBar({
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onSelect(pet);
+            }}
+            onLongPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onLongPress(pet);
             }}
             style={{ alignItems: 'center', width: 64 }}
           >
@@ -144,307 +159,285 @@ function PetSelectorBar({
   );
 }
 
-// ---------- Record Icon ----------
-function RecordIcon({ type }: { type: string }) {
-  const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
-    lab_results: 'flask',
-    vet_visit: 'medkit',
-    vaccine: 'shield-checkmark',
-    prescription: 'document',
-    other: 'document-text',
-  };
-
-  return (
-    <View
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: BorderRadius.button,
-        backgroundColor: Colors.primaryLight,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Ionicons name={iconMap[type] || 'document-text'} size={20} color={Colors.primary} />
-    </View>
-  );
-}
-
-// ---------- Status Badge ----------
-function StatusBadge({ record }: { record: HealthRecord }) {
-  if (record.processing_status === 'completed') {
-    return <Ionicons name="checkmark-circle" size={22} color={Colors.success} />;
-  }
-  if (record.processing_status === 'failed') {
-    return <Badge label="Failed" variant="urgent" />;
-  }
-  return <Badge label="Processing" variant="watch" />;
-}
-
 // ---------- Home Screen ----------
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { activePet, pets, setActivePet, isLoading: petsLoading } = usePets();
-  const [recentRecords, setRecentRecords] = useState<HealthRecord[]>([]);
+  const [records, setRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState('All');
 
-  const fetchRecent = useCallback(async () => {
+  const isContentFilter = (CONTENT_FILTERS as readonly string[]).includes(activeFilter);
+
+  const filteredRecords = useMemo(() => {
+    if (activeFilter === 'All') return records;
+    return records.filter((r) => recordMatchesFilter(r, activeFilter));
+  }, [records, activeFilter]);
+
+  const contentItems = useMemo(() => {
+    if (!isContentFilter) return [];
+    return flattenContentItems(records, activeFilter);
+  }, [records, activeFilter, isContentFilter]);
+
+  // Reset filter when pet changes
+  useEffect(() => {
+    setActiveFilter('All');
+  }, [activePet?.id]);
+
+  const fetchRecords = useCallback(async () => {
     if (!user?.id || !activePet) return;
     try {
       const { data, error } = await supabase
         .from('pl_health_records')
         .select('*')
         .eq('pet_id', activePet.id)
-        .order('created_at', { ascending: false })
-        .limit(3);
+        .order('record_date', { ascending: false });
       if (error) throw error;
-      setRecentRecords((data ?? []) as HealthRecord[]);
+      setRecords((data ?? []) as HealthRecord[]);
       setFetchError(null);
     } catch (error) {
       console.error('Error fetching records:', error);
-      setFetchError("Couldn't load recent records. Pull down to try again.");
+      setFetchError("Couldn't load records. Pull down to try again.");
     }
   }, [user?.id, activePet?.id]);
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
-      await fetchRecent();
+      await fetchRecords();
       setIsLoading(false);
     };
     load();
-  }, [fetchRecent]);
+  }, [fetchRecords]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchRecent();
+    await fetchRecords();
     setRefreshing(false);
   };
 
-  const handleDeleteRecord = useDeleteRecord(setRecentRecords);
-
-  const greeting = new Date().getHours() < 12
-    ? 'Good morning'
-    : new Date().getHours() < 18
-      ? 'Good afternoon'
-      : 'Good evening';
+  const handleDeleteRecord = useDeleteRecord(setRecords);
 
   const subtitleText = activePet ? `How is ${activePet.name} today?` : '';
 
-  return (
-    <CurvedHeaderPage
-      headerProps={{
-        title: `Welcome back! 👋`,
-        subtitle: subtitleText,
-      }}
-      contentStyle={{ paddingHorizontal: 0 }}
-    >
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: Spacing.lg, paddingBottom: 100 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-        }
-      >
-        {/* A. Pet Selector Bar */}
-        {pets.length > 0 && (
-          <StaggeredCard index={0}>
-            <PetSelectorBar
-              pets={pets}
-              activePet={activePet}
-              onSelect={setActivePet}
-              onAdd={() => router.push('/pet/create')}
-            />
-          </StaggeredCard>
-        )}
+  const hasFlaggedItems = records.some((r) => r.has_urgent_flags);
 
-        {fetchError && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: Spacing.sm,
-              backgroundColor: Colors.errorLight,
-              borderRadius: BorderRadius.button,
-              padding: Spacing.md,
-              marginBottom: Spacing.lg,
-            }}
-          >
-            <Ionicons name="alert-circle" size={20} color={Colors.error} />
-            <Text style={[Typography.secondary, { color: Colors.error, flex: 1 }]}>
-              {fetchError}
-            </Text>
-          </View>
-        )}
+  // Determine which data + renderItem to use for the FlashList
+  const listData: (HealthRecord | ContentItem)[] = isContentFilter ? contentItems : filteredRecords;
 
-        {activePet ? (
-          <>
-            {/* B. Hero CTA Card — Scan a Record */}
-            <StaggeredCard index={1}>
-              <Pressable
-                onPress={() => router.push('/record/scan')}
-                style={{ marginBottom: Spacing['2xl'] }}
+  const renderItem = useCallback(({ item, index }: { item: HealthRecord | ContentItem; index: number }) => {
+    if ('kind' in item) {
+      switch (item.kind) {
+        case 'medication':
+          return <MedicationCard item={item} index={index} />;
+        case 'lab_value':
+          return <LabValueCard item={item} index={index} />;
+        case 'vaccine':
+          return <VaccineCard item={item} index={index} />;
+      }
+    }
+    return (
+      <RecordCard
+        record={item as HealthRecord}
+        onPress={() => router.push(`/record/${(item as HealthRecord).id}` as any)}
+        onDelete={handleDeleteRecord}
+        index={index}
+      />
+    );
+  }, [router, handleDeleteRecord]);
+
+  const keyExtractor = useCallback((item: HealthRecord | ContentItem, index: number) => {
+    if ('kind' in item) {
+      return `${item.kind}-${item.sourceRecordId}-${item.name}-${index}`;
+    }
+    return (item as HealthRecord).id;
+  }, []);
+
+  // --- Header component for FlashList ---
+  const ListHeader = useMemo(() => (
+    <View style={{ paddingHorizontal: Spacing.lg }}>
+      {/* A. Pet Selector Bar */}
+      {pets.length > 0 && (
+        <StaggeredCard index={0}>
+          <PetSelectorBar
+            pets={pets}
+            activePet={activePet}
+            onSelect={setActivePet}
+            onLongPress={(pet) => router.push(`/pet/${pet.id}` as any)}
+            onAdd={() => router.push('/pet/create')}
+          />
+        </StaggeredCard>
+      )}
+
+      {fetchError && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: Spacing.sm,
+            backgroundColor: Colors.errorLight,
+            borderRadius: BorderRadius.button,
+            padding: Spacing.md,
+            marginBottom: Spacing.lg,
+          }}
+        >
+          <Ionicons name="alert-circle" size={20} color={Colors.error} />
+          <Text style={[Typography.secondary, { color: Colors.error, flex: 1 }]}>
+            {fetchError}
+          </Text>
+        </View>
+      )}
+
+      {activePet && (
+        <>
+          {/* B. Hero CTA Card — Scan a Record */}
+          <StaggeredCard index={1}>
+            <Pressable
+              onPress={() => router.push('/record/scan')}
+              style={{ marginBottom: Spacing['2xl'] }}
+            >
+              <LinearGradient
+                colors={Gradients.primaryCta}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[
+                  {
+                    borderRadius: BorderRadius.heroCard,
+                    padding: Spacing.xl,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    overflow: 'hidden',
+                  },
+                  Shadows.lg,
+                ]}
               >
-                <LinearGradient
-                  colors={Gradients.primaryCta}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={[
-                    {
-                      borderRadius: BorderRadius.heroCard,
-                      padding: Spacing.xl,
+                <View style={{ flex: 1 }}>
+                  <Text style={[Typography.sectionHeading, { color: Colors.textOnPrimary, marginBottom: Spacing.xs }]}>
+                    Scan your pet's
+                  </Text>
+                  <Text style={[Typography.sectionHeading, { color: Colors.textOnPrimary, marginBottom: Spacing.md }]}>
+                    vet record!
+                  </Text>
+                  <View
+                    style={{
+                      backgroundColor: Colors.surface,
+                      paddingHorizontal: Spacing['2xl'],
+                      paddingVertical: Spacing.md,
+                      borderRadius: BorderRadius.pill,
                       flexDirection: 'row',
                       alignItems: 'center',
-                      overflow: 'hidden',
-                    },
-                    Shadows.lg,
-                  ]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[Typography.sectionHeading, { color: Colors.textOnPrimary, marginBottom: Spacing.xs }]}>
-                      Scan your pet's
+                      alignSelf: 'flex-start',
+                      gap: Spacing.sm,
+                    }}
+                  >
+                    <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>
+                      Scan Now
                     </Text>
-                    <Text style={[Typography.sectionHeading, { color: Colors.textOnPrimary, marginBottom: Spacing.md }]}>
-                      vet record!
-                    </Text>
-                    <View
-                      style={{
-                        backgroundColor: Colors.surface,
-                        paddingHorizontal: Spacing['2xl'],
-                        paddingVertical: Spacing.md,
-                        borderRadius: BorderRadius.pill,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        alignSelf: 'flex-start',
-                        gap: Spacing.sm,
-                      }}
-                    >
-                      <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>
-                        Scan Now
-                      </Text>
-                      <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
-                    </View>
+                    <Ionicons name="arrow-forward" size={16} color={Colors.primary} />
                   </View>
+                </View>
 
-                  <View style={{ width: 110, height: 110, borderRadius: 55, overflow: 'hidden' }}>
-                    <Image
-                      source={require('@/assets/illustrations/mascot-stethoscope.png')}
-                      style={{ width: 110, height: 110 }}
-                      contentFit="cover"
-                    />
-                  </View>
-                </LinearGradient>
-              </Pressable>
-            </StaggeredCard>
+                <View style={{ width: 110, height: 110, borderRadius: 55, overflow: 'hidden' }}>
+                  <Image
+                    source={require('@/assets/illustrations/mascot-stethoscope.png')}
+                    style={{ width: 110, height: 110 }}
+                    contentFit="cover"
+                  />
+                </View>
+              </LinearGradient>
+            </Pressable>
+          </StaggeredCard>
 
-            {/* D. Recent Records */}
+          {/* C. Flagged items alert */}
+          {hasFlaggedItems && (
             <StaggeredCard index={2}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.md }}>
-                <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>Recent Records</SectionLabel>
-                {recentRecords.length > 0 && (
-                  <Pressable onPress={() => router.push('/(tabs)/records' as any)} hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}>
-                    <Text style={[Typography.secondary, { fontFamily: Fonts.semiBold, color: Colors.primary }]}>See all</Text>
-                  </Pressable>
-                )}
-              </View>
-            </StaggeredCard>
-
-            {isLoading ? (
-              <View style={{ gap: Spacing.md }}>
-                {[0, 1].map((i) => (
-                  <Card key={i}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
-                      <Skeleton width={40} height={40} />
-                      <View style={{ flex: 1, gap: 8 }}>
-                        <Skeleton height={16} width="75%" />
-                        <Skeleton height={12} width="50%" />
-                      </View>
-                      <Skeleton width={22} height={22} />
-                    </View>
-                  </Card>
-                ))}
-              </View>
-            ) : recentRecords.length === 0 ? (
-              <Card>
-                <View style={{ alignItems: 'center', paddingVertical: Spacing['2xl'] }}>
-                  <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: Spacing.md }}>
-                    <Image
-                      source={require('@/assets/illustrations/mascot-confused.png')}
-                      style={{ width: 120, height: 120 }}
-                      contentFit="cover"
-                    />
-                  </View>
-                  <Text style={[Typography.body, { fontFamily: Fonts.semiBold, color: Colors.textHeading, marginBottom: Spacing.xs }]}>
-                    No records yet
-                  </Text>
-                  <Text style={[Typography.secondary, { color: Colors.textBody, textAlign: 'center' }]}>
-                    Scan your first vet record to get started
+              <Card style={{ marginBottom: Spacing.lg }} variant="elevated">
+                <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm, marginLeft: Spacing.xs }}>
+                  <Ionicons name="warning" size={20} color={Colors.warning} />
+                  <Text style={[Typography.buttonPrimary, { color: Colors.textHeading }]}>
+                    Attention Needed
                   </Text>
                 </View>
+                <Text style={[Typography.secondary, { color: Colors.textBody, marginLeft: Spacing.xs }]}>
+                  Some records have flagged items that may need your vet's attention.
+                </Text>
               </Card>
-            ) : (
-              <View style={{ marginBottom: Spacing['2xl'] }}>
-                {recentRecords.map((record, idx) => (
-                  <StaggeredCard key={record.id} index={3 + idx}>
-                    <SwipeableRow onDelete={() => handleDeleteRecord(record)}>
-                      <Card onPress={() => router.push(`/record/${record.id}` as any)}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
-                          {/* Severity accent strip */}
-                          <View
-                            style={{
-                              position: 'absolute',
-                              left: -16,
-                              top: 8,
-                              bottom: 8,
-                              width: 3,
-                              borderRadius: 2,
-                              backgroundColor: record.has_urgent_flags
-                                ? Colors.error
-                                : record.processing_status === 'completed'
-                                  ? Colors.success
-                                  : Colors.secondary,
-                            }}
-                          />
-                          <RecordIcon type={record.record_type} />
-                          <View style={{ flex: 1 }}>
-                            <Text style={[Typography.buttonPrimary, { fontFamily: Fonts.semiBold, color: Colors.textHeading }]}>
-                              {getRecordTypeLabel(record.record_type)}
-                            </Text>
-                            <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: 2 }]}>
-                              {formatDate(record.record_date)}
-                            </Text>
-                          </View>
-                          <StatusBadge record={record} />
-                        </View>
-                      </Card>
-                    </SwipeableRow>
-                  </StaggeredCard>
-                ))}
-              </View>
-            )}
+            </StaggeredCard>
+          )}
 
-            {/* E. Flagged items alert */}
-            {recentRecords.some((r) => r.has_urgent_flags) && (
-              <StaggeredCard index={6}>
-                <Card style={{ marginTop: Spacing.xl }} variant="elevated">
-                  <View style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3, borderRadius: 2, backgroundColor: Colors.warning }} />
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm, marginLeft: Spacing.xs }}>
-                    <Ionicons name="warning" size={20} color={Colors.warning} />
-                    <Text style={[Typography.buttonPrimary, { color: Colors.textHeading }]}>
-                      Attention Needed
-                    </Text>
-                  </View>
-                  <Text style={[Typography.secondary, { color: Colors.textBody, marginLeft: Spacing.xs }]}>
-                    Some recent records have flagged items that may need your vet's attention.
-                  </Text>
-                </Card>
-              </StaggeredCard>
-            )}
-          </>
-        ) : (
+          {/* D. Records section label with count */}
+          <StaggeredCard index={3}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm }}>
+              <SectionLabel style={{ marginTop: 0, marginBottom: 0 }}>Records</SectionLabel>
+              {records.length > 0 && (
+                <Badge label={`${records.length}`} variant="primary" size="sm" />
+              )}
+            </View>
+          </StaggeredCard>
+        </>
+      )}
+    </View>
+  ), [pets, activePet, fetchError, hasFlaggedItems, records.length, router, setActivePet]);
+
+  // --- Empty component ---
+  const ListEmpty = useMemo(() => {
+    if (isLoading) return null;
+
+    if (isContentFilter) {
+      return (
+        <View style={{ paddingHorizontal: Spacing.lg }}>
+          <EmptyState
+            illustration={require('@/assets/illustrations/mascot-confused.png')}
+            icon="document-text-outline"
+            title={FILTER_EMPTY_STATES[activeFilter]?.title ?? `No ${activeFilter.toLowerCase()} found`}
+            subtitle={FILTER_EMPTY_STATES[activeFilter]?.subtitle ?? 'Try selecting a different filter.'}
+          />
+        </View>
+      );
+    }
+
+    if (activeFilter !== 'All') {
+      return (
+        <View style={{ paddingHorizontal: Spacing.lg }}>
+          <EmptyState
+            illustration={require('@/assets/illustrations/mascot-confused.png')}
+            icon="document-text-outline"
+            title={`No ${activeFilter.toLowerCase()} found`}
+            subtitle="Try selecting a different filter."
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View style={{ paddingHorizontal: Spacing.lg }}>
+        <EmptyState
+          illustration={require('@/assets/illustrations/mascot-sleeping.png')}
+          icon="document-text-outline"
+          title="No records yet"
+          subtitle={`Scan ${activePet?.name ?? 'your pet'}'s first vet record to get started.`}
+          actionLabel="Scan a Record"
+          onAction={() => router.push('/record/scan')}
+        />
+      </View>
+    );
+  }, [isLoading, isContentFilter, activeFilter, activePet?.name, router]);
+
+  // --- No pets state ---
+  if (!petsLoading && pets.length === 0) {
+    return (
+      <CurvedHeaderPage
+        headerProps={{
+          title: 'Welcome back! 👋',
+          subtitle: '',
+        }}
+        contentStyle={{ paddingHorizontal: 0 }}
+      >
+        <View style={{ flex: 1, paddingHorizontal: Spacing.lg }}>
           <EmptyState
             illustration={require('@/assets/illustrations/mascot-welcome.png')}
             icon="paw-outline"
@@ -453,8 +446,76 @@ export default function HomeScreen() {
             actionLabel="Add a Pet"
             onAction={() => router.push('/pet/create')}
           />
-        )}
-      </ScrollView>
+        </View>
+      </CurvedHeaderPage>
+    );
+  }
+
+  // --- Loading skeleton ---
+  if (isLoading && records.length === 0) {
+    return (
+      <CurvedHeaderPage
+        headerProps={{
+          title: 'Welcome back! 👋',
+          subtitle: subtitleText,
+        }}
+        contentStyle={{ paddingHorizontal: 0 }}
+      >
+        <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm }}>
+          {pets.length > 0 && (
+            <PetSelectorBar
+              pets={pets}
+              activePet={activePet}
+              onSelect={setActivePet}
+              onLongPress={(pet) => router.push(`/pet/${pet.id}` as any)}
+              onAdd={() => router.push('/pet/create')}
+            />
+          )}
+          {[0, 1, 2].map((i) => (
+            <Card key={i} style={{ marginBottom: Spacing.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.md }}>
+                <Skeleton width={40} height={40} />
+                <View style={{ flex: 1, gap: 8 }}>
+                  <Skeleton height={16} width="75%" />
+                  <Skeleton height={12} width="50%" />
+                </View>
+                <Skeleton width={22} height={22} />
+              </View>
+            </Card>
+          ))}
+        </View>
+      </CurvedHeaderPage>
+    );
+  }
+
+  return (
+    <CurvedHeaderPage
+      headerProps={{
+        title: 'Welcome back! 👋',
+        subtitle: subtitleText,
+        children: activePet ? (
+          <FilterPills
+            options={[...FILTER_OPTIONS]}
+            selected={activeFilter}
+            onSelect={setActiveFilter}
+          />
+        ) : undefined,
+      }}
+      contentStyle={{ paddingHorizontal: 0 }}
+    >
+      <View style={{ flex: 1 }}>
+        <FlashList
+          data={listData}
+          renderItem={renderItem}
+          keyExtractor={keyExtractor}
+          ListHeaderComponent={ListHeader}
+          ListEmptyComponent={ListEmpty}
+          contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: Spacing.lg }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
+        />
+      </View>
     </CurvedHeaderPage>
   );
 }
