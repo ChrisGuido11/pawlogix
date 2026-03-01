@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
@@ -10,6 +10,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '@/components/ui/card';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -112,6 +113,9 @@ export default function RecordChatScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const listRef = useRef<FlashListRef<ChatMessage>>(null);
+  const insets = useSafeAreaInsets();
+  // CurvedHeader height: insets.top + lg(16) + row(44) + xs(4) + 5xl(48), minus -32 curved overlap
+  const keyboardOffset = insets.top + Spacing.lg + 44 + Spacing.xs + Spacing['5xl'] - 32;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,6 +148,7 @@ export default function RecordChatScreen() {
     if (!input.trim() || !id || !user || isSending) return;
     const messageText = input.trim();
     setInput('');
+    Keyboard.dismiss();
     setIsSending(true);
 
     const userMessage: ChatMessage = {
@@ -281,9 +286,9 @@ export default function RecordChatScreen() {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? keyboardOffset : 0}
         >
           {/* Messages */}
           <View style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing['2xl'] }}>
@@ -326,6 +331,8 @@ export default function RecordChatScreen() {
                 data={messages}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.id}
+                estimatedItemSize={80}
+                contentContainerStyle={{ paddingBottom: Spacing.sm }}
                 onContentSizeChange={() =>
                   listRef.current?.scrollToEnd({ animated: true })
                 }
@@ -334,7 +341,7 @@ export default function RecordChatScreen() {
           </View>
 
           {/* Input */}
-          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }]}>
+          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md + insets.bottom }]}>
             <DisclaimerBanner className="mb-2" />
             <View className="flex-row items-end gap-2">
               <TextInput
