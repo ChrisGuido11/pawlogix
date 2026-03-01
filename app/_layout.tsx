@@ -2,6 +2,7 @@ import '../global.css';
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -17,6 +18,8 @@ import {
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { PetProvider } from '@/lib/pet-context';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ui/error-boundary';
+import { setupNotificationChannel } from '@/lib/notifications';
+import { useNotificationSync } from '@/hooks/useNotificationSync';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -30,6 +33,27 @@ function RootLayoutNav() {
   const { isLoading } = useAuth();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  // Notification channel setup (Android)
+  useEffect(() => {
+    setupNotificationChannel();
+  }, []);
+
+  // Auto-schedule vaccine & med reminders
+  useNotificationSync();
+
+  // Handle notification taps — navigate to pet detail
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const data = response.notification.request.content.data;
+        if (data?.petId) {
+          router.push(`/pet/${data.petId}` as any);
+        }
+      }
+    );
+    return () => subscription.remove();
+  }, [router]);
 
   useEffect(() => {
     const checkOnboarding = async () => {

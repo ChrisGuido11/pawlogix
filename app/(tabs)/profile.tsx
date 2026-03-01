@@ -14,6 +14,11 @@ import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
+import {
+  requestNotificationPermissions,
+  cancelNotificationsByType,
+  cancelAllNotifications,
+} from '@/lib/notifications';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius, IconTile } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
@@ -90,6 +95,18 @@ export default function ProfileScreen() {
     const previous = medReminders;
     setMedReminders(value);
     Haptics.selectionAsync();
+
+    if (value) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        setMedReminders(previous);
+        toast({ title: 'Notifications Blocked', message: 'Please enable notifications in your device settings.', preset: 'error' });
+        return;
+      }
+    } else {
+      await cancelNotificationsByType('med_reminder');
+    }
+
     if (user?.id) {
       const { error } = await supabase
         .from('pl_profiles')
@@ -106,6 +123,18 @@ export default function ProfileScreen() {
     const previous = vaxReminders;
     setVaxReminders(value);
     Haptics.selectionAsync();
+
+    if (value) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        setVaxReminders(previous);
+        toast({ title: 'Notifications Blocked', message: 'Please enable notifications in your device settings.', preset: 'error' });
+        return;
+      }
+    } else {
+      await cancelNotificationsByType('vaccine_reminder');
+    }
+
     if (user?.id) {
       const { error } = await supabase
         .from('pl_profiles')
@@ -261,6 +290,7 @@ export default function ProfileScreen() {
         return;
       }
 
+      await cancelAllNotifications();
       await AsyncStorage.removeItem('pawlogix_onboarding_complete');
       await signOut();
 

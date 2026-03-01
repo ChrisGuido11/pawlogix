@@ -39,7 +39,8 @@
       "Bash(grep pl-interpret-record:*)",
       "Bash(tail:*)",
       "Bash(python:*)",
-      "Bash(npx skills:*)"
+      "Bash(npx skills:*)",
+      "WebFetch(domain:skills.sh)"
     ]
   }
 }

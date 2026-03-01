@@ -20,6 +20,9 @@ import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
 import { calculateAge, getRecordTypeLabel, formatDate } from '@/lib/utils';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
+import { getMedReminderSchedules, type MedReminderSchedule } from '@/lib/notifications';
+import { cancelNotificationsForPet } from '@/lib/notifications';
+import { MedicationReminderModal } from '@/components/medication-reminder-modal';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
@@ -74,6 +77,27 @@ export default function PetDetailScreen() {
   const { medications, isLoading: medsLoading, refresh } = usePetMedications(id);
   const handleDeleteRecord = useDeleteRecord(setRecords);
 
+  // Medication reminder modal state
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [selectedMed, setSelectedMed] = useState<{ name: string; dosage: string; frequency: string } | null>(null);
+  const [activeReminders, setActiveReminders] = useState<Set<string>>(new Set());
+
+  const loadActiveReminders = useCallback(async () => {
+    if (!id) return;
+    const schedules = await getMedReminderSchedules();
+    const active = new Set<string>();
+    for (const s of schedules) {
+      if (s.petId === id) {
+        active.add(s.medicationName);
+      }
+    }
+    setActiveReminders(active);
+  }, [id]);
+
+  useEffect(() => {
+    loadActiveReminders();
+  }, [loadActiveReminders]);
+
   const handleDelete = () => {
     Alert.alert(
       'Remove Pet',
@@ -85,6 +109,7 @@ export default function PetDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             if (!id) return;
+            await cancelNotificationsForPet(id);
             await supabase.from('pl_pets').update({ is_active: false }).eq('id', id);
             await refreshPets();
             router.back();
@@ -335,6 +360,21 @@ export default function PetDetailScreen() {
                           {getRecordTypeLabel(med.sourceRecordType)} · {formatDate(med.sourceRecordDate)}
                         </Text>
                       </View>
+                      <Pressable
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          setSelectedMed({ name: med.name, dosage: med.dosage, frequency: med.frequency });
+                          setReminderModalVisible(true);
+                        }}
+                        hitSlop={8}
+                        style={{ padding: Spacing.xs }}
+                      >
+                        <Ionicons
+                          name={activeReminders.has(med.name) ? 'notifications' : 'notifications-outline'}
+                          size={20}
+                          color={activeReminders.has(med.name) ? Colors.primary : Colors.textMuted}
+                        />
+                      </Pressable>
                       <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
                     </View>
                   </Card>
@@ -414,6 +454,21 @@ export default function PetDetailScreen() {
           )}
         </ScrollView>
       </View>
+
+      {selectedMed && pet && (
+        <MedicationReminderModal
+          visible={reminderModalVisible}
+          onClose={() => {
+            setReminderModalVisible(false);
+            loadActiveReminders();
+          }}
+          petId={pet.id}
+          petName={pet.name}
+          medicationName={selectedMed.name}
+          dosage={selectedMed.dosage}
+          frequency={selectedMed.frequency}
+        />
+      )}
     </View>
   );
 }
