@@ -32,7 +32,7 @@ import type { ContentItem } from '@/lib/record-filters';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
-import type { HealthRecord } from '@/types';
+import type { HealthRecord, PetProfile } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
   const animStyle = useStaggeredEntrance(index);
@@ -47,10 +47,10 @@ function PetSelectorBar({
   onLongPress,
   onAdd,
 }: {
-  pets: any[];
-  activePet: any;
-  onSelect: (pet: any) => void;
-  onLongPress: (pet: any) => void;
+  pets: PetProfile[];
+  activePet: PetProfile | null;
+  onSelect: (pet: PetProfile) => void;
+  onLongPress: (pet: PetProfile) => void;
   onAdd: () => void;
 }) {
   return (
@@ -223,7 +223,7 @@ export default function HomeScreen() {
 
   const subtitleText = activePet ? `How is ${activePet.name} today?` : '';
 
-  const hasFlaggedItems = records.some((r) => r.has_urgent_flags);
+  const hasFlaggedItems = filteredRecords.some((r) => r.has_urgent_flags);
 
   // Determine which data + renderItem to use for the FlashList
   const listData: (HealthRecord | ContentItem)[] = isContentFilter ? contentItems : filteredRecords;
@@ -381,7 +381,7 @@ export default function HomeScreen() {
         </>
       )}
     </View>
-  ), [pets, activePet, fetchError, hasFlaggedItems, records.length, router, setActivePet]);
+  ), [pets, activePet, fetchError, hasFlaggedItems, records.length, router]);
 
   // --- Empty component ---
   const ListEmpty = useMemo(() => {

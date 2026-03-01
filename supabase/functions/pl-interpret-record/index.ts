@@ -98,6 +98,7 @@ CRITICAL RULES:
 - Use warm, empowering language — not clinical or scary.
 - If you cannot read part of the document, say so clearly.
 - You MUST populate extracted_values with ALL medications, lab values, and vaccines found in the document. Do NOT leave these arrays/objects empty if the document contains relevant data. Every medication mentioned must appear in medications, every numeric lab result in lab_values, and every vaccine in vaccines.
+- Do NOT create placeholder or empty entries. Only include a medication in the medications array if you can identify a specific drug name from the document. If no specific medications are mentioned, leave the medications array empty.
 - Species: ${pet_species}, Breed: ${pet_breed}, Record Type: ${record_type}
 
 Respond ONLY with valid JSON matching this exact schema (example values shown — replace with actual data from the document):

@@ -172,6 +172,7 @@ export default function RecordDetailScreen() {
   }
 
   const interpretation = record.interpretation;
+  const validMedications = (interpretation?.extracted_values?.medications ?? []).filter(m => m.name?.trim());
 
   return (
     <CurvedHeaderPage
@@ -316,12 +317,12 @@ export default function RecordDetailScreen() {
             )}
 
             {/* Medications */}
-            {(interpretation.extracted_values?.medications ?? []).length > 0 && (
+            {validMedications.length > 0 && (
               <View style={{ marginBottom: Spacing['2xl'] }}>
                 <SectionLabel>
                   Medications
                 </SectionLabel>
-                {(interpretation.extracted_values?.medications ?? []).map(
+                {validMedications.map(
                   (med, index) => (
                     <StaggeredCard key={index} index={4 + index}>
                       <Card className="mb-2">

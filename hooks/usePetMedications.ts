@@ -27,6 +27,7 @@ export function usePetMedications(petId: string | undefined) {
         const meds = interp?.extracted_values?.medications;
         if (!meds?.length) continue;
         for (const med of meds) {
+          if (!med.name?.trim()) continue;
           allMeds.push({
             name: med.name,
             dosage: med.dosage,
