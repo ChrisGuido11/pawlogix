@@ -60,6 +60,21 @@ export const FILTER_EMPTY_STATES: Record<string, { title: string; subtitle: stri
   },
 };
 
+// --- Vaccine status utilities (shared with content-cards.tsx) ---
+
+export type VaccineStatus = 'overdue' | 'upcoming' | 'current' | null;
+
+export function getVaccineStatus(nextDue: string | undefined): VaccineStatus {
+  if (!nextDue) return null;
+  const now = new Date();
+  const dueDate = new Date(nextDue);
+  if (isNaN(dueDate.getTime())) return null;
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  if (dueDate < now) return 'overdue';
+  if (dueDate < thirtyDaysFromNow) return 'upcoming';
+  return 'current';
+}
+
 export function recordMatchesFilter(record: HealthRecord, filter: string): boolean {
   const ev = record.interpretation?.extracted_values;
 
@@ -189,6 +204,24 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
         }
       }
     }
+  }
+
+  // Post-processing: deduplicate vaccines by name
+  if (filter === 'Vaccines') {
+    const deduped = new Map<string, VaccineItem>();
+    for (const item of items as VaccineItem[]) {
+      const key = item.name.toLowerCase().trim();
+      const existing = deduped.get(key);
+      if (!existing) {
+        deduped.set(key, item);
+      } else {
+        // Keep the entry with the latest nextDue date
+        if (item.nextDue && (!existing.nextDue || new Date(item.nextDue) > new Date(existing.nextDue))) {
+          deduped.set(key, item);
+        }
+      }
+    }
+    return Array.from(deduped.values());
   }
 
   return items;

@@ -10,7 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, BorderRadius, IconSize, IconTile } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import type { FlaggedItem } from '@/types';
-import type { MedicationItem, LabValueItem, VaccineItem } from '@/lib/record-filters';
+import { getVaccineStatus, type VaccineStatus, type MedicationItem, type LabValueItem, type VaccineItem } from '@/lib/record-filters';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -36,19 +36,6 @@ export function FlagDetails({ flags }: { flags: FlaggedItem[] }) {
       ))}
     </>
   );
-}
-
-type VaccineStatus = 'overdue' | 'upcoming' | 'current' | null;
-
-export function getVaccineStatus(nextDue: string | undefined): VaccineStatus {
-  if (!nextDue) return null;
-  const now = new Date();
-  const dueDate = new Date(nextDue);
-  if (isNaN(dueDate.getTime())) return null;
-  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  if (dueDate < now) return 'overdue';
-  if (dueDate < thirtyDaysFromNow) return 'upcoming';
-  return 'current';
 }
 
 export const VACCINE_STATUS_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; label: string }> = {

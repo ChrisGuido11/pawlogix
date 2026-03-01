@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurvedHeader } from '@/components/ui/curved-header';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -106,6 +107,7 @@ export default function RecordChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [record, setRecord] = useState<HealthRecord | null>(null);
   const [input, setInput] = useState('');
@@ -139,6 +141,14 @@ export default function RecordChatScreen() {
     };
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    const event = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const sub = Keyboard.addListener(event, () => {
+      listRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => sub.remove();
+  }, []);
 
   const sendMessage = async () => {
     if (!input.trim() || !id || !user || isSending) return;
@@ -281,9 +291,9 @@ export default function RecordChatScreen() {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + Spacing.lg + 44 + Spacing.xs + Spacing['5xl'] - 32 : 0}
         >
           {/* Messages */}
           <View style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing['2xl'] }}>
@@ -326,6 +336,7 @@ export default function RecordChatScreen() {
                 data={messages}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.id}
+                keyboardShouldPersistTaps="handled"
                 onContentSizeChange={() =>
                   listRef.current?.scrollToEnd({ animated: true })
                 }
@@ -334,7 +345,7 @@ export default function RecordChatScreen() {
           </View>
 
           {/* Input */}
-          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }]}>
+          <View style={[Shadows.sm, { backgroundColor: Colors.surface, paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.md + insets.bottom }]}>
             <DisclaimerBanner className="mb-2" />
             <View className="flex-row items-end gap-2">
               <TextInput
