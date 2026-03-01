@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, TextInput, Pressable, Platform, Keyboard } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
@@ -8,6 +8,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -114,8 +115,30 @@ export default function RecordChatScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const listRef = useRef<FlashListRef<ChatMessage>>(null);
   const insets = useSafeAreaInsets();
-  // CurvedHeader height: insets.top + lg(16) + row(44) + xs(4) + 5xl(48), minus -32 curved overlap
-  const keyboardOffset = insets.top + Spacing.lg + 44 + Spacing.xs + Spacing['5xl'] - 32;
+  const keyboardPadding = useSharedValue(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      // Subtract insets.bottom because the input container already includes it
+      const height = e.endCoordinates.height - insets.bottom;
+      keyboardPadding.value = withTiming(height, { duration: 250 });
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      keyboardPadding.value = withTiming(0, { duration: 200 });
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [insets.bottom]);
+
+  const keyboardStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboardPadding.value,
+  }));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -285,11 +308,7 @@ export default function RecordChatScreen() {
           borderTopRightRadius: BorderRadius.curvedHeader,
         }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? keyboardOffset : 0}
-        >
+        <Animated.View style={[{ flex: 1 }, keyboardStyle]}>
           {/* Messages */}
           <View style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing['2xl'] }}>
             {isLoading ? (
@@ -368,7 +387,7 @@ export default function RecordChatScreen() {
               />
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </Animated.View>
       </View>
     </View>
   );
