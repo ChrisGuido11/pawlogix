@@ -91,6 +91,8 @@ serve(async (req) => {
 8. Write a "Summary for Pet Parent" in warm, reassuring but honest language
 9. Suggest 2-4 specific questions the owner could ask their vet
 10. Detect the primary record type from the document content. Choose one of: "lab_results", "vet_visit", "vaccine", "prescription", "other"
+11. Extract the date of the visit, exam, or test from the document (YYYY-MM-DD). If multiple dates appear, use the primary visit/exam date. If no date is found, omit this field.
+12. Extract the patient's breed and date of birth if visible on the document. For age mentions like "3 year old", compute an approximate date of birth from the document date. If the document says the breed, extract it exactly as written.
 
 CRITICAL RULES:
 - NEVER diagnose conditions. Only interpret what the document says.
@@ -111,6 +113,9 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
     { "item": "Item name", "value": "measured value", "normal_range": "expected range", "severity": "info|watch|urgent", "explanation": "What this means..." }
   ],
   "extracted_values": {
+    "record_date": "2025-02-15",
+    "breed": "Golden Retriever",
+    "date_of_birth": "2022-01-15",
     "weight_kg": 12.5,
     "lab_values": {
       "BUN": { "value": 18, "unit": "mg/dL", "date": "2025-01-15" },
@@ -183,6 +188,20 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
     const detectedType = interpretation.detected_record_type;
     delete interpretation.detected_record_type;
 
+    // --- Extract transient fields from extracted_values BEFORE storing ---
+    // These are consumed here and removed so they don't persist in the interpretation JSON.
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+    const extractedDate = interpretation.extracted_values?.record_date;
+    if (interpretation.extracted_values) delete interpretation.extracted_values.record_date;
+
+    const extractedBreed = interpretation.extracted_values?.breed;
+    if (interpretation.extracted_values) delete interpretation.extracted_values.breed;
+
+    const extractedDob = interpretation.extracted_values?.date_of_birth;
+    if (interpretation.extracted_values) delete interpretation.extracted_values.date_of_birth;
+
+    // --- Build the primary update payload (must always succeed) ---
     const updatePayload: Record<string, any> = {
       interpretation,
       raw_text_extracted: responseText,
@@ -196,13 +215,74 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
       console.log(`[pl-interpret] Auto-correcting record_type to: ${detectedType}`);
     }
 
+    // Only add record_date to payload if it's a valid YYYY-MM-DD string
+    if (typeof extractedDate === 'string' && ISO_DATE_RE.test(extractedDate) && !isNaN(new Date(extractedDate).getTime())) {
+      updatePayload.record_date = extractedDate;
+      console.log(`[pl-interpret] Updating record_date to: ${extractedDate}`);
+    }
+
     // Update record with interpretation
-    await adminClient
+    const { error: updateError } = await adminClient
       .from('pl_health_records')
       .update(updatePayload)
       .eq('id', record_id);
 
+    if (updateError) {
+      // If the full update fails (e.g., invalid record_date), retry without record_date
+      console.error(`[pl-interpret] Update failed: ${updateError.message}, retrying without record_date`);
+      delete updatePayload.record_date;
+      const { error: retryError } = await adminClient
+        .from('pl_health_records')
+        .update(updatePayload)
+        .eq('id', record_id);
+      if (retryError) throw new Error(`DB update failed: ${retryError.message}`);
+    }
+
     console.log(`[pl-interpret] Record ${record_id} completed successfully`);
+
+    // --- Sync extracted pet profile fields (non-blocking) ---
+    try {
+      const petUpdates: Record<string, any> = {};
+
+      const extractedWeight = interpretation.extracted_values?.weight_kg;
+      if (typeof extractedWeight === 'number' && extractedWeight > 0) {
+        petUpdates.weight_kg = extractedWeight;
+      }
+
+      if (extractedBreed || extractedDob || Object.keys(petUpdates).length > 0) {
+        const { data: rec } = await adminClient
+          .from('pl_health_records')
+          .select('pet_id')
+          .eq('id', record_id)
+          .single();
+
+        if (rec?.pet_id) {
+          // Only fill breed/DOB if pet's current value is null
+          if (extractedBreed || extractedDob) {
+            const { data: pet } = await adminClient
+              .from('pl_pets')
+              .select('breed, date_of_birth')
+              .eq('id', rec.pet_id)
+              .single();
+
+            if (typeof extractedBreed === 'string' && extractedBreed && !pet?.breed) {
+              petUpdates.breed = extractedBreed;
+            }
+            if (typeof extractedDob === 'string' && ISO_DATE_RE.test(extractedDob) && !isNaN(new Date(extractedDob).getTime()) && !pet?.date_of_birth) {
+              petUpdates.date_of_birth = extractedDob;
+            }
+          }
+
+          if (Object.keys(petUpdates).length > 0) {
+            await adminClient.from('pl_pets').update(petUpdates).eq('id', rec.pet_id);
+            console.log(`[pl-interpret] Updated pet ${rec.pet_id}:`, Object.keys(petUpdates));
+          }
+        }
+      }
+    } catch (petErr: any) {
+      // Pet profile sync is best-effort â€” never block the main flow
+      console.error(`[pl-interpret] Pet profile sync error (non-fatal): ${petErr.message}`);
+    }
 
     return new Response(JSON.stringify({ success: true, interpretation }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

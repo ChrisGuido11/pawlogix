@@ -52,6 +52,9 @@ export interface FlaggedItem {
 }
 
 export interface ExtractedValues {
+  record_date?: string;       // Extracted then moved to health record
+  breed?: string;             // Extracted then moved to pet profile
+  date_of_birth?: string;     // Extracted then moved to pet profile
   weight_kg?: number;
   lab_values?: Record<string, {
     value: number;
