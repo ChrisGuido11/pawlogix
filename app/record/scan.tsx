@@ -186,55 +186,9 @@ export default function RecordScanScreen() {
 
       if (error) throw error;
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const pet = pets.find((p) => p.id === selectedPetId);
-
-      // Navigate to processing screen immediately — it polls for completion.
+      // Navigate to processing screen — it owns edge function invocation and polling.
       submittedRef.current = true;
       router.replace(`/record/processing/${recordId}` as any);
-
-      // Fire-and-forget: kick off the edge function in background.
-      // The processing screen polls the DB for status updates.
-      // Errors are written to the DB so the processing screen can display them.
-      fetch(
-        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            record_id: recordId,
-            image_urls: imageUrls,
-            pet_species: pet?.species ?? 'dog',
-            pet_breed: pet?.breed ?? 'unknown',
-            record_type: selectedType,
-          }),
-        }
-      ).then(async (fnResponse) => {
-        if (!fnResponse.ok) {
-          let errorMsg = 'Failed to start analysis.';
-          try {
-            const body = await fnResponse.json();
-            if (body?.error) errorMsg = body.error;
-          } catch {}
-          await supabase
-            .from('pl_health_records')
-            .update({ processing_status: 'failed', processing_error: errorMsg })
-            .eq('id', recordId);
-        }
-      }).catch(async () => {
-        await supabase
-          .from('pl_health_records')
-          .update({
-            processing_status: 'failed',
-            processing_error: 'Could not reach analysis service. Check your connection.',
-          })
-          .eq('id', recordId);
-      });
     } catch (error: any) {
       toast({
         title: 'Upload failed',

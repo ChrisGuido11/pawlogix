@@ -100,6 +100,7 @@ CRITICAL RULES:
 - Use warm, empowering language â€” not clinical or scary.
 - If you cannot read part of the document, say so clearly.
 - You MUST populate extracted_values with ALL medications, lab values, and vaccines found in the document. Do NOT leave these arrays/objects empty if the document contains relevant data. Every medication mentioned must appear in medications, every numeric lab result in lab_values, and every vaccine in vaccines.
+- For vaccines: ANY mention of a vaccine name (Rabies, DHPP, DAPP, Bordetella, Leptospirosis, Lyme, Canine Influenza, FVRCP, FeLV, etc.) counts â€” even in a vet visit summary, vaccination history section, or list of services rendered. If the document says a vaccine was given, is due, or is recorded in the patient's history, it MUST appear in the vaccines array with whatever dates are available.
 - Do NOT create placeholder or empty entries. Only include a medication in the medications array if you can identify a specific drug name from the document. If no specific medications are mentioned, leave the medications array empty.
 - Species: ${pet_species}, Breed: ${pet_breed}, Record Type: ${record_type}
 
@@ -134,8 +135,14 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
 
     console.log(`[pl-interpret] Downloaded ${imageContents.length} images, calling Anthropic API...`);
 
+    // Abort if the API doesn't respond within 60s so the catch block can
+    // update the DB to 'failed' before Supabase kills the edge function.
+    const controller = new AbortController();
+    const apiTimeout = setTimeout(() => controller.abort(), 60_000);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'x-api-key': anthropicKey,
         'anthropic-version': '2023-06-01',
@@ -158,6 +165,7 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
     });
 
     const aiData = await response.json();
+    clearTimeout(apiTimeout);
     console.log(`[pl-interpret] API responded: status=${response.status}`);
 
     if (!response.ok) {

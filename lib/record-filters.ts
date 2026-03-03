@@ -1,4 +1,3 @@
-import { getRecordTypeLabel } from '@/lib/utils';
 import { Colors } from '@/constants/Colors';
 import type { HealthRecord, FlaggedItem, InterpretedSection } from '@/types';
 
@@ -85,8 +84,15 @@ export function recordMatchesFilter(record: HealthRecord, filter: string): boole
       return (ev?.lab_values && Object.keys(ev.lab_values).length > 0) || record.record_type === 'lab_results';
     case 'Vet Records':
       return record.record_type === 'vet_visit';
-    case 'Vaccines':
-      return (ev?.vaccines && ev.vaccines.length > 0) || record.record_type === 'vaccine';
+    case 'Vaccines': {
+      if ((ev?.vaccines && ev.vaccines.length > 0) || record.record_type === 'vaccine') return true;
+      // Also match if sections/flags mention vaccines (fallback content exists)
+      const pattern = FALLBACK_PATTERNS.Vaccines;
+      const sections = record.interpretation?.interpreted_sections ?? [];
+      const flags = record.interpretation?.flagged_items ?? [];
+      return sections.some(s => pattern.test(s.title ?? '') || pattern.test(s.plain_english_content ?? ''))
+        || flags.some(f => pattern.test(f.item ?? '') || pattern.test(f.explanation ?? ''));
+    }
     default:
       return true;
   }
@@ -117,10 +123,10 @@ export const severityColor = (record: HealthRecord) => {
 
 export function flattenContentItems(records: HealthRecord[], filter: string): ContentItem[] {
   const items: ContentItem[] = [];
+  const pattern = FALLBACK_PATTERNS[filter];
 
   for (const record of records) {
     if (record.processing_status !== 'completed' || !record.interpretation) continue;
-    if (!recordMatchesFilter(record, filter)) continue;
 
     const ev = record.interpretation.extracted_values;
     const flags = record.interpretation.flagged_items ?? [];
@@ -155,52 +161,39 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
     }
 
     // Fallback: synthesize cards from interpreted_sections and flagged_items
-    if (!addedItems) {
-      const pattern = FALLBACK_PATTERNS[filter];
-      if (pattern) {
-        for (const section of sections) {
-          const title = section.title ?? '';
-          const content = section.plain_english_content ?? '';
-          if (pattern.test(title) || pattern.test(content)) {
-            if (filter === 'Prescriptions') {
-              items.push({ kind: 'medication', name: title || 'Medication Info', dosage: '', frequency: '', relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
-              addedItems = true;
-            } else if (filter === 'Lab Results') {
-              items.push({ kind: 'lab_value', name: title || 'Lab Results', value: 0, unit: '', date: record.record_date, relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
-              addedItems = true;
-            } else if (filter === 'Vaccines') {
-              items.push({ kind: 'vaccine', name: title || 'Vaccine Info', dateGiven: record.record_date, nextDue: '', relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
-              addedItems = true;
-            }
-          }
-        }
-
-        for (const flag of flags) {
-          const flagName = flag.item ?? '';
-          const flagExplanation = flag.explanation ?? '';
-          if (pattern.test(flagName) || pattern.test(flagExplanation)) {
-            if (filter === 'Prescriptions') {
-              items.push({ kind: 'medication', name: flagName || 'Flagged Medication', dosage: flag.value || '', frequency: '', relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
-              addedItems = true;
-            } else if (filter === 'Lab Results') {
-              items.push({ kind: 'lab_value', name: flagName || 'Flagged Lab Value', value: 0, unit: flag.value || '', date: record.record_date, relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
-              addedItems = true;
-            } else if (filter === 'Vaccines') {
-              items.push({ kind: 'vaccine', name: flagName || 'Flagged Vaccine', dateGiven: record.record_date, nextDue: '', relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
-              addedItems = true;
-            }
+    // when primary extraction found nothing
+    if (!addedItems && pattern) {
+      for (const section of sections) {
+        const title = section.title ?? '';
+        const content = section.plain_english_content ?? '';
+        if (pattern.test(title) || pattern.test(content)) {
+          if (filter === 'Prescriptions') {
+            items.push({ kind: 'medication', name: title || 'Medication Info', dosage: '', frequency: '', relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
+            addedItems = true;
+          } else if (filter === 'Lab Results') {
+            items.push({ kind: 'lab_value', name: title || 'Lab Results', value: 0, unit: '', date: record.record_date, relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
+            addedItems = true;
+          } else if (filter === 'Vaccines') {
+            items.push({ kind: 'vaccine', name: title || 'Vaccine Info', dateGiven: record.record_date, nextDue: '', relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
+            addedItems = true;
           }
         }
       }
 
-      // Last resort: create a summary card from the record
-      if (!addedItems && record.interpretation.summary) {
-        if (filter === 'Prescriptions') {
-          items.push({ kind: 'medication', name: getRecordTypeLabel(record.record_type), dosage: '', frequency: '', relatedFlags: flags, relatedSections: [record.interpretation.summary], ...base });
-        } else if (filter === 'Lab Results') {
-          items.push({ kind: 'lab_value', name: getRecordTypeLabel(record.record_type), value: 0, unit: '', date: record.record_date, relatedFlags: flags, relatedSections: [record.interpretation.summary], ...base });
-        } else if (filter === 'Vaccines') {
-          items.push({ kind: 'vaccine', name: getRecordTypeLabel(record.record_type), dateGiven: record.record_date, nextDue: '', relatedFlags: flags, relatedSections: [record.interpretation.summary], ...base });
+      for (const flag of flags) {
+        const flagName = flag.item ?? '';
+        const flagExplanation = flag.explanation ?? '';
+        if (pattern.test(flagName) || pattern.test(flagExplanation)) {
+          if (filter === 'Prescriptions') {
+            items.push({ kind: 'medication', name: flagName || 'Flagged Medication', dosage: flag.value || '', frequency: '', relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
+            addedItems = true;
+          } else if (filter === 'Lab Results') {
+            items.push({ kind: 'lab_value', name: flagName || 'Flagged Lab Value', value: 0, unit: flag.value || '', date: record.record_date, relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
+            addedItems = true;
+          } else if (filter === 'Vaccines') {
+            items.push({ kind: 'vaccine', name: flagName || 'Flagged Vaccine', dateGiven: record.record_date, nextDue: '', relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
+            addedItems = true;
+          }
         }
       }
     }

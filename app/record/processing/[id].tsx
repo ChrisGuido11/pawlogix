@@ -166,66 +166,64 @@ export default function RecordProcessingScreen() {
     transform: [{ scale: glowScale.value }],
   }));
 
-  useEffect(() => {
-    const pollStatus = async () => {
+  const cleanup = () => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+  };
+
+  const fail = (message: string) => {
+    cleanup();
+    setStatus('failed');
+    setError(message);
+  };
+
+  const startPollingWithTimeout = () => {
+    cleanup();
+    let pollErrorCount = 0;
+
+    intervalRef.current = setInterval(async () => {
       if (!id) return;
-      const { data } = await supabase
+      const { data, error: queryError } = await supabase
         .from('pl_health_records')
         .select('processing_status, processing_error')
         .eq('id', id)
         .single();
 
-      if (data) {
-        setStatus(data.processing_status);
-        if (data.processing_status === 'completed') {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          router.replace(`/record/${id}` as any);
-        } else if (data.processing_status === 'failed') {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          setError(data.processing_error || 'Something went wrong.');
+      if (queryError || !data) {
+        pollErrorCount++;
+        if (pollErrorCount >= 5) {
+          fail('Lost connection. Please check your internet and try again.');
         }
+        return;
       }
-    };
+      pollErrorCount = 0;
 
-    intervalRef.current = setInterval(pollStatus, 2000);
-    pollStatus();
+      setStatus(data.processing_status);
+      if (data.processing_status === 'completed') {
+        cleanup();
+        router.replace(`/record/${id}` as any);
+      } else if (data.processing_status === 'failed') {
+        cleanup();
+        setError(data.processing_error || 'Something went wrong.');
+      }
+    }, 2000);
 
     timeoutRef.current = setTimeout(() => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setStatus('failed');
-      setError('Processing is taking longer than expected. Please try again.');
-    }, 90000);
+      fail('Processing is taking longer than expected. Please try again.');
+    }, 90_000);
+  };
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [id]);
-
-  const handleRetry = async () => {
+  const invokeEdgeFunction = async () => {
     if (!id) return;
-    setStatus('pending');
-    setError(null);
+    try {
+      const { data: record } = await supabase
+        .from('pl_health_records')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    await supabase
-      .from('pl_health_records')
-      .update({ processing_status: 'pending' })
-      .eq('id', id);
+      if (!record) { fail('Record not found.'); return; }
 
-    const { data: record } = await supabase
-      .from('pl_health_records')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (record) {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      // Fetch actual pet species/breed instead of hardcoding
       let petSpecies = 'dog';
       let petBreed = 'unknown';
       if (record.pet_id) {
@@ -240,41 +238,113 @@ export default function RecordProcessingScreen() {
         }
       }
 
-      fetch(
-        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-interpret-record`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            record_id: id,
-            image_urls: record.image_urls,
-            pet_species: petSpecies,
-            pet_breed: petBreed,
-            record_type: record.record_type,
-          }),
-        }
-      ).catch(console.error);
+      // supabase-js v2 bug: the functions client never receives the user's JWT.
+      // _handleTokenChanged() only updates realtime, not functions headers.
+      // Fix: get a fresh token via refreshSession() and pass it explicitly.
+      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError || !refreshData.session?.access_token) {
+        fail('Session expired. Please restart the app.');
+        return;
+      }
 
-      intervalRef.current = setInterval(async () => {
-        const { data } = await supabase
+      const { error: invokeError } = await supabase.functions.invoke('pl-interpret-record', {
+        headers: {
+          Authorization: `Bearer ${refreshData.session.access_token}`,
+        },
+        body: {
+          record_id: id,
+          image_urls: record.image_urls,
+          pet_species: petSpecies,
+          pet_breed: petBreed,
+          record_type: record.record_type,
+        },
+      });
+
+      if (invokeError) {
+        // Extract the actual HTTP status and response body from the error.
+        // FunctionsHttpError wraps everything in a generic message — the real
+        // details are in error.context (the original Response object).
+        let errorMsg = invokeError.message;
+        const ctx = (invokeError as any).context;
+        if (ctx?.status) {
+          errorMsg = `HTTP ${ctx.status}`;
+          try {
+            const body = await ctx.json();
+            if (body?.error) errorMsg = body.error;
+            else if (body?.message) errorMsg = body.message;
+            else errorMsg = `HTTP ${ctx.status}: ${JSON.stringify(body).slice(0, 200)}`;
+          } catch {
+            try {
+              const text = await ctx.text();
+              if (text) errorMsg = `HTTP ${ctx.status}: ${text.slice(0, 200)}`;
+            } catch {}
+          }
+        }
+        console.warn('[processing] Edge function error:', errorMsg);
+
+        // Check if edge function already updated DB with a specific error
+        const { data: current } = await supabase
           .from('pl_health_records')
-          .select('processing_status, processing_error')
+          .select('processing_status')
           .eq('id', id)
           .single();
-
-        if (data?.processing_status === 'completed') {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          router.replace(`/record/${id}` as any);
-        } else if (data?.processing_status === 'failed') {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          setStatus('failed');
-          setError(data.processing_error || 'Something went wrong.');
+        if (current?.processing_status !== 'failed') {
+          await supabase
+            .from('pl_health_records')
+            .update({ processing_status: 'failed', processing_error: errorMsg })
+            .eq('id', id);
         }
-      }, 2000);
+      }
+    } catch {
+      fail('Could not start analysis. Please try again.');
     }
+  };
+
+  useEffect(() => {
+    if (!id) return;
+
+    const init = async () => {
+      // Check current status — may already be processing from a previous attempt
+      const { data } = await supabase
+        .from('pl_health_records')
+        .select('processing_status, processing_error')
+        .eq('id', id)
+        .single();
+
+      if (data?.processing_status === 'completed') {
+        router.replace(`/record/${id}` as any);
+        return;
+      }
+      if (data?.processing_status === 'failed') {
+        setStatus('failed');
+        setError(data.processing_error || 'Something went wrong.');
+        return;
+      }
+
+      startPollingWithTimeout();
+
+      // Invoke edge function if record is still pending (not yet kicked off)
+      if (!data || data.processing_status === 'pending') {
+        invokeEdgeFunction();
+      }
+    };
+
+    init();
+    return cleanup;
+  }, [id]);
+
+  const handleRetry = async () => {
+    if (!id) return;
+    setStatus('pending');
+    setError(null);
+
+    await supabase
+      .from('pl_health_records')
+      .update({ processing_status: 'pending' })
+      .eq('id', id);
+
+    startPollingWithTimeout();
+    invokeEdgeFunction();
   };
 
   return (
