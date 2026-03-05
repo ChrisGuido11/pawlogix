@@ -86,11 +86,11 @@ export function MedicationCard({ item, index }: { item: MedicationItem; index: n
             >
               <Ionicons name="medkit" size={IconSize.md} color={Colors.success} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[Typography.cardTitle, { color: Colors.textHeading }]} numberOfLines={2}>
                 {item.name}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs, flexWrap: 'wrap' }}>
                 {item.dosage ? (
                   <View
                     style={{
@@ -106,7 +106,7 @@ export function MedicationCard({ item, index }: { item: MedicationItem; index: n
                   </View>
                 ) : null}
                 {item.frequency ? (
-                  <Text style={[Typography.secondary, { color: Colors.textBody }]}>
+                  <Text style={[Typography.secondary, { color: Colors.textBody, flexShrink: 1 }]}>
                     {item.frequency}
                   </Text>
                 ) : null}
@@ -122,7 +122,7 @@ export function MedicationCard({ item, index }: { item: MedicationItem; index: n
               {item.relatedFlags.length > 0 ? (
                 <FlagDetails flags={item.relatedFlags} />
               ) : item.relatedSections.length > 0 ? (
-                <Text style={[Typography.secondary, { color: Colors.textBody }]} numberOfLines={6}>
+                <Text style={[Typography.secondary, { color: Colors.textBody }]}>
                   {item.relatedSections[0]}
                 </Text>
               ) : (
@@ -203,7 +203,7 @@ export function LabValueCard({ item, index }: { item: LabValueItem; index: numbe
               {item.relatedFlags.length > 0 ? (
                 <FlagDetails flags={item.relatedFlags} />
               ) : item.relatedSections.length > 0 ? (
-                <Text style={[Typography.secondary, { color: Colors.textBody }]} numberOfLines={6}>
+                <Text style={[Typography.secondary, { color: Colors.textBody }]}>
                   {item.relatedSections[0]}
                 </Text>
               ) : (
@@ -300,7 +300,7 @@ export function VaccineCard({ item, index }: { item: VaccineItem; index: number 
                   {getVaccineExpandedText(item.nextDue, status)}
                 </Text>
               ) : item.relatedSections.length > 0 ? (
-                <Text style={[Typography.secondary, { color: Colors.textBody }]} numberOfLines={6}>
+                <Text style={[Typography.secondary, { color: Colors.textBody }]}>
                   {item.relatedSections[0]}
                 </Text>
               ) : (
