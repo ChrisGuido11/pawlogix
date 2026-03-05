@@ -202,14 +202,17 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
   // Post-processing: deduplicate vaccines by name
   if (filter === 'Vaccines') {
     const deduped = new Map<string, VaccineItem>();
-    for (const item of items as VaccineItem[]) {
+    for (const item of items) {
+      if (item.kind !== 'vaccine') continue;
       const key = item.name.toLowerCase().trim();
       const existing = deduped.get(key);
       if (!existing) {
         deduped.set(key, item);
       } else {
         // Keep the entry with the latest nextDue date
-        if (item.nextDue && (!existing.nextDue || new Date(item.nextDue) > new Date(existing.nextDue))) {
+        const itemDue = new Date(item.nextDue);
+        const existingDue = new Date(existing.nextDue);
+        if (item.nextDue && (!existing.nextDue || (!isNaN(itemDue.getTime()) && (isNaN(existingDue.getTime()) || itemDue > existingDue)))) {
           deduped.set(key, item);
         }
       }

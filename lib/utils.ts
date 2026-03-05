@@ -1,6 +1,7 @@
 export function calculateAge(dateOfBirth: string | null): string {
   if (!dateOfBirth) return 'Unknown age';
   const birth = new Date(dateOfBirth);
+  if (isNaN(birth.getTime())) return 'Unknown age';
   const now = new Date();
   const years = now.getFullYear() - birth.getFullYear();
   const months = now.getMonth() - birth.getMonth();
@@ -16,6 +17,7 @@ export function calculateAge(dateOfBirth: string | null): string {
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Unknown date';
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -45,9 +47,10 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
   }
 
   const len = base64.length;
+  if (len === 0) return new ArrayBuffer(0);
   let bufferLength = Math.floor(len * 0.75);
-  if (base64[len - 1] === '=') bufferLength--;
-  if (base64[len - 2] === '=') bufferLength--;
+  if (len >= 1 && base64[len - 1] === '=') bufferLength--;
+  if (len >= 2 && base64[len - 2] === '=') bufferLength--;
 
   const arraybuffer = new ArrayBuffer(bufferLength);
   const bytes = new Uint8Array(arraybuffer);

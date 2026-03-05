@@ -172,6 +172,9 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
       throw new Error(aiData.error?.message || 'AI API request failed');
     }
 
+    if (!aiData.content?.length || !aiData.content[0].text) {
+      throw new Error('Unexpected AI response structure');
+    }
     const responseText = aiData.content[0].text;
     let interpretation;
     try {

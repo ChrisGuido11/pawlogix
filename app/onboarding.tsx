@@ -90,13 +90,14 @@ function FloatingAccent({
 
   useEffect(() => {
     scale.value = withDelay(delay, withSpring(1, { damping: 14, stiffness: 100 }));
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       translateY.value = withRepeat(
         withTiming(8, { duration: 2000 + delay }),
         -1,
         true
       );
     }, delay + 300);
+    return () => clearTimeout(timer);
   }, []);
 
   const animStyle = useAnimatedStyle(() => ({

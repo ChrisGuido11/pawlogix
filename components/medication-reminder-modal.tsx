@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { View, Text, Modal, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -167,12 +167,12 @@ export function MedicationReminderModal({
     }
   };
 
-  const pickerDate = (() => {
+  const pickerDate = useMemo(() => {
     if (editingIndex === null || !times[editingIndex]) return new Date();
     const d = new Date();
     d.setHours(times[editingIndex].hour, times[editingIndex].minute, 0, 0);
     return d;
-  })();
+  }, [editingIndex, times]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>

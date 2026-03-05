@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from './supabase';
 import { useAuth } from './auth-context';
 import type { PetProfile } from '@/types';
@@ -34,14 +34,16 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
       const petList = (data ?? []) as PetProfile[];
       setPets(petList);
 
-      if (!activePet && petList.length > 0) {
-        setActivePet(petList[0]);
-      } else if (activePet) {
-        const updated = petList.find((p) => p.id === activePet.id);
-        if (updated) setActivePet(updated);
-        else if (petList.length > 0) setActivePet(petList[0]);
-        else setActivePet(null);
-      }
+      setActivePet((current) => {
+        if (!current && petList.length > 0) return petList[0];
+        if (current) {
+          const updated = petList.find((p) => p.id === current.id);
+          if (updated) return updated;
+          if (petList.length > 0) return petList[0];
+          return null;
+        }
+        return current;
+      });
     } catch (error) {
       console.error('Error fetching pets:', error);
     } finally {
@@ -53,10 +55,13 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
     refreshPets();
   }, [refreshPets]);
 
+  const contextValue = useMemo(
+    () => ({ pets, activePet, isLoading, setActivePet, refreshPets }),
+    [pets, activePet, isLoading, setActivePet, refreshPets],
+  );
+
   return (
-    <PetContext.Provider
-      value={{ pets, activePet, isLoading, setActivePet, refreshPets }}
-    >
+    <PetContext.Provider value={contextValue}>
       {children}
     </PetContext.Provider>
   );

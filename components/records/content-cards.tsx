@@ -183,7 +183,7 @@ export function LabValueCard({ item, index }: { item: LabValueItem; index: numbe
                       paddingVertical: 2,
                     }}
                   >
-                    <Text style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: '600', color: Colors.primaryDark }}>
+                    <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', fontSize: 15, fontWeight: '600', color: Colors.primaryDark }}>
                       {item.value}
                     </Text>
                   </View>

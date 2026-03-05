@@ -122,7 +122,12 @@ export function useNotificationSync() {
       lastSyncRef.current = now;
 
       // Reconcile with OS first — detect cleared notifications
-      const missingKeys = await reconcileWithOS();
+      let missingKeys: string[] = [];
+      try {
+        missingKeys = await reconcileWithOS();
+      } catch (e) {
+        console.warn('[notificationSync] reconcileWithOS failed:', e);
+      }
 
       // --- Vaccine reminders ---
       if (!profile?.notification_vax_reminders) {
@@ -135,19 +140,19 @@ export function useNotificationSync() {
         const allIntents: VaccineNotificationIntent[] = [];
 
         for (const pet of pets) {
-          const { data } = await supabase
+          const { data, error: fetchError } = await supabase
             .from('pl_health_records')
             .select('interpretation')
             .eq('pet_id', pet.id)
             .eq('processing_status', 'completed');
 
-          if (!data) continue;
+          if (fetchError || !data) continue;
 
           const allVaccines: Array<{ name: string; date_given: string; next_due: string }> = [];
           for (const row of data) {
             const interp = row.interpretation as RecordInterpretation | null;
             const vaxes = interp?.extracted_values?.vaccines;
-            if (vaxes?.length) {
+            if (Array.isArray(vaxes) && vaxes.length) {
               allVaccines.push(...vaxes);
             }
           }

@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Alert, Pressable, View, type AccessibilityActionEvent } from 'react-native';
-import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -49,7 +49,7 @@ function DeleteAction({ progress, onPress }: { progress: SharedValue<number>; on
 }
 
 export function SwipeableRow({ onDelete, children, enabled = true }: SwipeableRowProps) {
-  const swipeableRef = useRef<any>(null);
+  const swipeableRef = useRef<SwipeableMethods>(null);
 
   const handleDelete = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

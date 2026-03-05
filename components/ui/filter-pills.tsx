@@ -80,7 +80,7 @@ export function FilterPills({
         style={{
           flexDirection: 'row',
           position: 'relative',
-          backgroundColor: 'rgba(255,255,255,0.15)',
+          backgroundColor: Colors.filterPillBg,
           borderRadius: BorderRadius.pill,
           padding: 3,
         }}
@@ -114,7 +114,7 @@ export function FilterPills({
                 Typography.secondary,
                 {
                   fontFamily: selected === option ? Fonts.bold : Fonts.medium,
-                  color: selected === option ? Colors.primary : 'rgba(255,255,255,0.85)',
+                  color: selected === option ? Colors.primary : Colors.filterPillText,
                 },
               ]}
             >

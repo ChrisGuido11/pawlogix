@@ -102,6 +102,8 @@ export class ErrorBoundary extends React.Component<
 
             <Pressable
               onPress={this.handleReset}
+              accessibilityRole="button"
+              accessibilityLabel="Try Again"
               style={[
                 Shadows.primaryButton,
                 {

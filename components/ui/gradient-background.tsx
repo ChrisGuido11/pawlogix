@@ -5,8 +5,7 @@ import { Gradients } from '@/constants/Colors';
 interface GradientBackgroundProps {
   variant?: 'warm' | 'primary' | 'surface' | 'cta';
   children: React.ReactNode;
-  className?: string;
-  style?: any;
+  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
 }
 
 const gradientMap = {

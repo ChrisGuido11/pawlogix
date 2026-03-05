@@ -35,13 +35,14 @@ function OrbitingCircle({ angle, radius, color, size, delay }: {
   const rotation = useSharedValue(angle);
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       rotation.value = withRepeat(
         withTiming(angle + 360, { duration: 4000, easing: Easing.linear }),
         -1,
         false
       );
     }, delay);
+    return () => clearTimeout(timer);
   }, []);
 
   const animStyle = useAnimatedStyle(() => {
@@ -76,9 +77,10 @@ function ProgressStepRow({ step, isActive, isDone }: { step: string; isActive: b
   useEffect(() => {
     if (isDone) {
       dotScale.value = withSpring(1.2, { damping: 8, stiffness: 200 });
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         dotScale.value = withSpring(1, { damping: 12, stiffness: 150 });
       }, 200);
+      return () => clearTimeout(timer);
     }
   }, [isDone]);
 

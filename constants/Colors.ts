@@ -43,6 +43,8 @@ export const Colors = {
   modalScrim: 'rgba(0,0,0,0.5)',
   headerButtonBg: 'rgba(255,255,255,0.2)',
   headerSubtitle: 'rgba(255,255,255,0.8)',
+  filterPillBg: 'rgba(255,255,255,0.15)',
+  filterPillText: 'rgba(255,255,255,0.85)',
   tabBarBorder: 'rgba(0,0,0,0.06)',
   cameraBackground: '#000000',
 } as const;

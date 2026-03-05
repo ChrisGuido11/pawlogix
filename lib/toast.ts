@@ -13,5 +13,5 @@ export function toast({ title, message, preset }: ToastOptions) {
     console.log(`[Toast] ${title}: ${message ?? ''}`);
     return;
   }
-  Alert.alert(title, message);
+  Alert.alert(title, message ?? '');
 }

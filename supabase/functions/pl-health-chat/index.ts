@@ -88,6 +88,9 @@ RULES:
       throw new Error(aiData.error?.message || 'AI API request failed');
     }
 
+    if (!aiData.content?.length || !aiData.content[0].text) {
+      throw new Error('Unexpected AI response structure');
+    }
     const reply = aiData.content[0].text;
 
     return new Response(JSON.stringify({ reply }), {

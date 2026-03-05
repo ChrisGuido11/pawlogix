@@ -20,7 +20,7 @@ export function useStaggeredEntrance(index: number, delay = 60) {
       staggerDelay,
       withSpring(1, { damping: 18, stiffness: 120 })
     );
-  }, []);
+  }, [index, delay]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],

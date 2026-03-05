@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase, scopeEmail } from './supabase';
 import type { User, Session } from '@supabase/supabase-js';
 import type { UserProfile } from '@/types';
@@ -146,7 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setTimeout(() => reject(new Error('Account creation timed out. Please try again.')), 12000)
     );
 
-    const { data, error } = await Promise.race([updatePromise, timeoutPromise]);
+    const result = await Promise.race([updatePromise, timeoutPromise]);
+    const { data, error } = result;
 
     console.log('[linkAccount] updateUser result', {
       hasData: !!data,
@@ -160,13 +161,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const userId = data.user?.id ?? user?.id;
     if (userId) {
-      await supabase
+      const { error: upsertError } = await supabase
         .from('pl_profiles')
         .upsert({
           id: userId,
           display_name: displayName || null,
           email,
         }, { onConflict: 'id' });
+      if (upsertError) {
+        console.error('[linkAccount] Profile upsert failed:', upsertError.message);
+      }
       await refreshProfile();
     }
   };
@@ -188,20 +192,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const contextValue = useMemo(
+    () => ({ user, session, profile, isAnonymous, isLoading, linkAccount, signIn, signOut, refreshProfile }),
+    [user, session, profile, isAnonymous, isLoading, linkAccount, signIn, signOut, refreshProfile],
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        profile,
-        isAnonymous,
-        isLoading,
-        linkAccount,
-        signIn,
-        signOut,
-        refreshProfile,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

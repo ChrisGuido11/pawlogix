@@ -288,7 +288,7 @@ export default function RecordChatScreen() {
 
       const { data: { session } } = await supabase.auth.getSession();
       const MAX_CHAT_HISTORY = 20;
-      const allHistory = messages.map((m) => ({
+      const allHistory = [...messages, userMessage].map((m) => ({
         role: m.role,
         content: m.content,
       }));
@@ -309,6 +309,10 @@ export default function RecordChatScreen() {
           }),
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
 
       const data = await response.json();
 
@@ -447,7 +451,6 @@ export default function RecordChatScreen() {
                 data={messages}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.id}
-                estimatedItemSize={80}
                 keyboardShouldPersistTaps="handled"
                 onContentSizeChange={() =>
                   listRef.current?.scrollToEnd({ animated: true })

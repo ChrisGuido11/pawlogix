@@ -10,7 +10,7 @@ import Animated, {
 import { useEffect } from 'react';
 
 interface SkeletonProps {
-  width?: number | string;
+  width?: number | `${number}%`;
   height?: number;
   className?: string;
 }
@@ -40,7 +40,7 @@ export function Skeleton({ width, height = 20, className = '' }: SkeletonProps) 
       style={[
         animatedStyle,
         {
-          width: width as number,
+          width: width,
           height,
           backgroundColor: Colors.border,
         },

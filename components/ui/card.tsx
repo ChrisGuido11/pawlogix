@@ -9,7 +9,7 @@ interface CardProps {
   onPress?: () => void;
   variant?: 'default' | 'elevated' | 'subtle';
   className?: string;
-  style?: any;
+  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

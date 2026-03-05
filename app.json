@@ -23,7 +23,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0D7377"
+        "backgroundColor": "#A8D8F0"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.pawlogix.app",
