@@ -8,6 +8,11 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withRepeat,
+  withTiming,
+  withSequence,
+  withDelay,
+  Easing,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Card } from '@/components/ui/card';
@@ -99,6 +104,111 @@ function SuggestionPill({ text, onPress, index }: { text: string; onPress: () =>
       >
         <Text style={[Typography.secondary, { color: Colors.primary, fontFamily: Fonts.semiBold }]}>{text}</Text>
       </Pressable>
+    </Animated.View>
+  );
+}
+
+function ThinkingDot({ delay }: { delay: number }) {
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 400, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 400, easing: Easing.inOut(Easing.ease) }),
+        ),
+        -1,
+        false,
+      ),
+    );
+  }, []);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        dotStyle,
+        {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: Colors.primary,
+        },
+      ]}
+    />
+  );
+}
+
+function ThinkingBubble() {
+  const bobY = useSharedValue(0);
+  const fadeIn = useSharedValue(0);
+
+  useEffect(() => {
+    fadeIn.value = withTiming(1, { duration: 300 });
+    bobY.value = withRepeat(
+      withSequence(
+        withTiming(-4, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+        withTiming(4, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1,
+      true,
+    );
+  }, []);
+
+  const mascotStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: bobY.value }],
+  }));
+
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: fadeIn.value,
+  }));
+
+  return (
+    <Animated.View style={[containerStyle, { alignSelf: 'flex-start', marginBottom: Spacing.md, marginTop: Spacing.xs }]}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.xs }}>
+        <Ionicons name="sparkles" size={12} color={Colors.primary} />
+        <Text style={[Typography.tabLabel, { color: Colors.textMuted }]}>AI Assistant</Text>
+      </View>
+      <View
+        style={[
+          Shadows.sm,
+          {
+            backgroundColor: Colors.surface,
+            borderRadius: BorderRadius.messageBubble,
+            borderBottomLeftRadius: BorderRadius.messageTail,
+            paddingHorizontal: Spacing.lg,
+            paddingVertical: Spacing.md,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: Spacing.md,
+          },
+        ]}
+      >
+        <Animated.View style={mascotStyle}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden' }}>
+            <Image
+              source={require('@/assets/illustrations/mascot-magnify.png')}
+              style={{ width: 40, height: 40 }}
+              contentFit="cover"
+            />
+          </View>
+        </Animated.View>
+        <View>
+          <Text style={[Typography.secondary, { color: Colors.textBody, fontFamily: Fonts.semiBold, marginBottom: 4 }]}>
+            Analyzing...
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <ThinkingDot delay={0} />
+            <ThinkingDot delay={150} />
+            <ThinkingDot delay={300} />
+          </View>
+        </View>
+      </View>
     </Animated.View>
   );
 }
@@ -336,10 +446,12 @@ export default function RecordChatScreen() {
                 data={messages}
                 renderItem={renderMessage}
                 keyExtractor={(item) => item.id}
+                estimatedItemSize={80}
                 keyboardShouldPersistTaps="handled"
                 onContentSizeChange={() =>
                   listRef.current?.scrollToEnd({ animated: true })
                 }
+                ListFooterComponent={isSending ? <ThinkingBubble /> : null}
               />
             )}
           </View>

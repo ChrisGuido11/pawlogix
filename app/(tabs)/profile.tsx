@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, Switch, Alert, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, Switch, Alert, Pressable, Modal, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -317,13 +317,6 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const showComingSoon = (item: string) => {
-    Alert.alert(
-      'Coming Soon',
-      `${item} will be available when PawLogix launches.`
-    );
-  };
-
   return (
     <CurvedHeaderPage
       headerProps={{ title: 'Settings' }}
@@ -434,19 +427,19 @@ export default function ProfileScreen() {
           <SettingsRow
             icon="shield-outline"
             label="Privacy Policy"
-            onPress={() => showComingSoon('Privacy Policy')}
+            onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/privacy')}
           />
           <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="document-text-outline"
             label="Terms of Service"
-            onPress={() => showComingSoon('Terms of Service')}
+            onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/terms')}
           />
           <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="help-circle-outline"
             label="Support & FAQ"
-            onPress={() => showComingSoon('Support & FAQ')}
+            onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/support')}
           />
         </Card>
 
