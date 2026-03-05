@@ -1,20 +1,20 @@
-import { View, Text, Pressable, Keyboard, Platform } from 'react-native';
-import { useState, useEffect } from 'react';
-import { Tabs, useRouter } from 'expo-router';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { Colors } from '@/constants/Colors';
+import { Shadows } from '@/constants/spacing';
+import { Typography } from '@/constants/typography';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
+import { Tabs, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Keyboard, Platform, Pressable, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Colors } from '@/constants/Colors';
-import { Shadows } from '@/constants/spacing';
-import { Typography, Fonts } from '@/constants/typography';
-import { ErrorBoundary } from '@/components/ui/error-boundary';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -207,19 +207,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
               paddingTop: 4,
             }}
           >
-            {/* Active dot indicator */}
-            {isFocused && (
-              <View
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: Colors.primary,
-                  marginBottom: 4,
-                }}
-              />
-            )}
-            {!isFocused && <View style={{ height: 10 }} />}
+
             <AnimatedTabIcon
               iconOutline={tab.iconOutline}
               iconFilled={tab.iconFilled}
