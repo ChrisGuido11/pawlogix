@@ -348,6 +348,7 @@ export default function RecordChatScreen() {
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
     const isUser = item.role === 'user';
+    const displayContent = isUser ? item.content : item.content.replace(/\*+/g, '');
 
     return (
       <View style={{ marginBottom: Spacing.md, maxWidth: '85%', alignSelf: isUser ? 'flex-end' : 'flex-start' }}>
@@ -361,7 +362,7 @@ export default function RecordChatScreen() {
           <View
             style={{ backgroundColor: Colors.primary, borderRadius: BorderRadius.messageBubble, borderBottomRightRadius: BorderRadius.messageTail, paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md }}
           >
-            <Text style={[Typography.body, { color: Colors.textOnPrimary }]}>{item.content}</Text>
+            <Text style={[Typography.body, { color: Colors.textOnPrimary }]}>{displayContent}</Text>
           </View>
         ) : (
           <View
@@ -376,7 +377,7 @@ export default function RecordChatScreen() {
               },
             ]}
           >
-            <Text style={[Typography.body, { color: Colors.textHeading }]}>{item.content}</Text>
+            <Text style={[Typography.body, { color: Colors.textHeading }]}>{displayContent}</Text>
           </View>
         )}
         {!isUser && (
