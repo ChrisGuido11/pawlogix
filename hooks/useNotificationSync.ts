@@ -15,6 +15,7 @@ import {
   getMedReminderSchedules,
   type ScheduledNotification,
 } from '@/lib/notifications';
+import { getAdvanceDays, getReminderHour } from '@/lib/notification-prefs';
 import type { HealthRecord, RecordInterpretation } from '@/types';
 
 const SYNC_COOLDOWN_MS = 30_000;
@@ -34,7 +35,9 @@ interface VaccineNotificationIntent {
 function buildVaccineIntents(
   petId: string,
   petName: string,
-  vaccines: Array<{ name: string; date_given: string; next_due: string }>
+  vaccines: Array<{ name: string; date_given: string; next_due: string }>,
+  advanceDays: number,
+  reminderHour: number,
 ): VaccineNotificationIntent[] {
   const intents: VaccineNotificationIntent[] = [];
   const now = new Date();
@@ -55,26 +58,26 @@ function buildVaccineIntents(
     const dueDate = new Date(vax.next_due);
     if (isNaN(dueDate.getTime())) continue;
 
-    const sevenBefore = new Date(dueDate.getTime() - 7 * DAY_MS);
-    sevenBefore.setHours(9, 0, 0, 0);
+    const advanceBefore = new Date(dueDate.getTime() - advanceDays * DAY_MS);
+    advanceBefore.setHours(reminderHour, 0, 0, 0);
     const dayOf = new Date(dueDate);
-    dayOf.setHours(9, 0, 0, 0);
+    dayOf.setHours(reminderHour, 0, 0, 0);
     const dayAfter = new Date(dueDate.getTime() + DAY_MS);
-    dayAfter.setHours(9, 0, 0, 0);
+    dayAfter.setHours(reminderHour, 0, 0, 0);
 
     const isFarOut = dueDate > sixtyDaysOut;
 
-    // 7 days before — always schedule if future
-    if (sevenBefore > now) {
+    // Advance notice — always schedule if future
+    if (advanceBefore > now) {
       intents.push({
         dedupKey: `vax_${petId}_${vax.name.toLowerCase().trim()}_before`,
         petId,
         petName,
         vaccineName: vax.name,
-        triggerDate: sevenBefore,
+        triggerDate: advanceBefore,
         triggerType: 'before',
         title: `${petName}: ${vax.name} Due Soon`,
-        body: `${vax.name} is due in 7 days. Schedule a vet appointment.`,
+        body: `${vax.name} is due in ${advanceDays} day${advanceDays !== 1 ? 's' : ''}. Schedule a vet appointment.`,
       });
     }
 
@@ -129,6 +132,10 @@ export function useNotificationSync() {
         console.warn('[notificationSync] reconcileWithOS failed:', e);
       }
 
+      // Load user notification preferences
+      const userAdvanceDays = await getAdvanceDays();
+      const userReminderHour = await getReminderHour();
+
       // --- Vaccine reminders ---
       if (!profile?.notification_vax_reminders) {
         await cancelNotificationsByType('vaccine_reminder');
@@ -158,7 +165,7 @@ export function useNotificationSync() {
           }
 
           if (allVaccines.length > 0) {
-            allIntents.push(...buildVaccineIntents(pet.id, pet.name, allVaccines));
+            allIntents.push(...buildVaccineIntents(pet.id, pet.name, allVaccines, userAdvanceDays, userReminderHour));
           }
         }
 

@@ -19,6 +19,7 @@ import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
+import { useNotificationItems } from '@/hooks/useNotificationItems';
 import { RecordCard } from '@/components/records/record-card';
 import { MedicationCard, LabValueCard, VaccineCard } from '@/components/records/content-cards';
 import {
@@ -169,6 +170,13 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
+  const { urgentCount } = useNotificationItems();
+
+  const bellProps = {
+    rightIcon: 'notifications' as const,
+    onRightPress: () => router.push('/notifications' as any),
+    rightBadge: urgentCount,
+  };
 
   const isContentFilter = (CONTENT_FILTERS as readonly string[]).includes(activeFilter);
 
@@ -434,6 +442,7 @@ export default function HomeScreen() {
         headerProps={{
           title: 'Welcome back! 👋',
           subtitle: '',
+          ...bellProps,
         }}
         contentStyle={{ paddingHorizontal: 0 }}
       >
@@ -458,6 +467,7 @@ export default function HomeScreen() {
         headerProps={{
           title: 'Welcome back! 👋',
           subtitle: subtitleText,
+          ...bellProps,
         }}
         contentStyle={{ paddingHorizontal: 0 }}
       >
@@ -493,6 +503,7 @@ export default function HomeScreen() {
       headerProps={{
         title: 'Welcome back! 👋',
         subtitle: subtitleText,
+        ...bellProps,
         children: activePet ? (
           <FilterPills
             options={[...FILTER_OPTIONS]}

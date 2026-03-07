@@ -17,6 +17,8 @@ interface CurvedHeaderProps {
   rightIcon?: keyof typeof Ionicons.glyphMap;
   /** Callback when right icon is pressed */
   onRightPress?: () => void;
+  /** Badge count shown on the right icon (0 = no badge) */
+  rightBadge?: number;
   /** Additional content rendered below the title inside the blue zone */
   children?: React.ReactNode;
   /** Extra bottom padding for the blue zone (for overlapping avatars etc.) */
@@ -50,6 +52,7 @@ export function CurvedHeader({
   showBack = false,
   rightIcon,
   onRightPress,
+  rightBadge = 0,
   children,
   extraPaddingBottom = 0,
 }: CurvedHeaderProps) {
@@ -113,6 +116,8 @@ export function CurvedHeader({
           <Pressable
             onPress={onRightPress}
             hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={rightBadge > 0 ? `Notifications, ${rightBadge} new` : 'Notifications'}
             style={{
               width: 44,
               height: 44,
@@ -123,6 +128,26 @@ export function CurvedHeader({
             }}
           >
             <Ionicons name={rightIcon} size={20} color={Colors.textOnPrimary} />
+            {rightBadge > 0 && (
+              <View
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  backgroundColor: Colors.error,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingHorizontal: 4,
+                }}
+              >
+                <Text style={{ color: Colors.textOnPrimary, fontSize: 11, fontWeight: '700' }}>
+                  {rightBadge > 99 ? '99+' : rightBadge}
+                </Text>
+              </View>
+            )}
           </Pressable>
         ) : (
           <View style={{ width: 44 }} />

@@ -41,7 +41,8 @@
       "Bash(python:*)",
       "Bash(npx skills:*)",
       "WebFetch(domain:skills.sh)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(cp:*)"
     ]
   }
 }

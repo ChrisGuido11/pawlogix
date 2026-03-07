@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Switch, Alert, Pressable, Modal, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,15 @@ import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius, IconTile } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import { SectionLabel } from '@/components/ui/section-label';
+import {
+  ADVANCE_OPTIONS,
+  TIME_OPTIONS,
+  getAdvanceDays,
+  setAdvanceDays as saveAdvanceDays,
+  getReminderHour,
+  setReminderHour as saveReminderHour,
+  formatHour,
+} from '@/lib/notification-prefs';
 
 function SettingsRow({
   icon,
@@ -90,6 +99,31 @@ export default function ProfileScreen() {
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [advanceDays, setAdvanceDays] = useState(7);
+  const [reminderHour, setReminderHour] = useState(9);
+  const [showAdvancePicker, setShowAdvancePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  useEffect(() => {
+    getAdvanceDays().then(setAdvanceDays);
+    getReminderHour().then(setReminderHour);
+  }, []);
+
+  const handleAdvanceDaysChange = useCallback(async (days: number) => {
+    setAdvanceDays(days);
+    setShowAdvancePicker(false);
+    await saveAdvanceDays(days);
+    Haptics.selectionAsync();
+    toast({ title: 'Updated', message: `Vaccine reminders set to ${days} day${days !== 1 ? 's' : ''} before.`, preset: 'done' });
+  }, []);
+
+  const handleReminderHourChange = useCallback(async (hour: number) => {
+    setReminderHour(hour);
+    setShowTimePicker(false);
+    await saveReminderHour(hour);
+    Haptics.selectionAsync();
+    toast({ title: 'Updated', message: `Reminders will arrive at ${formatHour(hour)}.`, preset: 'done' });
+  }, []);
 
   const toggleMedReminders = async (value: boolean) => {
     const previous = medReminders;
@@ -419,6 +453,30 @@ export default function ProfileScreen() {
               />
             }
           />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+          <SettingsRow
+            icon="calendar-outline"
+            label="Advance Notice"
+            onPress={() => setShowAdvancePicker(true)}
+            trailing={
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                <Text style={[Typography.secondary, { color: Colors.textMuted }]}>{advanceDays} day{advanceDays !== 1 ? 's' : ''}</Text>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </View>
+            }
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+          <SettingsRow
+            icon="time-outline"
+            label="Reminder Time"
+            onPress={() => setShowTimePicker(true)}
+            trailing={
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                <Text style={[Typography.secondary, { color: Colors.textMuted }]}>{formatHour(reminderHour)}</Text>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+              </View>
+            }
+          />
         </Card>
 
         {/* Legal */}
@@ -474,6 +532,94 @@ export default function ProfileScreen() {
           PawLogix v1.0.0 (Beta)
         </Text>
       </ScrollView>
+
+      {/* Advance Notice Picker */}
+      <Modal
+        visible={showAdvancePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAdvancePicker(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: Colors.modalScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}
+          onPress={() => setShowAdvancePicker(false)}
+        >
+          <Pressable style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing.xl, width: '100%', maxWidth: 320 }]}>
+            <Text style={[Typography.sectionHeading, { color: Colors.textHeading, marginBottom: Spacing.lg, textAlign: 'center' }]}>
+              Advance Notice
+            </Text>
+            <Text style={[Typography.secondary, { color: Colors.textBody, marginBottom: Spacing.lg, textAlign: 'center' }]}>
+              How early should we remind you about upcoming vaccines?
+            </Text>
+            {ADVANCE_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                onPress={() => handleAdvanceDaysChange(opt.value)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: Spacing.md,
+                  paddingHorizontal: Spacing.md,
+                  borderRadius: BorderRadius.button,
+                  backgroundColor: advanceDays === opt.value ? Colors.primaryLight : 'transparent',
+                }}
+              >
+                <Text style={[Typography.body, { color: advanceDays === opt.value ? Colors.primary : Colors.textHeading }]}>
+                  {opt.label}
+                </Text>
+                {advanceDays === opt.value && (
+                  <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                )}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Reminder Time Picker */}
+      <Modal
+        visible={showTimePicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: Colors.modalScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}
+          onPress={() => setShowTimePicker(false)}
+        >
+          <Pressable style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing.xl, width: '100%', maxWidth: 320 }]}>
+            <Text style={[Typography.sectionHeading, { color: Colors.textHeading, marginBottom: Spacing.lg, textAlign: 'center' }]}>
+              Reminder Time
+            </Text>
+            <Text style={[Typography.secondary, { color: Colors.textBody, marginBottom: Spacing.lg, textAlign: 'center' }]}>
+              What time of day should reminders arrive?
+            </Text>
+            {TIME_OPTIONS.map((opt) => (
+              <Pressable
+                key={opt.value}
+                onPress={() => handleReminderHourChange(opt.value)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: Spacing.md,
+                  paddingHorizontal: Spacing.md,
+                  borderRadius: BorderRadius.button,
+                  backgroundColor: reminderHour === opt.value ? Colors.primaryLight : 'transparent',
+                }}
+              >
+                <Text style={[Typography.body, { color: reminderHour === opt.value ? Colors.primary : Colors.textHeading }]}>
+                  {opt.label}
+                </Text>
+                {reminderHour === opt.value && (
+                  <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+                )}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Delete Account Confirmation Modal */}
       <Modal
