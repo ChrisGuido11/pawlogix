@@ -1,6 +1,9 @@
 export function calculateAge(dateOfBirth: string | null): string {
   if (!dateOfBirth) return 'Unknown age';
-  const birth = new Date(dateOfBirth);
+  const dob = dateOfBirth.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const birth = dob
+    ? new Date(Number(dob[1]), Number(dob[2]) - 1, Number(dob[3]))
+    : new Date(dateOfBirth);
   if (isNaN(birth.getTime())) return 'Unknown age';
   const now = new Date();
   const years = now.getFullYear() - birth.getFullYear();
@@ -16,7 +19,13 @@ export function calculateAge(dateOfBirth: string | null): string {
 }
 
 export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
+  // Parse date-only strings (YYYY-MM-DD) as local time, not UTC.
+  // new Date("2026-02-15") parses as UTC midnight, which shifts to the
+  // previous day in timezones behind UTC (e.g. PST shows Feb 14).
+  const dateOnly = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(dateString);
   if (isNaN(date.getTime())) return 'Unknown date';
   return date.toLocaleDateString('en-US', {
     month: 'short',

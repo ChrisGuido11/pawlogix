@@ -96,6 +96,7 @@ export default function ProfileScreen() {
   const { user, isAnonymous, profile, signOut, refreshProfile } = useAuth();
   const [medReminders, setMedReminders] = useState(profile?.notification_med_reminders ?? true);
   const [vaxReminders, setVaxReminders] = useState(profile?.notification_vax_reminders ?? true);
+  const [preventiveReminders, setPreventiveReminders] = useState(profile?.notification_preventive_reminders ?? true);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -176,6 +177,34 @@ export default function ProfileScreen() {
         .eq('id', user.id);
       if (error) {
         setVaxReminders(previous);
+        toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
+      }
+    }
+  };
+
+  const togglePreventiveReminders = async (value: boolean) => {
+    const previous = preventiveReminders;
+    setPreventiveReminders(value);
+    Haptics.selectionAsync();
+
+    if (value) {
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        setPreventiveReminders(previous);
+        toast({ title: 'Notifications Blocked', message: 'Please enable notifications in your device settings.', preset: 'error' });
+        return;
+      }
+    } else {
+      await cancelNotificationsByType('preventive_care_reminder');
+    }
+
+    if (user?.id) {
+      const { error } = await supabase
+        .from('pl_profiles')
+        .update({ notification_preventive_reminders: value })
+        .eq('id', user.id);
+      if (error) {
+        setPreventiveReminders(previous);
         toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
       }
     }
@@ -448,6 +477,19 @@ export default function ProfileScreen() {
               <Switch
                 value={vaxReminders}
                 onValueChange={toggleVaxReminders}
+                trackColor={{ false: Colors.disabled, true: Colors.secondary }}
+                thumbColor={Colors.textOnPrimary}
+              />
+            }
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+          <SettingsRow
+            icon="fitness-outline"
+            label="Preventive Care Reminders"
+            trailing={
+              <Switch
+                value={preventiveReminders}
+                onValueChange={togglePreventiveReminders}
                 trackColor={{ false: Colors.disabled, true: Colors.secondary }}
                 thumbColor={Colors.textOnPrimary}
               />

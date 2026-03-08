@@ -21,6 +21,95 @@ import type { HealthRecord, RecordInterpretation } from '@/types';
 const SYNC_COOLDOWN_MS = 30_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+interface PreventiveCareNotificationIntent {
+  dedupKey: string;
+  petId: string;
+  petName: string;
+  careName: string;
+  triggerDate: Date;
+  triggerType: 'before' | 'day_of' | 'after';
+  title: string;
+  body: string;
+}
+
+function buildPreventiveCareIntents(
+  petId: string,
+  petName: string,
+  items: Array<{ name: string; date_due: string; date_last?: string }>,
+  advanceDays: number,
+  reminderHour: number,
+): PreventiveCareNotificationIntent[] {
+  const intents: PreventiveCareNotificationIntent[] = [];
+  const now = new Date();
+  const sixtyDaysOut = new Date(now.getTime() + 60 * DAY_MS);
+
+  // Deduplicate by name, keeping latest date_due
+  const byName = new Map<string, { name: string; date_due: string }>();
+  for (const item of items) {
+    if (!item.name || !item.date_due) continue;
+    const key = item.name.toLowerCase().trim();
+    const existing = byName.get(key);
+    if (!existing || new Date(item.date_due) > new Date(existing.date_due)) {
+      byName.set(key, item);
+    }
+  }
+
+  for (const item of byName.values()) {
+    const dueDate = new Date(item.date_due);
+    if (isNaN(dueDate.getTime())) continue;
+
+    const advanceBefore = new Date(dueDate.getTime() - advanceDays * DAY_MS);
+    advanceBefore.setHours(reminderHour, 0, 0, 0);
+    const dayOf = new Date(dueDate);
+    dayOf.setHours(reminderHour, 0, 0, 0);
+    const dayAfter = new Date(dueDate.getTime() + DAY_MS);
+    dayAfter.setHours(reminderHour, 0, 0, 0);
+
+    const isFarOut = dueDate > sixtyDaysOut;
+
+    if (advanceBefore > now) {
+      intents.push({
+        dedupKey: `pc_${petId}_${item.name.toLowerCase().trim()}_before`,
+        petId,
+        petName,
+        careName: item.name,
+        triggerDate: advanceBefore,
+        triggerType: 'before',
+        title: `${petName}: ${item.name} Due Soon`,
+        body: `${item.name} is due in ${advanceDays} day${advanceDays !== 1 ? 's' : ''}. Schedule a vet appointment.`,
+      });
+    }
+
+    if (!isFarOut && dayOf > now) {
+      intents.push({
+        dedupKey: `pc_${petId}_${item.name.toLowerCase().trim()}_day_of`,
+        petId,
+        petName,
+        careName: item.name,
+        triggerDate: dayOf,
+        triggerType: 'day_of',
+        title: `${petName}: ${item.name} Due Today`,
+        body: `${item.name} is due today. Don't forget the appointment!`,
+      });
+    }
+
+    if (!isFarOut && dayAfter > now) {
+      intents.push({
+        dedupKey: `pc_${petId}_${item.name.toLowerCase().trim()}_after`,
+        petId,
+        petName,
+        careName: item.name,
+        triggerDate: dayAfter,
+        triggerType: 'after',
+        title: `${petName}: ${item.name} Overdue`,
+        body: `${item.name} was due yesterday. Please schedule an appointment soon.`,
+      });
+    }
+  }
+
+  return intents;
+}
+
 interface VaccineNotificationIntent {
   dedupKey: string;
   petId: string;
@@ -215,6 +304,79 @@ export function useNotificationSync() {
         await saveScheduledNotifications([...nonVax, ...newNotifications]);
       }
 
+      // --- Preventive care reminders ---
+      if (!profile?.notification_preventive_reminders) {
+        await cancelNotificationsByType('preventive_care_reminder');
+      } else {
+        const hasPerms = await requestNotificationPermissions();
+        if (hasPerms) {
+          const allPcIntents: PreventiveCareNotificationIntent[] = [];
+
+          for (const pet of pets) {
+            const { data, error: fetchError } = await supabase
+              .from('pl_health_records')
+              .select('interpretation')
+              .eq('pet_id', pet.id)
+              .eq('processing_status', 'completed');
+
+            if (fetchError || !data) continue;
+
+            const allCareItems: Array<{ name: string; date_due: string; date_last?: string }> = [];
+            for (const row of data) {
+              const interp = row.interpretation as RecordInterpretation | null;
+              const care = interp?.extracted_values?.preventive_care;
+              if (Array.isArray(care) && care.length) {
+                allCareItems.push(...care);
+              }
+            }
+
+            if (allCareItems.length > 0) {
+              allPcIntents.push(...buildPreventiveCareIntents(pet.id, pet.name, allCareItems, userAdvanceDays, userReminderHour));
+            }
+          }
+
+          const stored = await getScheduledNotifications();
+          const storedPc = stored.filter((n) => n.type === 'preventive_care_reminder');
+          const storedKeys = new Set(storedPc.map((n) => n.dedupKey));
+          const intentKeys = new Set(allPcIntents.map((i) => i.dedupKey));
+
+          const toCancel = storedPc.filter((n) => !intentKeys.has(n.dedupKey));
+          for (const n of toCancel) {
+            await cancelNotification(n.notificationId).catch(() => {});
+          }
+
+          const newNotifications: ScheduledNotification[] = [];
+          for (const intent of allPcIntents) {
+            const alreadyScheduled = storedKeys.has(intent.dedupKey) && !missingKeys.includes(intent.dedupKey);
+            if (alreadyScheduled) {
+              const existing = storedPc.find((n) => n.dedupKey === intent.dedupKey);
+              if (existing) newNotifications.push(existing);
+              continue;
+            }
+
+            const notificationId = await scheduleNotification({
+              title: intent.title,
+              body: intent.body,
+              data: { type: 'preventive_care_reminder', petId: intent.petId },
+              trigger: { type: SchedulableTriggerInputTypes.DATE, date: intent.triggerDate },
+            });
+
+            newNotifications.push({
+              notificationId,
+              type: 'preventive_care_reminder',
+              petId: intent.petId,
+              petName: intent.petName,
+              itemName: intent.careName,
+              triggerDate: intent.triggerDate.toISOString(),
+              dedupKey: intent.dedupKey,
+            });
+          }
+
+          const nonPc = stored.filter((n) => n.type !== 'preventive_care_reminder');
+          await saveScheduledNotifications([...nonPc, ...newNotifications]);
+        }
+      }
+
       // --- Med reminders: re-verify daily repeaters ---
       if (profile?.notification_med_reminders) {
         await syncAllMedReminders(missingKeys);
@@ -222,7 +384,7 @@ export function useNotificationSync() {
     };
 
     sync();
-  }, [profile?.notification_vax_reminders, profile?.notification_med_reminders, pets]);
+  }, [profile?.notification_vax_reminders, profile?.notification_med_reminders, profile?.notification_preventive_reminders, pets]);
 }
 
 /**

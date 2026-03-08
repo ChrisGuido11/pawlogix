@@ -35,7 +35,7 @@ export type VaccineItem = ContentItemBase & {
 
 export type ContentItem = MedicationItem | LabValueItem | VaccineItem;
 
-export const FILTER_OPTIONS = ['All', 'Lab Results', 'Vet Records', 'Prescriptions', 'Vaccines'] as const;
+export const FILTER_OPTIONS = ['All', 'Prescriptions', 'Lab Results', 'Vaccines'] as const;
 export const CONTENT_FILTERS = ['Prescriptions', 'Lab Results', 'Vaccines'] as const;
 
 export const FALLBACK_PATTERNS: Record<string, RegExp> = {
@@ -43,6 +43,64 @@ export const FALLBACK_PATTERNS: Record<string, RegExp> = {
   'Lab Results': /lab|blood|chem|panel|CBC|urinalysis|thyroid|glucose/i,
   Vaccines: /vaccin|immuniz|rabies|dhpp|bordetella|parvo|distemper/i,
 };
+
+// --- Vaccine classification guard (defense-in-depth) ---
+
+const KNOWN_VACCINE_PATTERNS = [
+  /rabies/i,
+  /dhpp/i,
+  /dapp/i,
+  /da2pp/i,
+  /dhlpp/i,
+  /bordetella/i,
+  /leptospirosis/i,
+  /lyme\s*vaccin/i,
+  /canine\s*influenza/i,
+  /fvrcp/i,
+  /felv/i,
+  /fiv\s*vaccin/i,
+  /parvo/i,
+  /distemper/i,
+  /parainfluenza/i,
+  /adenovirus/i,
+  /calicivirus/i,
+  /panleukopenia/i,
+];
+
+const NON_VACCINE_PATTERNS = [
+  /heartworm\s*(test|screen|antigen)?/i,
+  /4dx/i,
+  /snap\s*test/i,
+  /simparica/i,
+  /nexgard/i,
+  /bravecto/i,
+  /heartgard/i,
+  /interceptor/i,
+  /revolution/i,
+  /sentinel/i,
+  /credelio/i,
+  /trifexis/i,
+  /proheart/i,
+  /drontal/i,
+  /panacur/i,
+  /fenbendazole/i,
+  /pyrantel/i,
+  /fecal/i,
+  /deworming/i,
+];
+
+function isLikelyVaccine(name: string): boolean {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  // Blocklist first — reject known non-vaccines
+  if (NON_VACCINE_PATTERNS.some(p => p.test(lower))) return false;
+  // Allowlist — accept known vaccines
+  if (KNOWN_VACCINE_PATTERNS.some(p => p.test(lower))) return true;
+  // Keyword heuristic
+  if (/vaccin|immuniz/i.test(lower)) return true;
+  // Unknown — reject to be safe
+  return false;
+}
 
 export const FILTER_EMPTY_STATES: Record<string, { title: string; subtitle: string }> = {
   Prescriptions: {
@@ -82,9 +140,7 @@ export function recordMatchesFilter(record: HealthRecord, filter: string): boole
       return (ev?.medications && ev.medications.length > 0) || record.record_type === 'prescription';
     case 'Lab Results':
       return (ev?.lab_values && Object.keys(ev.lab_values).length > 0) || record.record_type === 'lab_results';
-    case 'Vet Records':
-      return record.record_type === 'vet_visit';
-    case 'Vaccines': {
+case 'Vaccines': {
       if ((ev?.vaccines && ev.vaccines.length > 0) || record.record_type === 'vaccine') return true;
       // Also match if sections/flags mention vaccines (fallback content exists)
       const pattern = FALLBACK_PATTERNS.Vaccines;
@@ -154,7 +210,7 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
       }
     } else if (filter === 'Vaccines' && ev?.vaccines) {
       for (const vax of ev.vaccines) {
-        if (!vax.name) continue;
+        if (!vax.name || !isLikelyVaccine(vax.name)) continue;
         items.push({ kind: 'vaccine', name: vax.name, dateGiven: vax.date_given ?? '', nextDue: vax.next_due ?? '', relatedFlags: matchFlags(flags, vax.name), relatedSections: matchSections(sections, vax.name), ...base });
         addedItems = true;
       }
@@ -174,6 +230,7 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
             items.push({ kind: 'lab_value', name: title || 'Lab Results', value: 0, unit: '', date: record.record_date, relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
             addedItems = true;
           } else if (filter === 'Vaccines') {
+            if (!isLikelyVaccine(title) && !isLikelyVaccine(content)) continue;
             items.push({ kind: 'vaccine', name: title || 'Vaccine Info', dateGiven: record.record_date, nextDue: '', relatedFlags: matchFlags(flags, title), relatedSections: [content], ...base });
             addedItems = true;
           }
@@ -191,6 +248,7 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
             items.push({ kind: 'lab_value', name: flagName || 'Flagged Lab Value', value: 0, unit: flag.value || '', date: record.record_date, relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
             addedItems = true;
           } else if (filter === 'Vaccines') {
+            if (!isLikelyVaccine(flagName) && !isLikelyVaccine(flagExplanation)) continue;
             items.push({ kind: 'vaccine', name: flagName || 'Flagged Vaccine', dateGiven: record.record_date, nextDue: '', relatedFlags: [flag], relatedSections: [flagExplanation], ...base });
             addedItems = true;
           }

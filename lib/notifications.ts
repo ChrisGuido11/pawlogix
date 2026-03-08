@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface ScheduledNotification {
   notificationId: string;
-  type: 'vaccine_reminder' | 'med_reminder';
+  type: 'vaccine_reminder' | 'med_reminder' | 'preventive_care_reminder';
   petId: string;
   petName: string;
   itemName: string;
@@ -81,7 +81,7 @@ export async function cancelNotification(id: string): Promise<void> {
 
 export async function cancelNotificationsForPet(
   petId: string,
-  type?: 'vaccine_reminder' | 'med_reminder'
+  type?: 'vaccine_reminder' | 'med_reminder' | 'preventive_care_reminder'
 ): Promise<void> {
   const scheduled = await getScheduledNotifications();
   const toCancel = scheduled.filter(
@@ -112,7 +112,7 @@ export async function cancelAllNotifications(): Promise<void> {
 }
 
 export async function cancelNotificationsByType(
-  type: 'vaccine_reminder' | 'med_reminder'
+  type: 'vaccine_reminder' | 'med_reminder' | 'preventive_care_reminder'
 ): Promise<void> {
   const scheduled = await getScheduledNotifications();
   const toCancel = scheduled.filter((n) => n.type === type);

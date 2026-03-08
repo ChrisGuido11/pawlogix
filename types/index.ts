@@ -71,6 +71,11 @@ export interface ExtractedValues {
     dosage: string;
     frequency: string;
   }>;
+  preventive_care?: Array<{
+    name: string;
+    date_due: string;
+    date_last?: string;
+  }>;
 }
 
 export interface AggregatedMedication {
@@ -99,6 +104,7 @@ export interface UserProfile {
   avatar_url: string | null;
   notification_med_reminders: boolean;
   notification_vax_reminders: boolean;
+  notification_preventive_reminders: boolean;
   created_at: string;
   updated_at: string;
 }

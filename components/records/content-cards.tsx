@@ -217,6 +217,35 @@ export function LabValueCard({ item, index }: { item: LabValueItem; index: numbe
   );
 }
 
+const VACCINE_DESCRIPTIONS: Record<string, string> = {
+  rabies: 'Protects against the rabies virus, required by law in most areas.',
+  bordetella: 'Protects against kennel cough, a highly contagious respiratory infection.',
+  dhpp: 'Combo vaccine for distemper, hepatitis, parainfluenza, and parvovirus.',
+  dapp: 'Combo vaccine for distemper, adenovirus, parainfluenza, and parvovirus.',
+  da2pp: 'Combo vaccine for distemper, adenovirus type 2, parainfluenza, and parvovirus.',
+  dhlpp: 'Combo vaccine for distemper, hepatitis, leptospirosis, parainfluenza, and parvovirus.',
+  leptospirosis: 'Protects against leptospira bacteria, spread through contaminated water.',
+  lyme: 'Protects against Lyme disease transmitted by ticks.',
+  'canine influenza': 'Protects against dog flu strains (H3N2 and H3N8).',
+  fvrcp: 'Combo vaccine for feline viral rhinotracheitis, calicivirus, and panleukopenia.',
+  felv: 'Protects cats against feline leukemia virus.',
+  fiv: 'Protects cats against feline immunodeficiency virus.',
+  parvo: 'Protects against parvovirus, a highly contagious and potentially fatal illness.',
+  parvovirus: 'Protects against parvovirus, a highly contagious and potentially fatal illness.',
+  distemper: 'Protects against canine distemper, a serious viral illness.',
+  parainfluenza: 'Protects against a respiratory virus that contributes to kennel cough.',
+  panleukopenia: 'Protects cats against feline panleukopenia (feline distemper).',
+  calicivirus: 'Protects cats against feline calicivirus, a common respiratory infection.',
+};
+
+function getVaccineDescription(name: string): string | null {
+  const lower = name.toLowerCase();
+  for (const [key, desc] of Object.entries(VACCINE_DESCRIPTIONS)) {
+    if (lower.includes(key)) return desc;
+  }
+  return null;
+}
+
 export function VaccineCard({ item, index }: { item: VaccineItem; index: number }) {
   const animStyle = useStaggeredEntrance(index);
   const [expanded, setExpanded] = useState(false);
@@ -295,6 +324,11 @@ export function VaccineCard({ item, index }: { item: VaccineItem; index: number 
           </View>
           {expanded && (
             <View style={{ marginTop: Spacing.md, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.border }}>
+              {getVaccineDescription(item.name) && (
+                <Text style={[Typography.secondary, { color: Colors.textBody, marginBottom: Spacing.sm }]}>
+                  {getVaccineDescription(item.name)}
+                </Text>
+              )}
               {status ? (
                 <Text style={[Typography.secondary, { color: status === 'overdue' ? Colors.error : Colors.textBody }]}>
                   {getVaccineExpandedText(item.nextDue, status)}

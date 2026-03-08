@@ -4,7 +4,7 @@ import { usePets } from '@/lib/pet-context';
 import { getVaccineStatus, type VaccineStatus } from '@/lib/record-filters';
 import type { HealthRecord, RecordInterpretation, PetProfile } from '@/types';
 
-export type NotificationItemType = 'vaccine_overdue' | 'vaccine_upcoming' | 'med_reminder' | 'urgent_flag';
+export type NotificationItemType = 'vaccine_overdue' | 'vaccine_upcoming' | 'med_reminder' | 'urgent_flag' | 'preventive_care_overdue' | 'preventive_care_upcoming';
 
 export interface NotificationItem {
   id: string;
@@ -102,6 +102,44 @@ export function useNotificationItems() {
                   recordId: record.id,
                   severity: 'urgent',
                   date: record.record_date,
+                });
+              }
+            }
+          }
+
+          // Preventive care alerts
+          const preventiveCare = interp.extracted_values?.preventive_care;
+          if (Array.isArray(preventiveCare)) {
+            for (const item of preventiveCare) {
+              if (!item.name || !item.date_due) continue;
+              const status = getVaccineStatus(item.date_due);
+              if (status === 'overdue') {
+                const dueDate = new Date(item.date_due);
+                const daysPast = Math.round((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                allItems.push({
+                  id: `pc_overdue_${pet.id}_${item.name}`,
+                  type: 'preventive_care_overdue',
+                  title: `${item.name} Overdue`,
+                  body: `${pet.name}'s ${item.name} is ${daysPast} day${daysPast !== 1 ? 's' : ''} overdue. Schedule a vet visit.`,
+                  petId: pet.id,
+                  petName: pet.name,
+                  recordId: record.id,
+                  severity: 'warning',
+                  date: item.date_due,
+                });
+              } else if (status === 'upcoming') {
+                const dueDate = new Date(item.date_due);
+                const daysUntil = Math.round((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                allItems.push({
+                  id: `pc_upcoming_${pet.id}_${item.name}`,
+                  type: 'preventive_care_upcoming',
+                  title: `${item.name} Due Soon`,
+                  body: `${pet.name}'s ${item.name} is due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}.`,
+                  petId: pet.id,
+                  petName: pet.name,
+                  recordId: record.id,
+                  severity: 'info',
+                  date: item.date_due,
                 });
               }
             }

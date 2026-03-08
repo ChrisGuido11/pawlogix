@@ -93,14 +93,23 @@ serve(async (req) => {
 10. Detect the primary record type from the document content. Choose one of: "lab_results", "vet_visit", "vaccine", "prescription", "other"
 11. Extract the date of the visit, exam, or test from the document (YYYY-MM-DD). If multiple dates appear, use the primary visit/exam date. If no date is found, omit this field.
 12. Extract the patient's breed and date of birth if visible on the document. For age mentions like "3 year old", compute an approximate date of birth from the document date. If the document says the breed, extract it exactly as written.
+13. Extract preventive care items — physical exams, heartworm tests, dental cleanings, fecal exams, flea/tick prevention, Lyme tests, and similar routine care — with their name and due date.
 
 CRITICAL RULES:
 - NEVER diagnose conditions. Only interpret what the document says.
 - ALWAYS recommend consulting the veterinarian for medical decisions.
 - Use warm, empowering language — not clinical or scary.
 - If you cannot read part of the document, say so clearly.
-- You MUST populate extracted_values with ALL medications, lab values, and vaccines found in the document. Do NOT leave these arrays/objects empty if the document contains relevant data. Every medication mentioned must appear in medications, every numeric lab result in lab_values, and every vaccine in vaccines.
+- You MUST populate extracted_values with ALL medications, lab values, vaccines, and preventive care items found in the document. Do NOT leave these arrays/objects empty if the document contains relevant data. Every medication mentioned must appear in medications, every numeric lab result in lab_values, every vaccine in vaccines, and every preventive care item (exams, tests, cleanings, preventive treatments) in preventive_care.
 - For vaccines: ANY mention of a vaccine name (Rabies, DHPP, DAPP, Bordetella, Leptospirosis, Lyme, Canine Influenza, FVRCP, FeLV, etc.) counts — even in a vet visit summary, vaccination history section, or list of services rendered. If the document says a vaccine was given, is due, or is recorded in the patient's history, it MUST appear in the vaccines array with whatever dates are available.
+- CLASSIFICATION RULES — vaccines vs. other categories:
+  - "vaccines" is ONLY for true immunizations: Rabies, DHPP, DAPP, DA2PP, Bordetella, Leptospirosis, Lyme vaccine, Canine Influenza, FVRCP, FeLV, FIV vaccine, etc.
+  - DO NOT put these in "vaccines":
+    * Heartworm tests (4Dx, SNAP test, heartworm antigen) → "preventive_care"
+    * Flea/tick/heartworm prevention (Simparica, Simparica TRIO, NexGard, Bravecto, Heartgard, Interceptor, Revolution, Sentinel, Credelio, Trifexis, ProHeart) → "medications"
+    * Deworming treatments (Drontal, Panacur, fenbendazole, pyrantel) → "medications"
+    * Fecal tests, urinalysis, blood panels → "preventive_care" or "lab_values"
+  - Rule of thumb: immunity via injection of antigens = vaccine. Chemical parasite prevention = medication. Test/screening = preventive_care.
 - Do NOT create placeholder or empty entries. Only include a medication in the medications array if you can identify a specific drug name from the document. If no specific medications are mentioned, leave the medications array empty.
 - Species: ${pet_species}, Breed: ${pet_breed}, Record Type: ${record_type}
 
@@ -127,6 +136,9 @@ Respond ONLY with valid JSON matching this exact schema (example values shown �
     ],
     "medications": [
       { "name": "Carprofen", "dosage": "25mg", "frequency": "Twice daily" }
+    ],
+    "preventive_care": [
+      { "name": "Annual Physical Exam", "date_due": "2026-02-15", "date_last": "2025-02-15" }
     ]
   },
   "suggested_vet_questions": ["Question 1", "Question 2"],

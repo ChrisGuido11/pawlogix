@@ -392,13 +392,15 @@ export default function RecordDetailScreen() {
                             </Text>
                           </View>
                           {item.value && (
-                            <View className="flex-row items-center gap-2 mb-1 ml-1">
+                            <View className="flex-row flex-wrap items-center gap-2 mb-1 ml-1">
                               <Text style={[Typography.secondary, { fontFamily: 'monospace', color: Colors.textHeading }]}>
                                 {item.value}
                               </Text>
-                              <Text style={[Typography.secondary, { color: Colors.textBody }]}>
-                                (Normal: {item.normal_range})
-                              </Text>
+                              {item.normal_range ? (
+                                <Text style={[Typography.secondary, { color: Colors.textBody }]}>
+                                  (Normal: {item.normal_range})
+                                </Text>
+                              ) : null}
                             </View>
                           )}
                           <Text style={[Typography.body, { color: Colors.textHeading, marginLeft: Spacing.xs }]}>

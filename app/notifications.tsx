@@ -20,6 +20,8 @@ const TYPE_CONFIG: Record<NotificationItemType, { icon: keyof typeof Ionicons.gl
   vaccine_upcoming: { icon: 'time', color: Colors.warning, bg: Colors.warningLight },
   med_reminder: { icon: 'medkit', color: Colors.success, bg: Colors.successLight },
   urgent_flag: { icon: 'warning', color: Colors.error, bg: Colors.errorLight },
+  preventive_care_overdue: { icon: 'calendar', color: Colors.warning, bg: Colors.warningLight },
+  preventive_care_upcoming: { icon: 'calendar-outline', color: Colors.primary, bg: Colors.primaryLight },
 };
 
 function NotificationCard({ item, index }: { item: NotificationItem; index: number }) {
@@ -124,7 +126,7 @@ export default function NotificationsScreen() {
   const sections: Array<{ title: string; data: NotificationItem[] }> = [];
   if (urgentItems.length > 0) sections.push({ title: 'Needs Attention', data: urgentItems });
   if (warningItems.length > 0) sections.push({ title: 'Coming Up', data: warningItems });
-  if (infoItems.length > 0) sections.push({ title: 'Active Medications', data: infoItems });
+  if (infoItems.length > 0) sections.push({ title: 'Reminders', data: infoItems });
 
   // Flatten with section headers for FlashList
   type ListItem = { type: 'header'; title: string } | { type: 'notification'; item: NotificationItem; globalIndex: number };
