@@ -6,8 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
 import { Tabs, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Keyboard, Platform, Pressable, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -125,18 +125,6 @@ function ScanButton({ onPress }: { onPress: () => void }) {
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
-    return () => { showSub.remove(); hideSub.remove(); };
-  }, []);
-
-  if (keyboardVisible) return null;
-
   return (
     <View
       style={[

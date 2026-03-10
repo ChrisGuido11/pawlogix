@@ -17,24 +17,15 @@ import { usePets } from '@/lib/pet-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import { Colors, Gradients } from '@/constants/Colors';
-import { Typography, Fonts } from '@/constants/typography';
+import { Typography } from '@/constants/typography';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { SectionLabel } from '@/components/ui/section-label';
 import * as Crypto from 'expo-crypto';
 import { File as ExpoFile } from 'expo-file-system';
-import * as Haptics from 'expo-haptics';
 
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB bucket limit
 
-const RECORD_TYPES = [
-  { key: 'lab_results', label: 'Lab Results', icon: 'flask-outline' },
-  { key: 'vet_visit', label: 'Vet Visit', icon: 'medkit-outline' },
-  { key: 'vaccine', label: 'Vaccine Record', icon: 'shield-checkmark-outline' },
-  { key: 'prescription', label: 'Prescription', icon: 'document-outline' },
-  { key: 'other', label: 'Other', icon: 'ellipsis-horizontal-outline' },
-] as const;
-
-type Step = 'choose' | 'camera' | 'preview' | 'details';
+type Step = 'choose' | 'camera' | 'preview';
 
 function StaggeredItem({ index, children }: { index: number; children: React.ReactNode }) {
   const animStyle = useStaggeredEntrance(index);
@@ -47,7 +38,6 @@ export default function RecordScanScreen() {
   const { activePet, pets } = usePets();
   const [step, setStep] = useState<Step>('choose');
   const [images, setImages] = useState<string[]>([]);
-  const [selectedType, setSelectedType] = useState<string>('lab_results');
   const [selectedPetId, setSelectedPetId] = useState<string>(activePet?.id ?? '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -181,7 +171,7 @@ export default function RecordScanScreen() {
         id: recordId,
         pet_id: selectedPetId,
         user_id: user.id,
-        record_type: selectedType,
+        record_type: 'other',
         record_date: new Date().toISOString().split('T')[0],
         image_urls: imageUrls,
         processing_status: 'pending',
@@ -293,8 +283,8 @@ export default function RecordScanScreen() {
           </View>
         )}
 
-        {/* Step: Preview Images */}
-        {(step === 'preview' || step === 'details') && (
+        {/* Step: Preview Images + Submit */}
+        {step === 'preview' && (
           <>
             <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.md }}>
               Selected Images ({images.length})
@@ -329,64 +319,6 @@ export default function RecordScanScreen() {
                 <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: Spacing.xs }]}>Add More</Text>
               </Pressable>
             </ScrollView>
-
-            {step === 'preview' && (
-              <Button
-                title="Continue"
-                onPress={() => {
-                  if (images.length === 0) {
-                    Alert.alert('No images selected', 'Please add at least one image of your record before continuing.');
-                    return;
-                  }
-                  setStep('details');
-                }}
-                disabled={images.length === 0}
-                className="mb-4"
-              />
-            )}
-          </>
-        )}
-
-        {/* Step: Details */}
-        {step === 'details' && (
-          <>
-            <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.xs }}>
-              What type of record is this?
-            </SectionLabel>
-            <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: Spacing.md }]}>
-              Our AI will auto-detect the content, so don't worry if you're unsure.
-            </Text>
-            <View className="flex-row flex-wrap gap-2 mb-5">
-              {RECORD_TYPES.map((type) => {
-                const isSelected = selectedType === type.key;
-                return (
-                  <Pressable
-                    key={type.key}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setSelectedType(type.key);
-                    }}
-                  >
-                    {isSelected ? (
-                      <LinearGradient
-                        colors={[Colors.primaryLight, Colors.primaryLight]}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.card, borderWidth: 1, borderColor: Colors.primary }}
-                      >
-                        <Ionicons name={type.icon as any} size={16} color={Colors.primary} />
-                        <Text style={[Typography.secondary, { fontFamily: Fonts.bold, color: Colors.primary }]}>{type.label}</Text>
-                      </LinearGradient>
-                    ) : (
-                      <View
-                        style={[Shadows.sm, { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md, borderRadius: BorderRadius.card, backgroundColor: Colors.surface }]}
-                      >
-                        <Ionicons name={type.icon as any} size={16} color={Colors.textBody} />
-                        <Text style={[Typography.secondary, { fontFamily: Fonts.medium, color: Colors.textBody }]}>{type.label}</Text>
-                      </View>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
 
             {pets.length > 1 && (
               <>
@@ -433,6 +365,7 @@ export default function RecordScanScreen() {
               title="Interpret This Record"
               onPress={handleSubmit}
               loading={isSubmitting}
+              disabled={images.length === 0}
               icon="sparkles"
             />
           </>

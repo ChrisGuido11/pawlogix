@@ -182,7 +182,7 @@ function RootLayoutNav() {
     if (isLoading || !onboardingChecked) return;
 
     // Hide native splash — our animated overlay takes over
-    SplashScreen.hideAsync();
+    SplashScreen.hideAsync().catch(() => {});
 
     if (needsOnboarding && segments[0] !== 'onboarding') {
       // Re-check AsyncStorage in case onboarding was just completed

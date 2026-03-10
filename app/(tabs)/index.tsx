@@ -235,12 +235,17 @@ export default function HomeScreen() {
   }, [fetchRecords]);
 
   // Re-fetch records when screen regains focus (e.g., after scanning)
+  const hasMountedRef = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      if (!isLoading && activePet) {
+      if (!hasMountedRef.current) {
+        hasMountedRef.current = true;
+        return;
+      }
+      if (activePet) {
         fetchRecords();
       }
-    }, [fetchRecords, isLoading, activePet])
+    }, [fetchRecords, activePet])
   );
 
   const onRefresh = async () => {
@@ -295,8 +300,8 @@ export default function HomeScreen() {
           <PetSelectorBar
             pets={pets}
             activePet={activePet}
-            onSelect={setActivePet}
-            onLongPress={(pet) => router.push(`/pet/${pet.id}` as any)}
+            onSelect={(pet) => router.push(`/pet/${pet.id}` as any)}
+            onLongPress={setActivePet}
             onAdd={() => router.push('/pet/create')}
           />
         </StaggeredCard>

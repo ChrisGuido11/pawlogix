@@ -1,5 +1,4 @@
 import { View, Text, TextInput, Platform, type TextInputProps } from 'react-native';
-import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { Typography, Fonts } from '@/constants/typography';
@@ -16,18 +15,11 @@ export function Input({
   error,
   containerClassName = '',
   className = '',
-  ...props
+  onFocus: onFocusProp,
+  onBlur: onBlurProp,
+  ...rest
 }: InputProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
-  // Spec: bg-surface (#FFFFFF), 1.5px solid border (#EAEAEA), radius 14px
-  // Focus: border-primary, blue focus ring shadow
-  // Error: border-error, error text below
-  const borderColor = error
-    ? Colors.error
-    : isFocused
-      ? Colors.primary
-      : Colors.border;
+  const borderColor = error ? Colors.error : Colors.border;
 
   return (
     <View className={containerClassName}>
@@ -51,15 +43,7 @@ export function Input({
           backgroundColor: Colors.surface,
           borderWidth: 1.5,
           borderColor,
-          borderRadius: BorderRadius.input, // 14px
-          ...(isFocused && Platform.OS === 'ios'
-            ? {
-                shadowColor: Colors.primary,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.15,
-                shadowRadius: 3,
-              }
-            : {}),
+          borderRadius: BorderRadius.input,
         }}
       >
         <TextInput
@@ -74,9 +58,15 @@ export function Input({
             },
           ]}
           placeholderTextColor={Colors.textMuted}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          {...props}
+          onFocus={(e) => {
+            console.log(`[Input] FOCUS: ${label}`);
+            onFocusProp?.(e);
+          }}
+          onBlur={(e) => {
+            console.log(`[Input] BLUR: ${label}`);
+            onBlurProp?.(e);
+          }}
+          {...rest}
         />
       </View>
       {error && (

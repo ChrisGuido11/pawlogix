@@ -32,7 +32,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('id', userId)
         .maybeSingle();
-      if (data) setProfile(data as UserProfile);
+      if (data) {
+        setProfile(data as UserProfile);
+      } else {
+        // Profile missing (e.g., after account deletion + re-login) — create it
+        const { data: newProfile } = await supabase
+          .from('pl_profiles')
+          .upsert({ id: userId }, { onConflict: 'id' })
+          .select()
+          .single();
+        if (newProfile) setProfile(newProfile as UserProfile);
+      }
     } catch {
       // Profile may not exist yet for anonymous users
     }

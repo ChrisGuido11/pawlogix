@@ -353,6 +353,20 @@ export default function ProfileScreen() {
         return;
       }
 
+      // 8. Delete the auth user via edge function (requires service role)
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.access_token) {
+          const { error: fnError } = await supabase.functions.invoke('pl-delete-account', {
+            headers: { Authorization: `Bearer ${currentSession.access_token}` },
+          });
+          if (fnError) throw fnError;
+          completed.push('auth account');
+        }
+      } catch {
+        failed.push('auth account');
+      }
+
       await cancelAllNotifications();
       await AsyncStorage.removeItem('pawlogix_onboarding_complete');
       await signOut();
@@ -575,9 +589,9 @@ export default function ProfileScreen() {
         </Text>
       </ScrollView>
 
-      {/* Advance Notice Picker */}
-      <Modal
-        visible={showAdvancePicker}
+      {/* Advance Notice Picker — conditionally mounted to avoid iOS Modal touch interception */}
+      {showAdvancePicker && <Modal
+        visible
         transparent
         animationType="fade"
         onRequestClose={() => setShowAdvancePicker(false)}
@@ -617,11 +631,11 @@ export default function ProfileScreen() {
             ))}
           </Pressable>
         </Pressable>
-      </Modal>
+      </Modal>}
 
-      {/* Reminder Time Picker */}
-      <Modal
-        visible={showTimePicker}
+      {/* Reminder Time Picker — conditionally mounted to avoid iOS Modal touch interception */}
+      {showTimePicker && <Modal
+        visible
         transparent
         animationType="fade"
         onRequestClose={() => setShowTimePicker(false)}
@@ -661,11 +675,11 @@ export default function ProfileScreen() {
             ))}
           </Pressable>
         </Pressable>
-      </Modal>
+      </Modal>}
 
-      {/* Delete Account Confirmation Modal */}
-      <Modal
-        visible={showDeleteConfirm}
+      {/* Delete Account Confirmation Modal — conditionally mounted to avoid iOS Modal touch interception */}
+      {showDeleteConfirm && <Modal
+        visible
         transparent
         animationType="fade"
         onRequestClose={() => !isDeleting && setShowDeleteConfirm(false)}
@@ -701,7 +715,7 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
         </View>
-      </Modal>
+      </Modal>}
     </CurvedHeaderPage>
   );
 }

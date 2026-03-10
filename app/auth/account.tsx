@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, Pressable, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from '@/lib/toast';
 import { Colors } from '@/constants/Colors';
@@ -70,19 +69,50 @@ export default function AccountScreen() {
   };
 
   return (
-    <CurvedHeaderPage
-      headerProps={{
-        title: authMode === 'signup' ? 'Create Account' : 'Log In',
-        showBack: true,
-      }}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }}>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: Spacing.lg,
+          paddingVertical: Spacing.md,
+        }}
+      >
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: Colors.primaryLight,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Ionicons name="arrow-back" size={20} color={Colors.primary} />
+        </Pressable>
+        <Text
+          style={[
+            Typography.sectionHeading,
+            { color: Colors.textHeading, marginLeft: Spacing.md },
+          ]}
+        >
+          {authMode === 'signup' ? 'Create Account' : 'Log In'}
+        </Text>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}
+          contentContainerStyle={{
+            paddingHorizontal: Spacing.lg,
+            paddingBottom: Spacing['4xl'],
+          }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Segmented control */}
@@ -196,6 +226,6 @@ export default function AccountScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
-    </CurvedHeaderPage>
+    </SafeAreaView>
   );
 }

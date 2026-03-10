@@ -22,7 +22,7 @@ const ONBOARDING_KEY = 'pawlogix_onboarding_complete';
 
 const slides = [
   {
-    title: 'Scan any\nvet record',
+    title: 'Scan any vet record',
     subtitle: 'Take a photo or upload \u2014 we\u2019ll handle the rest.',
     illustration: require('@/assets/illustrations/mascot-welcome.png'),
     mainIcon: 'scan' as const,
@@ -37,7 +37,7 @@ const slides = [
     ],
   },
   {
-    title: 'AI translates\nthe jargon',
+    title: 'AI translates the jargon',
     subtitle: 'Complex medical terms become plain English instantly.',
     illustration: require('@/assets/illustrations/mascot-magnify.png'),
     mainIcon: 'chatbubbles' as const,
@@ -52,7 +52,7 @@ const slides = [
     ],
   },
   {
-    title: 'Track your\npet\u2019s health',
+    title: 'Track your pet\u2019s health',
     subtitle: 'See trends, get reminders, stay on top of care.',
     illustration: require('@/assets/illustrations/mascot-chart.png'),
     mainIcon: 'trending-up' as const,
@@ -260,8 +260,8 @@ export default function OnboardingScreen() {
     scrollRef.current?.scrollTo({ x: width * 2, animated: true });
   };
 
-  // 60/40 split
-  const illustrationHeight = height * 0.52;
+  // 45/55 split — more room for text content
+  const illustrationHeight = height * 0.42;
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -299,29 +299,30 @@ export default function OnboardingScreen() {
                 <SlideIllustration slide={slide} />
               </View>
 
-              {/* Bottom 40%: Text content */}
-              <View style={{ flex: 1, paddingHorizontal: Spacing['3xl'] }}>
+              {/* Bottom 55%: Text content — centered vertically */}
+              <View style={{ flex: 1, paddingHorizontal: Spacing['2xl'], justifyContent: 'center' }}>
                 <Text
-                  style={[
-                    Typography.contentTitle,
-                    {
-                      color: Colors.textHeading,
-                      textAlign: 'center',
-                      marginBottom: Spacing.md,
-                    },
-                  ]}
+                  style={{
+                    fontFamily: Fonts.bold,
+                    fontSize: 22,
+                    lineHeight: 30,
+                    color: Colors.textHeading,
+                    textAlign: 'center',
+                    marginBottom: Spacing.sm,
+                  }}
                 >
                   {slide.title}
                 </Text>
                 <Text
-                  style={[
-                    Typography.body,
-                    {
-                      color: Colors.textMuted,
-                      textAlign: 'center',
-                      alignSelf: 'center',
-                    },
-                  ]}
+                  style={{
+                    fontFamily: Fonts.regular,
+                    fontSize: 16,
+                    lineHeight: 24,
+                    color: Colors.textBody,
+                    textAlign: 'center',
+                    alignSelf: 'center',
+                    maxWidth: 280,
+                  }}
                 >
                   {slide.subtitle}
                 </Text>

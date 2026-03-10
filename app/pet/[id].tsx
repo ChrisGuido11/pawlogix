@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,12 +80,15 @@ export default function PetDetailScreen() {
   }, [fetchPet]);
 
   // Re-fetch when screen regains focus (e.g., after scanning a record for this pet)
+  const hasMounted = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      if (!isLoading) {
-        fetchPet();
+      if (!hasMounted.current) {
+        hasMounted.current = true;
+        return;
       }
-    }, [fetchPet, isLoading])
+      fetchPet();
+    }, [fetchPet])
   );
 
   const { medications, isLoading: medsLoading, refresh } = usePetMedications(id);
