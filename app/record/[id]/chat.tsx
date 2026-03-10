@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import * as Crypto from 'expo-crypto';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import type { FlashListRef } from '@shopify/flash-list';
@@ -223,34 +224,48 @@ export default function RecordChatScreen() {
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const listRef = useRef<FlashListRef<ChatMessage>>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
-      setIsLoading(true);
-      try {
-        const { data: recordData } = await supabase
-          .from('pl_health_records')
-          .select('*')
-          .eq('id', id)
-          .single();
-        if (recordData) setRecord(recordData as HealthRecord);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
-        const { data: chatData } = await supabase
-          .from('pl_record_chats')
-          .select('*')
-          .eq('health_record_id', id)
-          .order('created_at', { ascending: true });
-        if (chatData) setMessages(chatData as ChatMessage[]);
-      } catch (error) {
-        console.error('Error fetching chat data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
+  const fetchData = useCallback(async () => {
+    if (!id) return;
+    setIsLoading(true);
+    setFetchError(null);
+    try {
+      const { data: recordData, error: recordError } = await supabase
+        .from('pl_health_records')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (recordError) throw recordError;
+      if (!mountedRef.current) return;
+      if (recordData) setRecord(recordData as HealthRecord);
+
+      const { data: chatData, error: chatError } = await supabase
+        .from('pl_record_chats')
+        .select('*')
+        .eq('health_record_id', id)
+        .order('created_at', { ascending: true });
+      if (chatError) throw chatError;
+      if (!mountedRef.current) return;
+      if (chatData) setMessages(chatData as ChatMessage[]);
+    } catch (error) {
+      console.error('Error fetching chat data:', error);
+      if (mountedRef.current) setFetchError('Could not load chat. Please try again.');
+    } finally {
+      if (mountedRef.current) setIsLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     const event = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -267,7 +282,7 @@ export default function RecordChatScreen() {
     setIsSending(true);
 
     const userMessage: ChatMessage = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Crypto.randomUUID()}`,
       role: 'user',
       content: messageText,
       created_at: new Date().toISOString(),
@@ -329,24 +344,24 @@ export default function RecordChatScreen() {
           .single();
 
         const assistantMessage: ChatMessage = {
-          id: savedAssistantMsg?.id ?? `assistant-${Date.now()}`,
+          id: savedAssistantMsg?.id ?? `assistant-${Crypto.randomUUID()}`,
           role: 'assistant',
           content: data.reply,
           created_at: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, assistantMessage]);
+        if (mountedRef.current) setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
+        id: `error-${Crypto.randomUUID()}`,
         role: 'assistant',
         content: "I'm having trouble responding right now. Please try again.",
         created_at: new Date().toISOString(),
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      if (mountedRef.current) setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setIsSending(false);
+      if (mountedRef.current) setIsSending(false);
     }
   };
 
@@ -408,7 +423,7 @@ export default function RecordChatScreen() {
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + Spacing.lg + 44 + Spacing.xs + Spacing['5xl'] - 32 : 0}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 56 : 0}
         >
           {/* Messages */}
           <View style={{ flex: 1, paddingHorizontal: Spacing.lg, paddingTop: Spacing['2xl'] }}>
@@ -417,6 +432,19 @@ export default function RecordChatScreen() {
                 <Skeleton height={60} className="w-2/3 self-start rounded-2xl" />
                 <Skeleton height={40} className="w-1/2 self-end rounded-2xl" />
                 <Skeleton height={80} className="w-3/4 self-start rounded-2xl" />
+              </View>
+            ) : fetchError ? (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="cloud-offline-outline" size={48} color={Colors.textMuted} />
+                <Text style={[Typography.body, { color: Colors.textBody, marginTop: Spacing.md, textAlign: 'center' }]}>
+                  {fetchError}
+                </Text>
+                <Pressable
+                  onPress={fetchData}
+                  style={{ marginTop: Spacing.lg, backgroundColor: Colors.primary, borderRadius: BorderRadius.button, paddingHorizontal: Spacing.xl, paddingVertical: Spacing.md }}
+                >
+                  <Text style={[Typography.buttonPrimary, { color: Colors.textOnPrimary }]}>Retry</Text>
+                </Pressable>
               </View>
             ) : messages.length === 0 ? (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, RefreshControl, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -195,18 +195,30 @@ export default function HomeScreen() {
     setActiveFilter('All');
   }, [activePet?.id]);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const fetchRecords = useCallback(async () => {
     if (!user?.id || !activePet) return;
+
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     try {
       const { data, error } = await supabase
         .from('pl_health_records')
         .select('*')
         .eq('pet_id', activePet.id)
-        .order('record_date', { ascending: false });
+        .order('record_date', { ascending: false })
+        .abortSignal(controller.signal);
       if (error) throw error;
-      setRecords((data ?? []) as HealthRecord[]);
-      setFetchError(null);
-    } catch (error) {
+      if (!controller.signal.aborted) {
+        setRecords((data ?? []) as HealthRecord[]);
+        setFetchError(null);
+      }
+    } catch (error: any) {
+      if (error?.name === 'AbortError' || controller.signal.aborted) return;
       console.error('Error fetching records:', error);
       setFetchError("Couldn't load records. Pull down to try again.");
     }
@@ -219,7 +231,17 @@ export default function HomeScreen() {
       setIsLoading(false);
     };
     load();
+    return () => { abortRef.current?.abort(); };
   }, [fetchRecords]);
+
+  // Re-fetch records when screen regains focus (e.g., after scanning)
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoading && activePet) {
+        fetchRecords();
+      }
+    }, [fetchRecords, isLoading, activePet])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

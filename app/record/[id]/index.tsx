@@ -90,6 +90,7 @@ export default function RecordDetailScreen() {
   const router = useRouter();
   const [record, setRecord] = useState<HealthRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
@@ -97,15 +98,18 @@ export default function RecordDetailScreen() {
   const fetchRecord = useCallback(async () => {
     if (!id) return;
     setIsLoading(true);
+    setFetchError(null);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('pl_health_records')
         .select('*')
         .eq('id', id)
         .single();
+      if (error) throw error;
       if (data) setRecord(data as HealthRecord);
     } catch (error) {
       console.error('Error fetching record:', error);
+      setFetchError('Could not load this record. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -154,6 +158,20 @@ export default function RecordDetailScreen() {
           <Skeleton height={14} className="w-full mb-2" />
           <Skeleton height={14} className="w-3/4" />
         </Card>
+      </View>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background }}>
+        <EmptyState
+          illustration={require('@/assets/illustrations/mascot-tangled.png')}
+          title="Something went wrong"
+          subtitle={fetchError}
+          actionLabel="Retry"
+          onAction={fetchRecord}
+        />
       </View>
     );
   }

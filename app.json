@@ -3,7 +3,7 @@
     "name": "PawLogix",
     "slug": "pawlogix",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "pawlogix",
     "userInterfaceStyle": "light",
@@ -14,7 +14,8 @@
       "backgroundColor": "#E8F6FC"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
+      "buildNumber": "1",
       "bundleIdentifier": "com.pawlogix.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

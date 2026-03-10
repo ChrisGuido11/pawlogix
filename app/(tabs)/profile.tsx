@@ -586,7 +586,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: Colors.modalScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}
           onPress={() => setShowAdvancePicker(false)}
         >
-          <Pressable style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing.xl, width: '100%', maxWidth: 320 }]}>
+          <Pressable style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing.xl, width: '100%', maxWidth: 480 }]}>
             <Text style={[Typography.sectionHeading, { color: Colors.textHeading, marginBottom: Spacing.lg, textAlign: 'center' }]}>
               Advance Notice
             </Text>
@@ -630,7 +630,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: Colors.modalScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}
           onPress={() => setShowTimePicker(false)}
         >
-          <Pressable style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing.xl, width: '100%', maxWidth: 320 }]}>
+          <Pressable style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing.xl, width: '100%', maxWidth: 480 }]}>
             <Text style={[Typography.sectionHeading, { color: Colors.textHeading, marginBottom: Spacing.lg, textAlign: 'center' }]}>
               Reminder Time
             </Text>
@@ -671,7 +671,7 @@ export default function ProfileScreen() {
         onRequestClose={() => !isDeleting && setShowDeleteConfirm(false)}
       >
         <View style={{ flex: 1, backgroundColor: Colors.modalScrim, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing['2xl'] }}>
-          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing['3xl'], width: '100%', maxWidth: 340, alignItems: 'center' }]}>
+          <View style={[Shadows.lg, { backgroundColor: Colors.surface, borderRadius: BorderRadius.bottomSheet, padding: Spacing['3xl'], width: '100%', maxWidth: 480, alignItems: 'center' }]}>
             <View style={{ width: 140, height: 140, borderRadius: 70, overflow: 'hidden', marginBottom: Spacing.lg }}>
               <Image
                 source={require('@/assets/illustrations/mascot-waving-goodbye.png')}

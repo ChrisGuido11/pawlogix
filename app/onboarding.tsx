@@ -269,7 +269,7 @@ export default function OnboardingScreen() {
         {/* Skip button — top right */}
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing['2xl'], paddingTop: Spacing.sm, paddingBottom: Spacing.xs }}>
           {activeIndex < 2 ? (
-            <Pressable onPress={skipToEnd} hitSlop={12}>
+            <Pressable onPress={skipToEnd} hitSlop={12} accessibilityLabel="Skip onboarding" accessibilityRole="button">
               <Text style={[Typography.body, { color: Colors.textBody }]}>Skip</Text>
             </Pressable>
           ) : (
@@ -319,7 +319,6 @@ export default function OnboardingScreen() {
                     {
                       color: Colors.textMuted,
                       textAlign: 'center',
-                      maxWidth: 300,
                       alignSelf: 'center',
                     },
                   ]}
@@ -346,6 +345,8 @@ export default function OnboardingScreen() {
             <View style={{ alignItems: 'center' }}>
               <Pressable
                 onPress={() => scrollRef.current?.scrollTo({ x: width * (activeIndex + 1), animated: true })}
+                accessibilityLabel="Next slide"
+                accessibilityRole="button"
                 style={[
                   Shadows.primaryButton,
                   {

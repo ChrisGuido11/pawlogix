@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -41,30 +41,35 @@ export default function PetDetailScreen() {
   const [pet, setPet] = useState<PetProfile | null>(null);
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchPet = useCallback(async () => {
     if (!id) return;
     setIsLoading(true);
+    setFetchError(null);
     try {
-      const { data: petData } = await supabase
+      const { data: petData, error: petError } = await supabase
         .from('pl_pets')
         .select('*')
         .eq('id', id)
         .single();
+      if (petError) throw petError;
 
       if (petData) setPet(petData as PetProfile);
 
-      const { data: recordData } = await supabase
+      const { data: recordData, error: recordError } = await supabase
         .from('pl_health_records')
         .select('*')
         .eq('pet_id', id)
         .order('record_date', { ascending: false })
         .limit(10);
+      if (recordError) throw recordError;
 
       if (recordData) setRecords(recordData as HealthRecord[]);
     } catch (error) {
       console.error('Error fetching pet:', error);
+      setFetchError('Could not load pet details. Pull down to try again.');
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +78,15 @@ export default function PetDetailScreen() {
   useEffect(() => {
     fetchPet();
   }, [fetchPet]);
+
+  // Re-fetch when screen regains focus (e.g., after scanning a record for this pet)
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoading) {
+        fetchPet();
+      }
+    }, [fetchPet, isLoading])
+  );
 
   const { medications, isLoading: medsLoading, refresh } = usePetMedications(id);
   const handleDeleteRecord = useDeleteRecord(setRecords);
@@ -205,6 +219,20 @@ export default function PetDetailScreen() {
             <Skeleton height={12} className="w-2/3" />
           </Card>
         </View>
+      </View>
+    );
+  }
+
+  if (fetchError && !pet) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background }}>
+        <EmptyState
+          illustration={require('@/assets/illustrations/mascot-tangled.png')}
+          title="Something went wrong"
+          subtitle={fetchError}
+          actionLabel="Retry"
+          onAction={fetchPet}
+        />
       </View>
     );
   }

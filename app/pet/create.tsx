@@ -191,7 +191,7 @@ export default function PetCreateScreen() {
           </Text>
 
           {/* Photo Picker */}
-          <Pressable onPress={pickImage} style={{ alignSelf: 'center', marginBottom: Spacing['2xl'], alignItems: 'center' }}>
+          <Pressable onPress={pickImage} accessibilityLabel="Add pet photo" accessibilityRole="button" style={{ alignSelf: 'center', marginBottom: Spacing['2xl'], alignItems: 'center' }}>
             {photoUri ? (
               <View style={[Shadows.lg, { borderRadius: 60 }]}>
                 <Image
@@ -300,7 +300,7 @@ export default function PetCreateScreen() {
                       value={breedSearch}
                       onChangeText={setBreedSearch}
                     />
-                    <ScrollView style={{ maxHeight: 160 }} nestedScrollEnabled>
+                    <ScrollView style={{ maxHeight: 240 }} nestedScrollEnabled>
                       {filteredBreeds.map((breed) => (
                         <Pressable
                           key={breed}

@@ -42,7 +42,10 @@
       "Bash(npx skills:*)",
       "WebFetch(domain:skills.sh)",
       "Bash(npx supabase:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(eas:*)",
+      "Bash(wc:*)",
+      "Bash(cat:*)"
     ]
   }
 }

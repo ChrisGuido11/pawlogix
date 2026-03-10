@@ -111,16 +111,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
+  // I2: Ensure profile is loaded whenever user changes — covers the race
+  // condition where onAuthStateChange fires fetchProfile without awaiting it.
+  useEffect(() => {
+    if (user?.id) {
+      fetchProfile(user.id);
+    }
+  }, [user?.id, fetchProfile]);
+
   const linkAccount = async (email: string, password: string, displayName?: string) => {
-    // --- DEBUG: gather evidence for network failure ---
     const scopedEmail = scopeEmail(email);
-    console.log('[linkAccount] start', {
-      scopedEmail,
-      hasSession: !!session,
-      hasUser: !!user,
-      userId: user?.id?.slice(0, 8),
-      isAnon: user?.is_anonymous,
-    });
 
     // Quick connectivity check — bypasses SDK session/lock machinery
     try {
@@ -128,14 +128,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`,
         { headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY! } },
       );
-      console.log('[linkAccount] health check:', healthResp.status);
+      if (!healthResp.ok) {
+        throw new Error(`Health check returned ${healthResp.status}`);
+      }
     } catch (healthErr: any) {
       console.error('[linkAccount] health check FAILED:', healthErr.message);
       throw new Error(
         'Cannot reach the server. Please check your internet connection and try again.',
       );
     }
-    // --- END DEBUG ---
 
     const updatePromise = supabase.auth.updateUser({
       email: scopedEmail,
@@ -148,14 +149,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const result = await Promise.race([updatePromise, timeoutPromise]);
     const { data, error } = result;
-
-    console.log('[linkAccount] updateUser result', {
-      hasData: !!data,
-      hasUser: !!data?.user,
-      hasError: !!error,
-      errorMsg: error?.message,
-      errorName: error?.name,
-    });
 
     if (error) throw error;
 

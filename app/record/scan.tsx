@@ -148,9 +148,12 @@ export default function RecordScanScreen() {
 
     const urls: string[] = [];
 
+    const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'heic'];
+
     for (let i = 0; i < images.length; i++) {
       const uri = images[i];
-      const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const rawExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileExt = ALLOWED_EXTENSIONS.includes(rawExt) ? rawExt : 'jpg';
       const filePath = `${user.id}/${recordId}/${i}.${fileExt}`;
 
       const file = new ExpoFile(uri);
@@ -217,6 +220,8 @@ export default function RecordScanScreen() {
             <View style={{ alignItems: 'center', paddingBottom: Spacing['2xl'] }}>
               <Pressable
                 onPress={takePhoto}
+                accessibilityLabel="Take photo"
+                accessibilityRole="button"
                 style={{ width: 80, height: 80, borderRadius: 40, borderWidth: 4, borderColor: Colors.textOnPrimary, alignItems: 'center', justifyContent: 'center' }}
               >
                 <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.textOnPrimary }} />

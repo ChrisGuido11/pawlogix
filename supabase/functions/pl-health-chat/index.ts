@@ -12,10 +12,18 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+      { global: { headers: { Authorization: authHeader } } }
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -27,6 +35,21 @@ serve(async (req) => {
     }
 
     const { health_record_id, message, chat_history } = await req.json();
+
+    // C3: Validate message input
+    if (typeof message !== 'string' || message.trim().length === 0) {
+      return new Response(JSON.stringify({ error: 'Message is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (message.length > 5000) {
+      return new Response(JSON.stringify({ error: 'Message too long (max 5000 characters)' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
 
     if (!anthropicKey) {
@@ -67,8 +90,13 @@ RULES:
       { role: 'user', content: message },
     ];
 
+    // C4: Add AbortController with 60s timeout matching pl-interpret-record
+    const controller = new AbortController();
+    const apiTimeout = setTimeout(() => controller.abort(), 60_000);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'x-api-key': anthropicKey,
         'anthropic-version': '2023-06-01',
@@ -83,6 +111,7 @@ RULES:
     });
 
     const aiData = await response.json();
+    clearTimeout(apiTimeout);
 
     if (!response.ok) {
       throw new Error(aiData.error?.message || 'AI API request failed');
