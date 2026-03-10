@@ -291,7 +291,7 @@ export default function PetDetailScreen() {
             )}
           </Pressable>
           {pet.weight_kg && (
-            <Badge label={`${pet.weight_kg} kg`} variant="primary" className="mt-3" />
+            <Badge label={`${pet.weight_kg} lbs`} variant="primary" className="mt-3" />
           )}
         </View>
 

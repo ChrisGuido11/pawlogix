@@ -94,7 +94,7 @@ serve(async (req) => {
 3. Translate every medical term, abbreviation, and lab value into plain English
 4. For lab values, indicate if they are within normal range for the species and breed
 5. Flag any values outside normal range with severity: "info" (minor/FYI), "watch" (monitor this), or "urgent" (discuss with vet soon)
-6. Extract numeric values (weight, lab values) into structured data for trend tracking
+6. Extract numeric values (weight in lbs â€” convert from kg if needed, lab values) into structured data for trend tracking
 7. Extract vaccination dates and medication schedules
 8. Write a "Summary for Pet Parent" in warm, reassuring but honest language
 9. Suggest 2-4 specific questions the owner could ask their vet
@@ -134,7 +134,7 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
     "record_date": "2025-02-15",
     "breed": "Golden Retriever",
     "date_of_birth": "2022-01-15",
-    "weight_kg": 12.5,
+    "weight_lbs": 27.5,
     "lab_values": {
       "BUN": { "value": 18, "unit": "mg/dL", "date": "2025-01-15" },
       "ALT": { "value": 45, "unit": "U/L", "date": "2025-01-15" }
@@ -275,9 +275,9 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
     try {
       const petUpdates: Record<string, any> = {};
 
-      const extractedWeight = interpretation.extracted_values?.weight_kg;
+      const extractedWeight = interpretation.extracted_values?.weight_lbs ?? interpretation.extracted_values?.weight_kg;
       if (typeof extractedWeight === 'number' && extractedWeight > 0) {
-        petUpdates.weight_kg = extractedWeight;
+        petUpdates.weight_kg = extractedWeight; // column stores lbs despite name
       }
 
       if (extractedBreed || extractedDob || Object.keys(petUpdates).length > 0) {

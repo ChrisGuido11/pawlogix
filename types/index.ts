@@ -55,7 +55,8 @@ export interface ExtractedValues {
   record_date?: string;       // Extracted then moved to health record
   breed?: string;             // Extracted then moved to pet profile
   date_of_birth?: string;     // Extracted then moved to pet profile
-  weight_kg?: number;
+  weight_lbs?: number;
+  weight_kg?: number; // legacy — prefer weight_lbs
   lab_values?: Record<string, {
     value: number;
     unit: string;
