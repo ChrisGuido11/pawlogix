@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "buildNumber": "1",
+      "buildNumber": "11",
       "bundleIdentifier": "com.pawlogix.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -45,13 +45,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "PawLogix needs camera access to scan your pet's vet records."
+          "cameraPermission": "PawLogix uses your camera to take photos of your pet's veterinary records, lab results, and vaccination documents so our AI can analyze them and provide plain-English health summaries."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "PawLogix needs photo access to upload your pet's vet records."
+          "photosPermission": "PawLogix accesses your photo library so you can select existing photos of veterinary records, lab results, and vaccination documents for AI-powered health analysis. For example, you can upload a photo of your pet's blood work to get a plain-English explanation of the results."
         }
       ],
       [

@@ -45,7 +45,9 @@
       "Bash(cp:*)",
       "Bash(eas:*)",
       "Bash(wc:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(npx eas:*)",
+      "Bash(find /c/Users/cguid/pawlogix-1 -maxdepth 2 -name \"*.plist\" -o -name \"eas.json\" 2>/dev/null | grep -v node_modules)"
     ]
   }
 }
