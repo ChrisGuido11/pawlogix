@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { SectionLabel } from '@/components/ui/section-label';
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { requestNotificationPermissions } from '@/lib/notifications';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from '@/lib/toast';
 import { Colors } from '@/constants/Colors';
 import { Spacing, BorderRadius, Shadows } from '@/constants/spacing';
@@ -66,6 +67,8 @@ export function MedicationReminderModal({
   frequency,
 }: MedicationReminderModalProps) {
   const { getSchedule, setReminder, removeReminder } = useMedReminderScheduler();
+  const { profile } = useAuth();
+  const medRemindersEnabled = profile?.notification_med_reminders !== false;
   const [times, setTimes] = useState<Array<{ hour: number; minute: number }>>([]);
   const [hasExisting, setHasExisting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -221,6 +224,26 @@ export function MedicationReminderModal({
               <Ionicons name="close" size={24} color={Colors.textMuted} />
             </Pressable>
           </View>
+
+          {/* Global toggle warning */}
+          {!medRemindersEnabled && (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: Spacing.sm,
+                backgroundColor: Colors.warningLight,
+                borderRadius: BorderRadius.button,
+                padding: Spacing.md,
+                marginBottom: Spacing.md,
+              }}
+            >
+              <Ionicons name="warning" size={18} color={Colors.warning} />
+              <Text style={[Typography.caption, { color: Colors.textBody, flex: 1 }]}>
+                Medication reminders are paused in Settings. Your schedule will be saved but won't fire until re-enabled.
+              </Text>
+            </View>
+          )}
 
           {/* Times List */}
           <SectionLabel style={{ marginBottom: Spacing.sm }}>Reminder Times</SectionLabel>

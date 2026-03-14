@@ -1,53 +1,84 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, KeyboardAvoidingView, Platform, Pressable, Alert } from 'react-native';
-import { useRouter, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as ImagePicker from 'expo-image-picker';
-import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
-import { useAuth } from '@/lib/auth-context';
-import { usePets } from '@/lib/pet-context';
+import { Skeleton } from '@/components/ui/skeleton';
+import { SectionLabel } from '@/components/ui/section-label';
 import { supabase } from '@/lib/supabase';
+import { usePets } from '@/lib/pet-context';
 import { toast } from '@/lib/toast';
-import { Colors, Gradients } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
-import { SectionLabel } from '@/components/ui/section-label';
-import * as Crypto from 'expo-crypto';
-import { File as ExpoFile } from 'expo-file-system';
-import * as Haptics from 'expo-haptics';
+import type { PetProfile } from '@/types';
 
-const petSchema = z.object({
+const editPetSchema = z.object({
   name: z.string().min(1, 'Pet name is required'),
   species: z.enum(['dog', 'cat']),
-  sex: z.enum(['male', 'female', '']).optional(),
   breed: z.string().optional(),
+  sex: z.enum(['male', 'female', '']).optional(),
+  date_of_birth: z.string().optional(),
   weight_kg: z.string().optional(),
   notes: z.string().optional(),
 });
 
-type PetForm = z.infer<typeof petSchema>;
+type EditPetForm = z.infer<typeof editPetSchema>;
 
-export default function PetCreateScreen() {
+export default function PetEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
-  const { refreshPets } = usePets();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
   const navigation = useNavigation();
+  const { refreshPets } = usePets();
+  const [pet, setPet] = useState<PetProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  const { control, handleSubmit, watch, setValue, formState: { errors, isDirty } } = useForm<PetForm>({
-    resolver: zodResolver(petSchema),
-    defaultValues: { name: '', species: 'dog', sex: '', breed: '', weight_kg: '', notes: '' },
+  const { control, handleSubmit, watch, setValue, reset, formState: { errors, isDirty } } = useForm<EditPetForm>({
+    resolver: zodResolver(editPetSchema),
+    defaultValues: { name: '', species: 'dog', breed: '', sex: '', date_of_birth: '', weight_kg: '', notes: '' },
   });
 
+  const fetchPet = useCallback(async () => {
+    if (!id) return;
+    try {
+      const { data, error } = await supabase
+        .from('pl_pets')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      const petData = data as PetProfile;
+      setPet(petData);
+      reset({
+        name: petData.name,
+        species: petData.species,
+        breed: petData.breed ?? '',
+        sex: petData.sex ?? '',
+        date_of_birth: petData.date_of_birth ?? '',
+        weight_kg: petData.weight_kg != null ? String(petData.weight_kg) : '',
+        notes: petData.notes ?? '',
+      });
+    } catch (error) {
+      toast({ title: 'Error', message: 'Could not load pet details', preset: 'error' });
+      router.back();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, reset, router]);
+
+  useEffect(() => {
+    fetchPet();
+  }, [fetchPet]);
+
+  // Unsaved changes guard
   useEffect(() => {
     if (submitSuccess) return;
     const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
@@ -66,118 +97,56 @@ export default function PetCreateScreen() {
   }, [navigation, isDirty, submitSuccess]);
 
   const species = watch('species');
-  const sex = watch('sex');
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  };
-
-  const uploadPhoto = async (petId: string): Promise<string | null> => {
-    if (!photoUri || !user) return null;
-    try {
-      const filePath = `${user.id}/${petId}.jpg`;
-
-      const file = new ExpoFile(photoUri);
-      const arrayBuffer = await file.arrayBuffer();
-
-      const { error } = await supabase.storage
-        .from('pl-pet-photos')
-        .upload(filePath, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
-
-      if (error) throw error;
-
-      const { data: urlData } = supabase.storage
-        .from('pl-pet-photos')
-        .getPublicUrl(filePath);
-
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error('Photo upload error:', error);
-      return null;
-    }
-  };
-
-  const onSubmit = async (data: PetForm) => {
-    if (!user) return;
+  const onSubmit = async (data: EditPetForm) => {
+    if (!id) return;
     setIsSubmitting(true);
     try {
-      const petId = Crypto.randomUUID();
-      const photoUrl = await uploadPhoto(petId);
-
-      const { error } = await supabase.from('pl_pets').insert({
-        id: petId,
-        user_id: user.id,
+      const updates: Record<string, unknown> = {
         name: data.name,
         species: data.species,
         breed: data.breed || null,
         sex: data.sex || null,
+        date_of_birth: data.date_of_birth || null,
         weight_kg: data.weight_kg ? parseFloat(data.weight_kg) : null,
-        photo_url: photoUrl,
         notes: data.notes || null,
-        is_active: true,
-      });
+      };
 
+      const { error } = await supabase.from('pl_pets').update(updates).eq('id', id);
       if (error) throw error;
 
       await refreshPets();
       setSubmitSuccess(true);
-      toast({ title: `${data.name} added!`, preset: 'done' });
-      router.replace('/(tabs)');
+      toast({ title: `${data.name} updated!`, preset: 'done' });
+      router.back();
     } catch (error: any) {
-      toast({ title: 'Error', message: error.message || 'Failed to add pet', preset: 'error' });
+      toast({ title: 'Error', message: error.message || 'Failed to update pet', preset: 'error' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <CurvedHeaderPage headerProps={{ title: 'Edit Pet', showBack: true }}>
+        <View style={{ gap: Spacing.lg, paddingTop: Spacing.xl }}>
+          <Skeleton height={48} />
+          <Skeleton height={48} />
+          <Skeleton height={48} />
+          <Skeleton height={48} />
+        </View>
+      </CurvedHeaderPage>
+    );
+  }
+
   return (
-    <CurvedHeaderPage
-      headerProps={{ title: 'Add Your Pet', showBack: true }}
-    >
+    <CurvedHeaderPage headerProps={{ title: 'Edit Pet', showBack: true }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
-          <Text style={[Typography.body, { color: Colors.textBody, marginBottom: Spacing['2xl'] }]}>
-            Tell us about your furry friend
-          </Text>
-
-          {/* Photo Picker */}
-          <Pressable onPress={pickImage} accessibilityLabel="Add pet photo" accessibilityRole="button" style={{ alignSelf: 'center', marginBottom: Spacing['2xl'], alignItems: 'center' }}>
-            {photoUri ? (
-              <View style={[Shadows.lg, { borderRadius: 60 }]}>
-                <Image
-                  source={{ uri: photoUri }}
-                  style={{ width: 120, height: 120, borderRadius: 60 }}
-                />
-                <View style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.textOnPrimary }}>
-                  <Ionicons name="camera" size={14} color={Colors.textOnPrimary} />
-                </View>
-              </View>
-            ) : (
-              <View style={{ alignItems: 'center' }}>
-                <View style={[Shadows.primaryButton, { borderRadius: 60 }]}>
-                  <LinearGradient
-                    colors={[...Gradients.primaryCta]}
-                    style={{ width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Ionicons name="camera-outline" size={40} color={Colors.textOnPrimary} />
-                  </LinearGradient>
-                </View>
-                <Text style={[Typography.secondary, { color: Colors.textBody, marginTop: Spacing.md }]}>Tap to add photo</Text>
-              </View>
-            )}
-          </Pressable>
-
+          {/* Name */}
           <Controller
             control={control}
             name="name"
@@ -195,7 +164,7 @@ export default function PetCreateScreen() {
             )}
           />
 
-          {/* Species Selector */}
+          {/* Species */}
           <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
             Species *
           </SectionLabel>
@@ -205,42 +174,54 @@ export default function PetCreateScreen() {
               return (
                 <Pressable
                   key={s}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setValue('species', s); setValue('breed', ''); }}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setValue('species', s, { shouldDirty: true });
+                  }}
                   style={[
                     isSelected ? Shadows.md : Shadows.sm,
                     { flex: 1, borderRadius: BorderRadius.card },
                   ]}
                 >
-                  {isSelected ? (
-                    <LinearGradient
-                      colors={[Colors.primaryLight, Colors.primaryLight]}
-                      style={{ borderRadius: BorderRadius.card, paddingVertical: Spacing.lg, alignItems: 'center' }}
+                  <View
+                    style={{
+                      backgroundColor: isSelected ? Colors.primaryLight : Colors.surface,
+                      borderRadius: BorderRadius.card,
+                      paddingVertical: Spacing.lg,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Ionicons
+                      name={isSelected ? 'paw' : 'paw-outline'}
+                      size={28}
+                      color={isSelected ? Colors.primary : Colors.textBody}
+                    />
+                    <Text
+                      style={[
+                        Typography.secondary,
+                        {
+                          fontFamily: isSelected ? Fonts.bold : Fonts.medium,
+                          color: isSelected ? Colors.primary : Colors.textBody,
+                          marginTop: 6,
+                        },
+                      ]}
                     >
-                      <Ionicons name="paw" size={28} color={Colors.primary} />
-                      <Text style={[Typography.secondary, { fontFamily: Fonts.bold, color: Colors.primary, marginTop: 6 }]}>
-                        {s === 'dog' ? 'Dog' : 'Cat'}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={{ backgroundColor: Colors.surface, borderRadius: BorderRadius.card, paddingVertical: Spacing.lg, alignItems: 'center' }}>
-                      <Ionicons name="paw-outline" size={28} color={Colors.textBody} />
-                      <Text style={[Typography.secondary, { fontFamily: Fonts.medium, color: Colors.textBody, marginTop: 6 }]}>
-                        {s === 'dog' ? 'Dog' : 'Cat'}
-                      </Text>
-                    </View>
-                  )}
+                      {s === 'dog' ? 'Dog' : 'Cat'}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
           </View>
 
-          {/* Sex Selector */}
+          {/* Sex */}
           <SectionLabel style={{ marginTop: Spacing.md, marginBottom: Spacing.sm }}>
             Sex
           </SectionLabel>
           <View className="flex-row gap-3 mb-4">
             {(['male', 'female'] as const).map((s) => {
-              const isSelected = sex === s;
+              const currentSex = watch('sex');
+              const isSelected = currentSex === s;
               return (
                 <Pressable
                   key={s}
@@ -301,6 +282,23 @@ export default function PetCreateScreen() {
             )}
           />
 
+          {/* Date of Birth */}
+          <Controller
+            control={control}
+            name="date_of_birth"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                label="Date of Birth"
+                placeholder="YYYY-MM-DD"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                keyboardType="numbers-and-punctuation"
+                containerClassName="mb-4"
+              />
+            )}
+          />
+
           {/* Weight */}
           <Controller
             control={control}
@@ -318,12 +316,13 @@ export default function PetCreateScreen() {
             )}
           />
 
+          {/* Notes */}
           <Controller
             control={control}
             name="notes"
             render={({ field: { onChange, onBlur, value } }) => (
               <Input
-                label="Notes (optional)"
+                label="Notes"
                 placeholder="Allergies, conditions, anything the vet should know..."
                 value={value}
                 onChangeText={onChange}
@@ -336,10 +335,11 @@ export default function PetCreateScreen() {
           />
 
           <Button
-            title="Save Pet"
+            title="Save Changes"
             onPress={handleSubmit(onSubmit)}
             loading={isSubmitting}
-            icon="paw"
+            disabled={!isDirty}
+            icon="checkmark-circle"
           />
         </ScrollView>
       </KeyboardAvoidingView>

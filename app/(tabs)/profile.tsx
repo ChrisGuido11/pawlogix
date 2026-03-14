@@ -17,6 +17,8 @@ import { toast } from '@/lib/toast';
 import {
   requestNotificationPermissions,
   cancelNotificationsByType,
+  cancelMedNotificationsOnly,
+  rescheduleAllMedReminders,
   cancelAllNotifications,
 } from '@/lib/notifications';
 import { Colors, Gradients } from '@/constants/Colors';
@@ -138,8 +140,14 @@ export default function ProfileScreen() {
         toast({ title: 'Notifications Blocked', message: 'Please enable notifications in your device settings.', preset: 'error' });
         return;
       }
+      // Reschedule all saved med reminders from AsyncStorage
+      const count = await rescheduleAllMedReminders();
+      if (count > 0) {
+        toast({ title: 'Reminders restored', message: `${count} medication reminder${count !== 1 ? 's' : ''} rescheduled.`, preset: 'done' });
+      }
     } else {
-      await cancelNotificationsByType('med_reminder');
+      // Cancel OS notifications but preserve saved schedules
+      await cancelMedNotificationsOnly();
     }
 
     if (user?.id) {
@@ -468,9 +476,9 @@ export default function ProfileScreen() {
           </Card>
         )}
 
-        {/* Notifications */}
-        <SectionLabel>Notifications</SectionLabel>
-        <Card className="mb-5">
+        {/* Notifications — Medications */}
+        <SectionLabel>Medication Reminders</SectionLabel>
+        <Card className="mb-3">
           <SettingsRow
             icon="medical-outline"
             label="Medication Reminders"
@@ -483,7 +491,14 @@ export default function ProfileScreen() {
               />
             }
           />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+        </Card>
+        <Text style={[Typography.caption, { color: Colors.textMuted, marginBottom: Spacing.lg, paddingHorizontal: Spacing.xs }]}>
+          Set reminder times for each medication from pet profiles or the home screen. This toggle enables or pauses all medication reminders.
+        </Text>
+
+        {/* Notifications — Vaccines & Preventive */}
+        <SectionLabel>Vaccine &amp; Preventive Reminders</SectionLabel>
+        <Card className="mb-5">
           <SettingsRow
             icon="shield-checkmark-outline"
             label="Vaccine Reminders"
@@ -509,30 +524,34 @@ export default function ProfileScreen() {
               />
             }
           />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
-          <SettingsRow
-            icon="calendar-outline"
-            label="Advance Notice"
-            onPress={() => setShowAdvancePicker(true)}
-            trailing={
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
-                <Text style={[Typography.secondary, { color: Colors.textMuted }]}>{advanceDays} day{advanceDays !== 1 ? 's' : ''}</Text>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-              </View>
-            }
-          />
-          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
-          <SettingsRow
-            icon="time-outline"
-            label="Reminder Time"
-            onPress={() => setShowTimePicker(true)}
-            trailing={
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
-                <Text style={[Typography.secondary, { color: Colors.textMuted }]}>{formatHour(reminderHour)}</Text>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
-              </View>
-            }
-          />
+          {(vaxReminders || preventiveReminders) && (
+            <>
+              <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+              <SettingsRow
+                icon="calendar-outline"
+                label="Advance Notice"
+                onPress={() => setShowAdvancePicker(true)}
+                trailing={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                    <Text style={[Typography.secondary, { color: Colors.textMuted }]}>{advanceDays} day{advanceDays !== 1 ? 's' : ''}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  </View>
+                }
+              />
+              <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+              <SettingsRow
+                icon="time-outline"
+                label="Reminder Time"
+                onPress={() => setShowTimePicker(true)}
+                trailing={
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                    <Text style={[Typography.secondary, { color: Colors.textMuted }]}>{formatHour(reminderHour)}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                  </View>
+                }
+              />
+            </>
+          )}
         </Card>
 
         {/* Legal */}
@@ -605,7 +624,7 @@ export default function ProfileScreen() {
               Advance Notice
             </Text>
             <Text style={[Typography.secondary, { color: Colors.textBody, marginBottom: Spacing.lg, textAlign: 'center' }]}>
-              How early should we remind you about upcoming vaccines?
+              How early should we remind you about upcoming vaccines and preventive care?
             </Text>
             {ADVANCE_OPTIONS.map((opt) => (
               <Pressable
@@ -649,7 +668,7 @@ export default function ProfileScreen() {
               Reminder Time
             </Text>
             <Text style={[Typography.secondary, { color: Colors.textBody, marginBottom: Spacing.lg, textAlign: 'center' }]}>
-              What time of day should reminders arrive?
+              What time of day should vaccine and preventive care reminders arrive?
             </Text>
             {TIME_OPTIONS.map((opt) => (
               <Pressable

@@ -257,10 +257,10 @@ export default function PetDetailScreen() {
     <View style={{ flex: 1, backgroundColor: Colors.primary }}>
       <CurvedHeader
         title={pet.name}
-        subtitle={`${pet.breed ?? pet.species} ${pet.date_of_birth ? `· ${calculateAge(pet.date_of_birth)}` : ''}`}
+        subtitle={[pet.breed ?? pet.species, pet.sex ? (pet.sex === 'male' ? 'Male' : 'Female') : null, pet.date_of_birth ? calculateAge(pet.date_of_birth) : null].filter(Boolean).join(' · ')}
         showBack
-        rightIcon="trash-outline"
-        onRightPress={handleDelete}
+        rightIcon="create-outline"
+        onRightPress={() => router.push(`/pet/edit/${pet.id}` as any)}
         extraPaddingBottom={40}
       />
 
@@ -364,7 +364,10 @@ export default function PetDetailScreen() {
             <View style={{ gap: Spacing.sm, marginBottom: Spacing.lg }}>
               {medications.map((med, idx) => (
                 <StaggeredCard key={`${med.sourceRecordId}-${med.name}`} index={2 + idx}>
-                  <Card onPress={() => router.push(`/record/${med.sourceRecordId}` as any)}>
+                  <Card onPress={() => {
+                    setSelectedMed({ name: med.name, dosage: med.dosage, frequency: med.frequency });
+                    setReminderModalVisible(true);
+                  }}>
                     <View className="flex-row items-center gap-3">
                       <View
                         style={{
@@ -391,22 +394,11 @@ export default function PetDetailScreen() {
                           {getRecordTypeLabel(med.sourceRecordType)} · {formatDate(med.sourceRecordDate)}
                         </Text>
                       </View>
-                      <Pressable
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          setSelectedMed({ name: med.name, dosage: med.dosage, frequency: med.frequency });
-                          setReminderModalVisible(true);
-                        }}
-                        hitSlop={8}
-                        style={{ padding: Spacing.xs }}
-                      >
-                        <Ionicons
-                          name={activeReminders.has(med.name) ? 'notifications' : 'notifications-outline'}
-                          size={20}
-                          color={activeReminders.has(med.name) ? Colors.primary : Colors.textMuted}
-                        />
-                      </Pressable>
-                      <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                      <Ionicons
+                        name={activeReminders.has(med.name) ? 'notifications' : 'notifications-outline'}
+                        size={20}
+                        color={activeReminders.has(med.name) ? Colors.primary : Colors.textMuted}
+                      />
                     </View>
                   </Card>
                 </StaggeredCard>
@@ -483,6 +475,17 @@ export default function PetDetailScreen() {
               </Card>
             </StaggeredCard>
           )}
+
+          {/* Remove Pet */}
+          <View style={{ marginTop: Spacing['2xl'], alignItems: 'center' }}>
+            <Button
+              title="Remove Pet"
+              onPress={handleDelete}
+              variant="destructive"
+              size="sm"
+              icon="trash-outline"
+            />
+          </View>
         </ScrollView>
       </View>
 

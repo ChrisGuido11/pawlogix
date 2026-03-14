@@ -124,9 +124,29 @@ export async function cancelNotificationsByType(
   const remaining = scheduled.filter((n) => n.type !== type);
   await saveScheduledNotifications(remaining);
 
+  // Only wipe saved med schedules when explicitly removing individual reminders,
+  // NOT when toggling the global master switch off. See cancelMedNotificationsOnly().
   if (type === 'med_reminder') {
     await saveMedReminderSchedules([]);
   }
+}
+
+/**
+ * Cancel all med reminder OS notifications WITHOUT wiping saved schedules.
+ * Used by the global "Medication Reminders" master switch so schedules
+ * can be restored when the toggle is turned back on.
+ */
+export async function cancelMedNotificationsOnly(): Promise<void> {
+  const scheduled = await getScheduledNotifications();
+  const toCancel = scheduled.filter((n) => n.type === 'med_reminder');
+
+  for (const n of toCancel) {
+    await cancelNotification(n.notificationId).catch(() => {});
+  }
+
+  const remaining = scheduled.filter((n) => n.type !== 'med_reminder');
+  await saveScheduledNotifications(remaining);
+  // Intentionally does NOT clear med schedules from AsyncStorage
 }
 
 // --- Reconcile with OS ---
@@ -215,4 +235,57 @@ export async function removeMedReminderSchedule(
     (s) => !(s.petId === petId && s.medicationName === medicationName)
   );
   await saveMedReminderSchedules(filtered);
+}
+
+/**
+ * Re-schedule OS notifications for ALL saved med reminder schedules.
+ * Used when the global "Medication Reminders" toggle is turned back on.
+ */
+export async function rescheduleAllMedReminders(): Promise<number> {
+  const { SchedulableTriggerInputTypes } = await import('expo-notifications');
+  const schedules = await getMedReminderSchedules();
+  if (schedules.length === 0) return 0;
+
+  const stored = await getScheduledNotifications();
+  const newNotifications: ScheduledNotification[] = [];
+  let count = 0;
+
+  for (const schedule of schedules) {
+    const medKey = schedule.medicationName.toLowerCase().trim();
+
+    for (const time of schedule.times) {
+      const dedupKey = `med_${schedule.petId}_${medKey}_${time.hour}:${time.minute}`;
+
+      // Skip if already scheduled
+      if (stored.some((n) => n.dedupKey === dedupKey)) continue;
+
+      const notificationId = await scheduleNotification({
+        title: `Time for ${schedule.petName}'s ${schedule.medicationName}`,
+        body: [schedule.dosage].filter(Boolean).join(' · '),
+        data: { type: 'med_reminder', petId: schedule.petId },
+        trigger: {
+          type: SchedulableTriggerInputTypes.DAILY,
+          hour: time.hour,
+          minute: time.minute,
+        },
+      });
+
+      newNotifications.push({
+        notificationId,
+        type: 'med_reminder',
+        petId: schedule.petId,
+        petName: schedule.petName,
+        itemName: schedule.medicationName,
+        triggerDate: `daily:${String(time.hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`,
+        dedupKey,
+      });
+      count++;
+    }
+  }
+
+  if (newNotifications.length > 0) {
+    await saveScheduledNotifications([...stored, ...newNotifications]);
+  }
+
+  return count;
 }

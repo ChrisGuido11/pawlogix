@@ -60,7 +60,7 @@ export function getVaccineExpandedText(nextDue: string | undefined, status: Vacc
   }
 }
 
-export function MedicationCard({ item, index }: { item: MedicationItem; index: number }) {
+export function MedicationCard({ item, index, onSetReminder }: { item: MedicationItem; index: number; onSetReminder?: () => void }) {
   const animStyle = useStaggeredEntrance(index);
   const [expanded, setExpanded] = useState(false);
 
@@ -115,6 +115,18 @@ export function MedicationCard({ item, index }: { item: MedicationItem; index: n
                 {formatDate(item.sourceRecordDate)}
               </Text>
             </View>
+            {onSetReminder && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onSetReminder();
+                }}
+                hitSlop={8}
+                style={{ padding: Spacing.xs }}
+              >
+                <Ionicons name="notifications-outline" size={20} color={Colors.textMuted} />
+              </Pressable>
+            )}
             <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
           </View>
           {expanded && (

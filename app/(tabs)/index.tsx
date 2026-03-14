@@ -33,6 +33,8 @@ import type { ContentItem } from '@/lib/record-filters';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
+import { MedicationReminderModal } from '@/components/medication-reminder-modal';
+import type { MedicationItem } from '@/lib/record-filters';
 import type { HealthRecord, PetProfile } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -45,13 +47,13 @@ function PetSelectorBar({
   pets,
   activePet,
   onSelect,
-  onLongPress,
+  onViewDetail,
   onAdd,
 }: {
   pets: PetProfile[];
   activePet: PetProfile | null;
   onSelect: (pet: PetProfile) => void;
-  onLongPress: (pet: PetProfile) => void;
+  onViewDetail: (pet: PetProfile) => void;
   onAdd: () => void;
 }) {
   return (
@@ -68,11 +70,11 @@ function PetSelectorBar({
             key={pet.id}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onSelect(pet);
-            }}
-            onLongPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onLongPress(pet);
+              if (isActive) {
+                onViewDetail(pet);
+              } else {
+                onSelect(pet);
+              }
             }}
             style={{ alignItems: 'center', width: 64 }}
           >
@@ -172,6 +174,10 @@ export default function HomeScreen() {
   const [activeFilter, setActiveFilter] = useState('All');
   const { urgentCount } = useNotificationItems();
 
+  // Medication reminder modal state
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [selectedMed, setSelectedMed] = useState<MedicationItem | null>(null);
+
   const bellProps = {
     rightIcon: 'notifications' as const,
     onRightPress: () => router.push('/notifications' as any),
@@ -267,7 +273,16 @@ export default function HomeScreen() {
     if ('kind' in item) {
       switch (item.kind) {
         case 'medication':
-          return <MedicationCard item={item} index={index} />;
+          return (
+            <MedicationCard
+              item={item}
+              index={index}
+              onSetReminder={() => {
+                setSelectedMed(item);
+                setReminderModalVisible(true);
+              }}
+            />
+          );
         case 'lab_value':
           return <LabValueCard item={item} index={index} />;
         case 'vaccine':
@@ -300,8 +315,8 @@ export default function HomeScreen() {
           <PetSelectorBar
             pets={pets}
             activePet={activePet}
-            onSelect={(pet) => router.push(`/pet/${pet.id}` as any)}
-            onLongPress={setActivePet}
+            onSelect={setActivePet}
+            onViewDetail={(pet) => router.push(`/pet/${pet.id}` as any)}
             onAdd={() => router.push('/pet/create')}
           />
         </StaggeredCard>
@@ -504,7 +519,7 @@ export default function HomeScreen() {
               pets={pets}
               activePet={activePet}
               onSelect={setActivePet}
-              onLongPress={(pet) => router.push(`/pet/${pet.id}` as any)}
+              onViewDetail={(pet) => router.push(`/pet/${pet.id}` as any)}
               onAdd={() => router.push('/pet/create')}
             />
           )}
@@ -554,6 +569,18 @@ export default function HomeScreen() {
           }
         />
       </View>
+
+      {selectedMed && activePet && (
+        <MedicationReminderModal
+          visible={reminderModalVisible}
+          onClose={() => setReminderModalVisible(false)}
+          petId={activePet.id}
+          petName={activePet.name}
+          medicationName={selectedMed.name}
+          dosage={selectedMed.dosage}
+          frequency={selectedMed.frequency}
+        />
+      )}
     </CurvedHeaderPage>
   );
 }

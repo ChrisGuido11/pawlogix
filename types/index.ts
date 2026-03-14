@@ -4,6 +4,7 @@ export interface PetProfile {
   name: string;
   species: 'dog' | 'cat';
   breed: string | null;
+  sex: 'male' | 'female' | null;
   date_of_birth: string | null;
   weight_kg: number | null;
   photo_url: string | null;
