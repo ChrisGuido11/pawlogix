@@ -164,13 +164,17 @@ function RootLayoutNav() {
   // Auto-schedule vaccine & med reminders
   useNotificationSync();
 
-  // Handle notification taps — navigate to pet detail
+  // Handle notification taps — route based on notification data type
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = response.notification.request.content.data;
-        if (data?.petId) {
+        if (data?.recordId) {
+          router.push(`/record/${data.recordId}` as any);
+        } else if (data?.petId) {
           router.push(`/pet/${data.petId}` as any);
+        } else {
+          router.push('/notifications' as any);
         }
       }
     );
@@ -239,7 +243,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontError) {
-      console.warn('Font loading error:', fontError);
+      // Font loading failed — app will fall back to system fonts
     }
   }, [fontError]);
 

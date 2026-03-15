@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, AppState, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useAnimatedStyle,
@@ -152,12 +152,15 @@ function ProgressSteps() {
 export default function RecordProcessingScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const [status, setStatus] = useState<
     'pending' | 'processing' | 'completed' | 'failed'
   >('pending');
   const [error, setError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
   const glowScale = useSharedValue(1);
 
   useEffect(() => {
@@ -179,9 +182,23 @@ export default function RecordProcessingScreen() {
     setError(message);
   };
 
-  const startPollingWithTimeout = () => {
+  const TIMEOUT_MS = 90_000;
+
+  const checkRecordStatus = async (): Promise<{ processing_status: string; processing_error?: string } | null> => {
+    if (!id) return null;
+    const { data } = await supabase
+      .from('pl_health_records')
+      .select('processing_status, processing_error')
+      .eq('id', id)
+      .single();
+    return data;
+  };
+
+  const startPollingWithTimeout = (remainingMs?: number) => {
     cleanup();
+    startTimeRef.current = Date.now();
     let pollErrorCount = 0;
+    const budget = remainingMs ?? TIMEOUT_MS;
 
     intervalRef.current = setInterval(async () => {
       if (!id) return;
@@ -212,7 +229,7 @@ export default function RecordProcessingScreen() {
 
     timeoutRef.current = setTimeout(() => {
       fail('Processing is taking longer than expected. Please try again.');
-    }, 90_000);
+    }, budget);
   };
 
   const invokeEdgeFunction = async () => {
@@ -335,18 +352,56 @@ export default function RecordProcessingScreen() {
   }, [id]);
 
   const handleRetry = async () => {
-    if (!id) return;
+    if (!id || isRetrying) return;
+    setIsRetrying(true);
     setStatus('pending');
     setError(null);
 
-    await supabase
-      .from('pl_health_records')
-      .update({ processing_status: 'pending' })
-      .eq('id', id);
+    try {
+      const { error: updateError } = await supabase
+        .from('pl_health_records')
+        .update({ processing_status: 'pending' })
+        .eq('id', id);
+      if (updateError) throw updateError;
 
-    startPollingWithTimeout();
-    invokeEdgeFunction();
+      startPollingWithTimeout();
+      invokeEdgeFunction();
+    } catch {
+      Alert.alert('Error', 'Could not retry. Please try again.');
+      setStatus('failed');
+    } finally {
+      setIsRetrying(false);
+    }
   };
+
+  // Disable back gesture during processing
+  const isProcessing = status === 'pending' || status === 'processing';
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: !isProcessing });
+  }, [isProcessing, navigation]);
+
+  // Handle app foregrounding — check DB status before showing stale timeout
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active' && (status === 'pending' || status === 'processing')) {
+        const data = await checkRecordStatus();
+        if (data?.processing_status === 'completed') {
+          cleanup();
+          router.replace(`/record/${id}` as any);
+        } else if (data?.processing_status === 'failed') {
+          cleanup();
+          setStatus('failed');
+          setError(data.processing_error || 'Something went wrong.');
+        } else {
+          // Still processing — restart polling with remaining budget
+          const elapsed = Date.now() - startTimeRef.current;
+          const remaining = Math.max(TIMEOUT_MS - elapsed, 10_000);
+          startPollingWithTimeout(remaining);
+        }
+      }
+    });
+    return () => subscription.remove();
+  }, [id, status]);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -369,6 +424,8 @@ export default function RecordProcessingScreen() {
             <Button
               title="Try Again"
               onPress={handleRetry}
+              loading={isRetrying}
+              disabled={isRetrying}
               className="w-full mb-3"
             />
             <Button

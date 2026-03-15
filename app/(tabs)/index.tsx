@@ -36,6 +36,7 @@ import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, BorderRadius, Spacing } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import { MedicationReminderModal } from '@/components/medication-reminder-modal';
+import { useMedicationCompletions } from '@/hooks/useMedicationCompletions';
 import type { MedicationItem } from '@/lib/record-filters';
 import type { HealthRecord, PetProfile } from '@/types';
 
@@ -174,8 +175,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
-  const { urgentCount } = useNotificationItems();
+  const { urgentCount, refresh: refreshNotifications } = useNotificationItems();
   const { isPremium, showPaywall, canUseFeature } = usePaywall();
+  const { markDone, markUndone, isCompleted, getLastCompletedAt } = useMedicationCompletions();
 
   const handleAddPet = useCallback(() => {
     if (!isPremium && pets.length >= FREE_LIMITS.maxPets) {
@@ -247,7 +249,6 @@ export default function HomeScreen() {
       }
     } catch (error: any) {
       if (error?.name === 'AbortError' || controller.signal.aborted) return;
-      console.error('Error fetching records:', error);
       setFetchError("Couldn't load records. Pull down to try again.");
     }
   }, [user?.id, activePet?.id]);
@@ -273,12 +274,13 @@ export default function HomeScreen() {
       if (activePet) {
         fetchRecords();
       }
-    }, [fetchRecords, activePet])
+      refreshNotifications();
+    }, [fetchRecords, activePet, refreshNotifications])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchRecords();
+    await Promise.all([fetchRecords(), refreshNotifications()]);
     setRefreshing(false);
   };
 
@@ -303,6 +305,18 @@ export default function HomeScreen() {
                 setSelectedMed(item);
                 setReminderModalVisible(true);
               }}
+              onMarkDone={activePet ? () => {
+                const done = isCompleted(activePet.id, item.name, item.frequency);
+                Haptics.notificationAsync(done ? Haptics.NotificationFeedbackType.Warning : Haptics.NotificationFeedbackType.Success);
+                if (done) {
+                  markUndone(activePet.id, item.name);
+                } else {
+                  markDone(activePet.id, item.name);
+                }
+                refreshNotifications();
+              } : undefined}
+              isCompleted={activePet ? isCompleted(activePet.id, item.name, item.frequency) : false}
+              lastCompletedAt={activePet ? getLastCompletedAt(activePet.id, item.name) : null}
             />
           );
         case 'lab_value':
@@ -319,7 +333,7 @@ export default function HomeScreen() {
         index={index}
       />
     );
-  }, [router, handleDeleteRecord]);
+  }, [router, handleDeleteRecord, activePet, markDone, isCompleted]);
 
   const keyExtractor = useCallback((item: HealthRecord | ContentItem, index: number) => {
     if ('kind' in item) {

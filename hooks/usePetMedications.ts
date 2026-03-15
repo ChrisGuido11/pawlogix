@@ -51,7 +51,6 @@ export function usePetMedications(petId: string | undefined) {
 
       setMedications(Array.from(seen.values()));
     } catch (err: any) {
-      console.error('Error fetching medications:', err);
       setError(err.message ?? 'Failed to load medications');
     } finally {
       setIsLoading(false);

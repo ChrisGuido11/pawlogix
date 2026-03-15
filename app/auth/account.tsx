@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, Pressable, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, Pressable, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,25 @@ export default function AccountScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState<{ email?: string; password?: string }>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const navigation = useNavigation();
+
+  // Unsaved changes guard
+  useEffect(() => {
+    const hasContent = formEmail.trim().length > 0 || formPassword.length > 0;
+    if (!hasContent) return;
+    const unsubscribe = navigation.addListener('beforeRemove', (e: any) => {
+      e.preventDefault();
+      Alert.alert(
+        'Discard Changes?',
+        'You have unsaved changes. Are you sure you want to go back?',
+        [
+          { text: 'Keep Editing', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(e.data.action) },
+        ],
+      );
+    });
+    return unsubscribe;
+  }, [navigation, formEmail, formPassword]);
 
   const validate = () => {
     const errors: { email?: string; password?: string } = {};

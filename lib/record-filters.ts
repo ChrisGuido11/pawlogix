@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { getResetIntervalMs } from '@/hooks/useMedicationCompletions';
 import type { HealthRecord, FlaggedItem, InterpretedSection } from '@/types';
 
 // --- Content item types for flattened filter views ---
@@ -122,11 +123,47 @@ export const FILTER_EMPTY_STATES: Record<string, { title: string; subtitle: stri
 
 export type VaccineStatus = 'overdue' | 'upcoming' | 'current' | null;
 
+/**
+ * Advances a static next_due date forward by the medication/vaccine frequency
+ * until it reaches a date that is today or in the future.
+ * If the user completed the current interval, advances one more step.
+ */
+export function getEffectiveNextDue(
+  originalNextDue: string | undefined,
+  frequency: string,
+  lastCompletedAt?: string | null
+): string | undefined {
+  if (!originalNextDue) return undefined;
+  const dueDate = new Date(originalNextDue + (originalNextDue.length === 10 ? 'T00:00:00' : ''));
+  if (isNaN(dueDate.getTime())) return originalNextDue;
+
+  const intervalMs = getResetIntervalMs(frequency);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  // Advance past dates forward by the interval until >= today
+  while (dueDate < now) {
+    dueDate.setTime(dueDate.getTime() + intervalMs);
+  }
+
+  // If the user completed the current interval, show the next one
+  if (lastCompletedAt) {
+    const timeSinceCompletion = Date.now() - new Date(lastCompletedAt).getTime();
+    if (timeSinceCompletion < intervalMs) {
+      dueDate.setTime(dueDate.getTime() + intervalMs);
+    }
+  }
+
+  return dueDate.toISOString().split('T')[0];
+}
+
 export function getVaccineStatus(nextDue: string | undefined): VaccineStatus {
   if (!nextDue) return null;
-  const now = new Date();
-  const dueDate = new Date(nextDue);
+  // Force local time interpretation for date-only strings (avoids UTC timezone shift)
+  const dueDate = new Date(nextDue + (nextDue.length === 10 ? 'T00:00:00' : ''));
   if (isNaN(dueDate.getTime())) return null;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   if (dueDate < now) return 'overdue';
   if (dueDate < thirtyDaysFromNow) return 'upcoming';

@@ -24,12 +24,12 @@ import { File as ExpoFile } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 
 const petSchema = z.object({
-  name: z.string().min(1, 'Pet name is required'),
+  name: z.string().min(1, 'Pet name is required').max(50, 'Name too long'),
   species: z.enum(['dog', 'cat']),
   sex: z.enum(['male', 'female', '']).optional(),
-  breed: z.string().optional(),
+  breed: z.string().max(50, 'Breed too long').optional(),
   weight_kg: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().max(500, 'Notes too long').optional(),
 });
 
 type PetForm = z.infer<typeof petSchema>;
@@ -37,7 +37,7 @@ type PetForm = z.infer<typeof petSchema>;
 export default function PetCreateScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { refreshPets } = usePets();
+  const { refreshPets, setActivePet } = usePets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -99,8 +99,7 @@ export default function PetCreateScreen() {
         .getPublicUrl(filePath);
 
       return urlData.publicUrl;
-    } catch (error) {
-      console.error('Photo upload error:', error);
+    } catch {
       return null;
     }
   };
@@ -112,7 +111,7 @@ export default function PetCreateScreen() {
       const petId = Crypto.randomUUID();
       const photoUrl = await uploadPhoto(petId);
 
-      const { error } = await supabase.from('pl_pets').insert({
+      const { data: createdPet, error } = await supabase.from('pl_pets').insert({
         id: petId,
         user_id: user.id,
         name: data.name,
@@ -123,11 +122,12 @@ export default function PetCreateScreen() {
         photo_url: photoUrl,
         notes: data.notes || null,
         is_active: true,
-      });
+      }).select().single();
 
       if (error) throw error;
 
       await refreshPets();
+      if (createdPet) setActivePet(createdPet as any);
       setSubmitSuccess(true);
       toast({ title: `${data.name} added!`, preset: 'done' });
       router.replace('/(tabs)');
@@ -190,6 +190,7 @@ export default function PetCreateScreen() {
                 onBlur={onBlur}
                 error={errors.name?.message}
                 autoCapitalize="words"
+                maxLength={50}
                 containerClassName="mb-4"
               />
             )}
@@ -296,6 +297,7 @@ export default function PetCreateScreen() {
                 onChangeText={onChange}
                 onBlur={onBlur}
                 autoCapitalize="words"
+                maxLength={50}
                 containerClassName="mb-4"
               />
             )}
@@ -330,6 +332,7 @@ export default function PetCreateScreen() {
                 onBlur={onBlur}
                 multiline
                 numberOfLines={3}
+                maxLength={500}
                 containerClassName="mb-6"
               />
             )}

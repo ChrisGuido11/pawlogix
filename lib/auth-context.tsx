@@ -82,8 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await fetchProfile(anonSession.user.id);
           }
         }
-      } catch (error) {
-        console.error('Auth init error:', error);
+      } catch {
         // Last resort: try to create a fresh anonymous session
         try {
           await supabase.auth.signOut();
@@ -141,8 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!healthResp.ok) {
         throw new Error(`Health check returned ${healthResp.status}`);
       }
-    } catch (healthErr: any) {
-      console.error('[linkAccount] health check FAILED:', healthErr.message);
+    } catch {
       throw new Error(
         'Cannot reach the server. Please check your internet connection and try again.',
       );
@@ -172,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email,
         }, { onConflict: 'id' });
       if (upsertError) {
-        console.error('[linkAccount] Profile upsert failed:', upsertError.message);
+        throw new Error(upsertError.message);
       }
       await refreshProfile();
     }

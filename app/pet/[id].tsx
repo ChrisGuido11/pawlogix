@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, Pressable, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import Animated from 'react-native-reanimated';
@@ -19,6 +20,7 @@ import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
 import { calculateAge, getRecordTypeLabel, formatDate } from '@/lib/utils';
+import { getVaccineStatus, getEffectiveNextDue } from '@/lib/record-filters';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
 import { usePaywall } from '@/hooks/usePaywall';
 import { canScan } from '@/lib/subscription';
@@ -26,6 +28,7 @@ import { useAuth } from '@/lib/auth-context';
 import { getMedReminderSchedules, type MedReminderSchedule } from '@/lib/notifications';
 import { cancelNotificationsForPet } from '@/lib/notifications';
 import { MedicationReminderModal } from '@/components/medication-reminder-modal';
+import { useMedicationCompletions } from '@/hooks/useMedicationCompletions';
 import { Colors, Gradients } from '@/constants/Colors';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
@@ -72,8 +75,7 @@ export default function PetDetailScreen() {
       if (recordError) throw recordError;
 
       if (recordData) setRecords(recordData as HealthRecord[]);
-    } catch (error) {
-      console.error('Error fetching pet:', error);
+    } catch {
       setFetchError('Could not load pet details. Pull down to try again.');
     } finally {
       setIsLoading(false);
@@ -98,6 +100,8 @@ export default function PetDetailScreen() {
 
   const { medications, isLoading: medsLoading, refresh } = usePetMedications(id);
   const handleDeleteRecord = useDeleteRecord(setRecords);
+  const { markDone, markUndone, isCompleted: isMedCompleted, getLastCompletedAt } = useMedicationCompletions();
+  const [isUploading, setIsUploading] = useState(false);
 
   // Medication reminder modal state
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
@@ -131,10 +135,15 @@ export default function PetDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             if (!id) return;
-            await cancelNotificationsForPet(id);
-            await supabase.from('pl_pets').update({ is_active: false }).eq('id', id);
-            await refreshPets();
-            router.back();
+            try {
+              await cancelNotificationsForPet(id);
+              const { error: deleteError } = await supabase.from('pl_pets').update({ is_active: false }).eq('id', id);
+              if (deleteError) throw deleteError;
+              await refreshPets();
+              router.back();
+            } catch {
+              Alert.alert('Error', 'Could not remove pet. Please try again.');
+            }
           },
         },
       ]
@@ -149,7 +158,8 @@ export default function PetDetailScreen() {
   };
 
   const updatePhoto = async () => {
-    if (!pet) return;
+    if (!pet || isUploading) return;
+    setIsUploading(true);
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
@@ -199,9 +209,10 @@ export default function PetDetailScreen() {
 
       setPet({ ...pet, photo_url: urlData.publicUrl });
       await refreshPets();
-    } catch (error: any) {
-      console.error('Photo update error:', error);
+    } catch {
       Alert.alert('Photo Upload Failed', 'Could not update the photo. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -280,7 +291,7 @@ export default function PetDetailScreen() {
         }}
       >
         <View style={{ alignItems: 'center', marginTop: -48 }}>
-          <Pressable onPress={updatePhoto} style={[Shadows.lg, { borderRadius: 48 }]}>
+          <Pressable onPress={updatePhoto} disabled={isUploading} style={[Shadows.lg, { borderRadius: 48, opacity: isUploading ? 0.6 : 1 }]}>
             {pet.photo_url ? (
               <Image
                 source={{ uri: pet.photo_url }}
@@ -295,6 +306,9 @@ export default function PetDetailScreen() {
               </LinearGradient>
             )}
           </Pressable>
+          {isUploading && (
+            <ActivityIndicator size="small" color={Colors.primary} style={{ marginTop: Spacing.sm }} />
+          )}
           {pet.weight_kg && (
             <Badge label={`${pet.weight_kg} lbs`} variant="primary" className="mt-3" />
           )}
@@ -401,15 +415,58 @@ export default function PetDetailScreen() {
                             {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
                           </Text>
                         )}
-                        {med.next_due && (
-                          <Text style={[Typography.caption, { color: Colors.primary[600], marginTop: 2 }]}>
-                            Next due: {formatDate(med.next_due)}
-                          </Text>
-                        )}
+                        {(() => {
+                          const lastDone = id ? getLastCompletedAt(id, med.name) : null;
+                          const effectiveDue = getEffectiveNextDue(med.next_due, med.frequency, lastDone);
+                          if (!effectiveDue) return null;
+                          const completed = id ? isMedCompleted(id, med.name, med.frequency) : false;
+                          if (completed) {
+                            return (
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                <Ionicons name="checkmark-circle" size={12} color={Colors.success} />
+                                <Text style={[Typography.caption, { color: Colors.success }]}>Done · Next due: {formatDate(effectiveDue)}</Text>
+                              </View>
+                            );
+                          }
+                          const medStatus = getVaccineStatus(effectiveDue);
+                          const statusColor = medStatus === 'overdue' ? Colors.error : medStatus === 'upcoming' ? Colors.warning : Colors.primaryDark;
+                          return (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                              {medStatus === 'overdue' && <Ionicons name="alert-circle" size={12} color={Colors.error} />}
+                              {medStatus === 'upcoming' && <Ionicons name="time" size={12} color={Colors.warning} />}
+                              <Text style={[Typography.caption, { color: statusColor }]}>
+                                {medStatus === 'overdue' ? 'Overdue' : medStatus === 'upcoming' ? 'Due Soon' : `Next due: ${formatDate(effectiveDue)}`}
+                              </Text>
+                            </View>
+                          );
+                        })()}
                         <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: 2 }]}>
                           {getRecordTypeLabel(med.sourceRecordType)} · {formatDate(med.sourceRecordDate)}
                         </Text>
                       </View>
+                      <Pressable
+                        onPress={() => {
+                          if (!id) return;
+                          const completed = isMedCompleted(id, med.name, med.frequency);
+                          if (completed) {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                            markUndone(id, med.name);
+                          } else {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            markDone(id, med.name);
+                          }
+                        }}
+                        hitSlop={8}
+                        style={{ padding: 4 }}
+                        accessibilityLabel={id && isMedCompleted(id, med.name, med.frequency) ? `Mark ${med.name} as not done` : `Mark ${med.name} as done`}
+                        accessibilityRole="button"
+                      >
+                        <Ionicons
+                          name={id && isMedCompleted(id, med.name, med.frequency) ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                          size={20}
+                          color={id && isMedCompleted(id, med.name, med.frequency) ? Colors.success : Colors.textMuted}
+                        />
+                      </Pressable>
                       <Ionicons
                         name={activeReminders.has(med.name) ? 'notifications' : 'notifications-outline'}
                         size={20}

@@ -20,8 +20,8 @@ export function useOfferings(): UseOfferingsResult {
     try {
       const pkgs = await getPackages();
       setPackages(pkgs);
-    } catch (e: any) {
-      setError(e.message ?? 'Failed to load offerings');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load offerings');
     } finally {
       setIsLoading(false);
     }

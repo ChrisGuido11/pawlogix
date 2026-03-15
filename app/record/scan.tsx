@@ -161,7 +161,11 @@ export default function RecordScanScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!user || images.length === 0 || !selectedPetId) return;
+    if (!user || images.length === 0) return;
+    if (!selectedPetId) {
+      Alert.alert('Select a Pet', 'Please select which pet this record belongs to.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       const recordId = Crypto.randomUUID();
@@ -172,7 +176,7 @@ export default function RecordScanScreen() {
         pet_id: selectedPetId,
         user_id: user.id,
         record_type: 'other',
-        record_date: new Date().toISOString().split('T')[0],
+        record_date: (() => { const n = new Date(); return [n.getFullYear(), String(n.getMonth() + 1).padStart(2, '0'), String(n.getDate()).padStart(2, '0')].join('-'); })(),
         image_urls: imageUrls,
         processing_status: 'pending',
       });

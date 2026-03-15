@@ -21,7 +21,7 @@ import { Spacing, Shadows, BorderRadius } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import { FREE_LIMITS, getResetDateLabel } from '@/lib/subscription';
 import { useOfferings } from '@/hooks/useOfferings';
-import { purchasePackage, restorePurchases } from '@/lib/revenucat';
+import { purchasePackage, restorePurchases, checkEntitlement } from '@/lib/revenucat';
 import { PACKAGE_TYPE } from 'react-native-purchases';
 
 // ---------- Feature row ----------
@@ -273,12 +273,23 @@ export default function PaywallScreen() {
     try {
       const info = await purchasePackage(pkg);
       if (info) {
-        // Purchase successful
-        router.back();
+        // Verify entitlement is active before closing
+        const entitled = await checkEntitlement('pro');
+        if (entitled) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.back();
+        } else {
+          // Purchase succeeded but entitlement not yet active
+          Alert.alert(
+            'Almost There',
+            'Your purchase is being processed. Please try again in a moment.'
+          );
+        }
       }
       // null means user cancelled — do nothing
-    } catch (e: any) {
-      Alert.alert('Purchase Failed', e.message ?? 'Something went wrong. Please try again.');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Something went wrong. Please try again.';
+      Alert.alert('Purchase Failed', message);
     } finally {
       setIsPurchasing(false);
     }
@@ -289,16 +300,18 @@ export default function PaywallScreen() {
     setIsRestoring(true);
     try {
       const info = await restorePurchases();
-      const hasPlus = info.entitlements.active['plus'] !== undefined;
-      if (hasPlus) {
+      const hasPro = info.entitlements.active['pro'] !== undefined;
+      if (hasPro) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('Restored!', 'Your PawLogix Pro subscription has been restored.', [
           { text: 'OK', onPress: () => router.back() },
         ]);
       } else {
         Alert.alert('No Subscription Found', 'We could not find a previous PawLogix Pro subscription for this account.');
       }
-    } catch {
-      Alert.alert('Restore Failed', 'Could not restore purchases. Please try again.');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Could not restore purchases. Please try again.';
+      Alert.alert('Restore Failed', message);
     } finally {
       setIsRestoring(false);
     }

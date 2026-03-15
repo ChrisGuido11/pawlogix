@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
-import { getVaccineStatus, type VaccineStatus } from '@/lib/record-filters';
+import { getVaccineStatus, getEffectiveNextDue, type VaccineStatus } from '@/lib/record-filters';
+import { loadMedCompletions, checkMedCompleted } from '@/hooks/useMedicationCompletions';
 import type { HealthRecord, RecordInterpretation, PetProfile } from '@/types';
 
 export type NotificationItemType = 'vaccine_overdue' | 'vaccine_upcoming' | 'med_reminder' | 'med_due' | 'med_overdue' | 'urgent_flag' | 'preventive_care_overdue' | 'preventive_care_upcoming';
@@ -31,16 +32,16 @@ export function useNotificationItems() {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchItems = useCallback(async () => {
     if (pets.length === 0) {
       setItems([]);
       setIsLoading(false);
       return;
     }
 
-    const fetchItems = async () => {
-      setIsLoading(true);
-      const allItems: NotificationItem[] = [];
+    setIsLoading(true);
+    const allItems: NotificationItem[] = [];
+    const medCompletions = await loadMedCompletions();
 
       for (const pet of pets) {
         const { data, error } = await supabase
@@ -60,10 +61,11 @@ export function useNotificationItems() {
           if (Array.isArray(vaccines)) {
             for (const vax of vaccines) {
               if (!vax.name || !vax.next_due) continue;
-              const status = getVaccineStatus(vax.next_due);
+              const effectiveVaxDue = getEffectiveNextDue(vax.next_due, 'yearly') ?? vax.next_due;
+              const status = getVaccineStatus(effectiveVaxDue);
               const vaxReminder = { name: vax.name, dosage: '', frequency: 'As scheduled' };
               if (status === 'overdue') {
-                const dueDate = new Date(vax.next_due);
+                const dueDate = new Date(effectiveVaxDue);
                 const daysPast = Math.round((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
                 allItems.push({
                   id: `vax_overdue_${pet.id}_${vax.name}`,
@@ -74,11 +76,11 @@ export function useNotificationItems() {
                   petName: pet.name,
                   recordId: record.id,
                   severity: 'urgent',
-                  date: vax.next_due,
+                  date: effectiveVaxDue,
                   reminderData: vaxReminder,
                 });
               } else if (status === 'upcoming') {
-                const dueDate = new Date(vax.next_due);
+                const dueDate = new Date(effectiveVaxDue);
                 const daysUntil = Math.round((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                 allItems.push({
                   id: `vax_upcoming_${pet.id}_${vax.name}`,
@@ -89,7 +91,7 @@ export function useNotificationItems() {
                   petName: pet.name,
                   recordId: record.id,
                   severity: 'warning',
-                  date: vax.next_due,
+                  date: effectiveVaxDue,
                   reminderData: vaxReminder,
                 });
               }
@@ -162,12 +164,15 @@ export function useNotificationItems() {
           if (Array.isArray(meds)) {
             for (const med of meds) {
               if (!med.name) continue;
+              // Skip completed medications
+              if (checkMedCompleted(medCompletions, pet.id, med.name, med.frequency ?? '')) continue;
               const medData = { name: med.name, dosage: med.dosage ?? '', frequency: med.frequency ?? '' };
 
               if (med.next_due) {
-                const status = getVaccineStatus(med.next_due);
+                const effectiveMedDue = getEffectiveNextDue(med.next_due, med.frequency ?? '') ?? med.next_due;
+                const status = getVaccineStatus(effectiveMedDue);
                 if (status === 'overdue') {
-                  const dueDate = new Date(med.next_due);
+                  const dueDate = new Date(effectiveMedDue);
                   const daysPast = Math.round((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
                   allItems.push({
                     id: `med_overdue_${pet.id}_${med.name}`,
@@ -180,12 +185,12 @@ export function useNotificationItems() {
                     petName: pet.name,
                     recordId: record.id,
                     severity: 'urgent',
-                    date: med.next_due,
+                    date: effectiveMedDue,
                     reminderData: medData,
                   });
                   continue;
                 } else if (status === 'upcoming') {
-                  const dueDate = new Date(med.next_due);
+                  const dueDate = new Date(effectiveMedDue);
                   const daysUntil = Math.round((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                   allItems.push({
                     id: `med_due_${pet.id}_${med.name}`,
@@ -198,7 +203,7 @@ export function useNotificationItems() {
                     petName: pet.name,
                     recordId: record.id,
                     severity: 'warning',
-                    date: med.next_due,
+                    date: effectiveMedDue,
                     reminderData: medData,
                   });
                   continue;
@@ -235,12 +240,13 @@ export function useNotificationItems() {
 
       setItems(deduped);
       setIsLoading(false);
-    };
-
-    fetchItems();
   }, [pets]);
+
+  useEffect(() => {
+    fetchItems();
+  }, [fetchItems]);
 
   const urgentCount = items.filter((i) => i.severity === 'urgent' || i.severity === 'warning').length;
 
-  return { items, isLoading, urgentCount };
+  return { items, isLoading, urgentCount, refresh: fetchItems };
 }

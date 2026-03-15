@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,9 @@ import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { MedicationReminderModal } from '@/components/medication-reminder-modal';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { useNotificationItems, type NotificationItem, type NotificationItemType } from '@/hooks/useNotificationItems';
+import { useMedicationCompletions } from '@/hooks/useMedicationCompletions';
+import { toast } from '@/lib/toast';
+import * as Haptics from 'expo-haptics';
 import { formatDate } from '@/lib/utils';
 import { Colors } from '@/constants/Colors';
 import { Spacing, BorderRadius, IconTile, IconSize } from '@/constants/spacing';
@@ -28,7 +31,7 @@ const TYPE_CONFIG: Record<NotificationItemType, { icon: keyof typeof Ionicons.gl
   preventive_care_upcoming: { icon: 'calendar-outline', color: Colors.primary, bg: Colors.primaryLight },
 };
 
-function NotificationCard({ item, index, onSetReminder }: { item: NotificationItem; index: number; onSetReminder?: () => void }) {
+function NotificationCard({ item, index, onSetReminder, onMarkDone }: { item: NotificationItem; index: number; onSetReminder?: () => void; onMarkDone?: () => void }) {
   const router = useRouter();
   const animStyle = useStaggeredEntrance(index);
   const config = TYPE_CONFIG[item.type];
@@ -80,6 +83,20 @@ function NotificationCard({ item, index, onSetReminder }: { item: NotificationIt
               </Text>
             </View>
           </View>
+          {onMarkDone && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onMarkDone();
+              }}
+              hitSlop={8}
+              style={{ padding: Spacing.xs, alignSelf: 'center' }}
+              accessibilityLabel={`Mark ${item.title} as done`}
+              accessibilityRole="button"
+            >
+              <Ionicons name="checkmark-circle-outline" size={20} color={Colors.textMuted} />
+            </Pressable>
+          )}
           {hasReminder && (
             <Pressable
               onPress={(e) => {
@@ -99,13 +116,39 @@ function NotificationCard({ item, index, onSetReminder }: { item: NotificationIt
 }
 
 export default function NotificationsScreen() {
-  const { items, isLoading, urgentCount } = useNotificationItems();
+  const { items, isLoading, urgentCount, refresh } = useNotificationItems();
+  const { markDone, markUndone, isCompleted: isMedCompleted } = useMedicationCompletions();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState<NotificationItem | null>(null);
 
   const urgentItems = items.filter((i) => i.severity === 'urgent');
   const warningItems = items.filter((i) => i.severity === 'warning');
   const infoItems = items.filter((i) => i.severity === 'info');
+
+  const isMedType = (type: NotificationItemType) =>
+    type === 'med_overdue' || type === 'med_due' || type === 'med_reminder';
+
+  const handleToggleDone = async (item: NotificationItem) => {
+    if (!item.reminderData) return;
+    const completed = isMedCompleted(item.petId, item.reminderData.name, item.reminderData.frequency ?? '');
+    if (completed) {
+      await markUndone(item.petId, item.reminderData.name);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      toast({ title: 'Marked as not done', preset: 'done' });
+    } else {
+      await markDone(item.petId, item.reminderData.name);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      toast({ title: 'Marked as done', preset: 'done' });
+    }
+    await refresh();
+  };
 
   const handleSetReminder = (item: NotificationItem) => {
     setSelectedItem(item);
@@ -138,6 +181,7 @@ export default function NotificationsScreen() {
       <CurvedHeaderPage headerProps={{ title: 'Notifications', showBack: true }}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
+            illustration={require('@/assets/illustrations/mascot-sleeping.png')}
             icon="notifications-off"
             title="All clear!"
             subtitle="No upcoming reminders or alerts. We'll notify you when something needs attention."
@@ -168,6 +212,9 @@ export default function NotificationsScreen() {
     <CurvedHeaderPage headerProps={{ title: 'Notifications', showBack: true }}>
       <FlashList
         data={listData}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+        }
         renderItem={({ item: listItem }) => {
           if (listItem.type === 'header') {
             return (
@@ -184,6 +231,7 @@ export default function NotificationsScreen() {
                 item={listItem.item}
                 index={listItem.globalIndex}
                 onSetReminder={() => handleSetReminder(listItem.item)}
+                onMarkDone={isMedType(listItem.item.type) ? () => handleToggleDone(listItem.item) : undefined}
               />
             </View>
           );

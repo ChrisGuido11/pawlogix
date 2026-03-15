@@ -104,6 +104,8 @@ export default function ProfileScreen() {
   const [preventiveReminders, setPreventiveReminders] = useState(profile?.notification_preventive_reminders ?? true);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [isManaging, setIsManaging] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [advanceDays, setAdvanceDays] = useState(7);
   const [reminderHour, setReminderHour] = useState(9);
@@ -161,6 +163,8 @@ export default function ProfileScreen() {
       if (error) {
         setMedReminders(previous);
         toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
+      } else {
+        await refreshProfile();
       }
     }
   };
@@ -189,6 +193,8 @@ export default function ProfileScreen() {
       if (error) {
         setVaxReminders(previous);
         toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
+      } else {
+        await refreshProfile();
       }
     }
   };
@@ -217,6 +223,8 @@ export default function ProfileScreen() {
       if (error) {
         setPreventiveReminders(previous);
         toast({ title: 'Failed to update', message: 'Could not save notification preference. Please try again.', preset: 'error' });
+      } else {
+        await refreshProfile();
       }
     }
   };
@@ -504,11 +512,17 @@ export default function ProfileScreen() {
             icon="refresh-outline"
             label="Restore Purchases"
             onPress={async () => {
-              const restored = await rcRestore();
-              if (restored) {
-                toast({ title: 'Restored!', message: 'Your subscription has been restored.', preset: 'done' });
-              } else {
-                toast({ title: 'No subscription found', message: 'We could not find a previous subscription.', preset: 'error' });
+              if (isRestoring) return;
+              setIsRestoring(true);
+              try {
+                const restored = await rcRestore();
+                if (restored) {
+                  toast({ title: 'Restored!', message: 'Your subscription has been restored.', preset: 'done' });
+                } else {
+                  toast({ title: 'No subscription found', message: 'We could not find a previous subscription.', preset: 'error' });
+                }
+              } finally {
+                setIsRestoring(false);
               }
             }}
           />
@@ -519,11 +533,17 @@ export default function ProfileScreen() {
                 icon="settings-outline"
                 label="Manage Subscription"
                 onPress={async () => {
-                  const url = await getManageSubscriptionURL();
-                  if (url) {
-                    Linking.openURL(url);
-                  } else {
-                    Linking.openURL('https://apps.apple.com/account/subscriptions');
+                  if (isManaging) return;
+                  setIsManaging(true);
+                  try {
+                    const url = await getManageSubscriptionURL();
+                    if (url) {
+                      Linking.openURL(url);
+                    } else {
+                      Linking.openURL('https://apps.apple.com/account/subscriptions');
+                    }
+                  } finally {
+                    setIsManaging(false);
                   }
                 }}
               />

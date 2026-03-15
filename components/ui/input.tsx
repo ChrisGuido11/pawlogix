@@ -59,11 +59,9 @@ export function Input({
           ]}
           placeholderTextColor={Colors.textMuted}
           onFocus={(e) => {
-            console.log(`[Input] FOCUS: ${label}`);
             onFocusProp?.(e);
           }}
           onBlur={(e) => {
-            console.log(`[Input] BLUR: ${label}`);
             onBlurProp?.(e);
           }}
           {...rest}

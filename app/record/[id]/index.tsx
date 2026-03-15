@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, RefreshControl, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -19,10 +20,12 @@ import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { getRecordTypeLabel, formatDate } from '@/lib/utils';
+import { getVaccineStatus, getEffectiveNextDue } from '@/lib/record-filters';
 import { Colors } from '@/constants/Colors';
 import { Typography, Fonts } from '@/constants/typography';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
 import { SectionLabel } from '@/components/ui/section-label';
+import { useMedicationCompletions } from '@/hooks/useMedicationCompletions';
 import type { HealthRecord, FlaggedItem } from '@/types';
 
 function StaggeredCard({ index, children }: { index: number; children: React.ReactNode }) {
@@ -91,6 +94,9 @@ export default function RecordDetailScreen() {
   const [record, setRecord] = useState<HealthRecord | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const { markDone, markUndone, isCompleted: isMedCompleted, getLastCompletedAt } = useMedicationCompletions();
+  const [isRetrying, setIsRetrying] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set()
   );
@@ -107,8 +113,7 @@ export default function RecordDetailScreen() {
         .single();
       if (error) throw error;
       if (data) setRecord(data as HealthRecord);
-    } catch (error) {
-      console.error('Error fetching record:', error);
+    } catch {
       setFetchError('Could not load this record. Please try again.');
     } finally {
       setIsLoading(false);
@@ -201,7 +206,21 @@ export default function RecordDetailScreen() {
       }}
       contentStyle={{ paddingHorizontal: 0 }}
     >
-      <ScrollView style={{ flex: 1, paddingHorizontal: Spacing.lg }} contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}>
+      <ScrollView
+        style={{ flex: 1, paddingHorizontal: Spacing.lg }}
+        contentContainerStyle={{ paddingBottom: Spacing['4xl'] }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await fetchRecord();
+              setRefreshing(false);
+            }}
+            tintColor={Colors.primary}
+          />
+        }
+      >
         {/* Mascot illustration — shown for interpreted records */}
         {interpretation && (
           <StaggeredCard index={0}>
@@ -251,6 +270,31 @@ export default function RecordDetailScreen() {
               onPress={fetchRecord}
               variant="secondary"
               className="mt-4"
+            />
+            <Button
+              title="Retry Processing"
+              onPress={async () => {
+                if (isRetrying || !id) return;
+                setIsRetrying(true);
+                try {
+                  const { error: updateError } = await supabase
+                    .from('pl_health_records')
+                    .update({ processing_status: 'pending' })
+                    .eq('id', id);
+                  if (updateError) throw updateError;
+                  await supabase.functions.invoke('pl-interpret-record', {
+                    body: { record_id: id, image_urls: record.image_urls },
+                  });
+                  await fetchRecord();
+                } catch {
+                  Alert.alert('Error', 'Could not retry processing. Please try again.');
+                } finally {
+                  setIsRetrying(false);
+                }
+              }}
+              loading={isRetrying}
+              disabled={isRetrying}
+              className="mt-2"
             />
           </Card>
         ) : record.processing_status === 'failed' ? (
@@ -366,12 +410,55 @@ export default function RecordDetailScreen() {
                                 {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
                               </Text>
                             )}
-                            {med.next_due && (
-                              <Text style={[Typography.caption, { color: Colors.primary[600], marginTop: 2 }]}>
-                                Next due: {formatDate(med.next_due)}
-                              </Text>
-                            )}
+                            {(() => {
+                              const lastDone = record ? getLastCompletedAt(record.pet_id, med.name) : null;
+                              const effectiveDue = getEffectiveNextDue(med.next_due, med.frequency ?? '', lastDone);
+                              if (!effectiveDue) return null;
+                              const completed = record ? isMedCompleted(record.pet_id, med.name, med.frequency ?? '') : false;
+                              if (completed) {
+                                return (
+                                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                    <Ionicons name="checkmark-circle" size={12} color={Colors.success} />
+                                    <Text style={[Typography.caption, { color: Colors.success }]}>Done · Next due: {formatDate(effectiveDue)}</Text>
+                                  </View>
+                                );
+                              }
+                              const medStatus = getVaccineStatus(effectiveDue);
+                              const statusColor = medStatus === 'overdue' ? Colors.error : medStatus === 'upcoming' ? Colors.warning : Colors.primaryDark;
+                              return (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                  {medStatus === 'overdue' && <Ionicons name="alert-circle" size={12} color={Colors.error} />}
+                                  {medStatus === 'upcoming' && <Ionicons name="time" size={12} color={Colors.warning} />}
+                                  <Text style={[Typography.caption, { color: statusColor }]}>
+                                    {medStatus === 'overdue' ? 'Overdue' : medStatus === 'upcoming' ? 'Due Soon' : `Next due: ${formatDate(effectiveDue)}`}
+                                  </Text>
+                                </View>
+                              );
+                            })()}
                           </View>
+                          {record && (
+                            <Pressable
+                              onPress={() => {
+                                const completed = isMedCompleted(record.pet_id, med.name, med.frequency ?? '');
+                                Haptics.notificationAsync(completed ? Haptics.NotificationFeedbackType.Warning : Haptics.NotificationFeedbackType.Success);
+                                if (completed) {
+                                  markUndone(record.pet_id, med.name);
+                                } else {
+                                  markDone(record.pet_id, med.name);
+                                }
+                              }}
+                              hitSlop={8}
+                              style={{ padding: 4 }}
+                              accessibilityLabel={isMedCompleted(record.pet_id, med.name, med.frequency ?? '') ? `Mark ${med.name} as not done` : `Mark ${med.name} as done`}
+                              accessibilityRole="button"
+                            >
+                              <Ionicons
+                                name={isMedCompleted(record.pet_id, med.name, med.frequency ?? '') ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                                size={20}
+                                color={isMedCompleted(record.pet_id, med.name, med.frequency ?? '') ? Colors.success : Colors.textMuted}
+                              />
+                            </Pressable>
+                          )}
                         </View>
                       </Card>
                     </StaggeredCard>

@@ -44,7 +44,7 @@ export function usePaywall(): UsePaywallResult {
   const refreshEntitlement = useCallback(async () => {
     setIsLoading(true);
     try {
-      const entitled = await checkEntitlement('plus');
+      const entitled = await checkEntitlement('pro');
       setIsPremium(entitled);
     } catch {
       setIsPremium(false);
@@ -130,7 +130,7 @@ export function usePaywall(): UsePaywallResult {
       const usage = await getOrCreateUsage(feature);
       if (!usage) return;
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('pl_usage')
         .update({
           usage_count: usage.usage_count + 1,
@@ -138,6 +138,7 @@ export function usePaywall(): UsePaywallResult {
         })
         .eq('user_id', user.id)
         .eq('feature_name', feature);
+      if (updateError) throw updateError;
     },
     [isPremium, user?.id, getOrCreateUsage]
   );
@@ -167,7 +168,7 @@ export function usePaywall(): UsePaywallResult {
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     try {
       const info = await rcRestorePurchases();
-      const entitled = info.entitlements.active['plus'] !== undefined;
+      const entitled = info.entitlements.active['pro'] !== undefined;
       setIsPremium(entitled);
       return entitled;
     } catch {

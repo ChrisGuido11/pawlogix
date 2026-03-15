@@ -80,7 +80,10 @@
       "Bash(cd C:/Users/cguid/pawlogix-1 && npm uninstall pg 2>&1 | tail -3)",
       "Bash(ls \"C:/Users/cguid/pawlogix-1/app/\\(tabs\\)/\")",
       "Bash(find /c/Users/cguid/pawlogix-1 -name \"*prescription*\" -o -name \"*reminder*\" -type f 2>/dev/null | head -20)",
-      "Bash(find /c/Users/cguid/pawlogix-1/app -type f -name \"*.tsx\" 2>/dev/null | head -30)"
+      "Bash(find /c/Users/cguid/pawlogix-1/app -type f -name \"*.tsx\" 2>/dev/null | head -30)",
+      "Bash(find:*)",
+      "Bash(convert:*)",
+      "Bash(npm uninstall:*)"
     ]
   }
 }

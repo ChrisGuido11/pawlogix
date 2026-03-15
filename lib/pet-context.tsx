@@ -44,8 +44,8 @@ export function PetProvider({ children }: { children: React.ReactNode }) {
         }
         return current;
       });
-    } catch (error) {
-      console.error('Error fetching pets:', error);
+    } catch {
+      // Silently fail — pets will show as empty
     } finally {
       setIsLoading(false);
     }

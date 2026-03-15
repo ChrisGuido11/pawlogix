@@ -10,7 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { Spacing, BorderRadius, IconSize, IconTile } from '@/constants/spacing';
 import { Typography, Fonts } from '@/constants/typography';
 import type { FlaggedItem } from '@/types';
-import { getVaccineStatus, type VaccineStatus, type MedicationItem, type LabValueItem, type VaccineItem } from '@/lib/record-filters';
+import { getVaccineStatus, getEffectiveNextDue, type VaccineStatus, type MedicationItem, type LabValueItem, type VaccineItem } from '@/lib/record-filters';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -60,7 +60,7 @@ export function getVaccineExpandedText(nextDue: string | undefined, status: Vacc
   }
 }
 
-export function MedicationCard({ item, index, onSetReminder }: { item: MedicationItem; index: number; onSetReminder?: () => void }) {
+export function MedicationCard({ item, index, onSetReminder, onMarkDone, isCompleted, lastCompletedAt }: { item: MedicationItem; index: number; onSetReminder?: () => void; onMarkDone?: () => void; isCompleted?: boolean; lastCompletedAt?: string | null }) {
   const animStyle = useStaggeredEntrance(index);
   const [expanded, setExpanded] = useState(false);
 
@@ -111,15 +111,52 @@ export function MedicationCard({ item, index, onSetReminder }: { item: Medicatio
                   </Text>
                 ) : null}
               </View>
-              {item.nextDue && (
-                <Text style={[Typography.caption, { color: Colors.primary[600], marginTop: Spacing.xs }]}>
-                  Next due: {formatDate(item.nextDue)}
+              {(() => {
+                const effectiveDue = getEffectiveNextDue(item.nextDue, item.frequency, lastCompletedAt);
+                if (!effectiveDue) return null;
+                if (isCompleted) {
+                  return (
+                    <Text style={[Typography.caption, { color: Colors.success, marginTop: Spacing.xs }]} numberOfLines={1}>
+                      Next: {formatDate(effectiveDue)}
+                    </Text>
+                  );
+                }
+                const medStatus = getVaccineStatus(effectiveDue);
+                const statusColor = medStatus === 'overdue' ? Colors.error : medStatus === 'upcoming' ? Colors.warning : Colors.primaryDark;
+                return (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: Spacing.xs }}>
+                    {medStatus === 'overdue' && <Ionicons name="alert-circle" size={12} color={Colors.error} />}
+                    {medStatus === 'upcoming' && <Ionicons name="time" size={12} color={Colors.warning} />}
+                    <Text style={[Typography.caption, { color: statusColor }]} numberOfLines={1}>
+                      {medStatus === 'overdue' ? 'Overdue' : medStatus === 'upcoming' ? 'Due Soon' : `Due: ${formatDate(effectiveDue)}`}
+                    </Text>
+                  </View>
+                );
+              })()}
+              {!isCompleted && (
+                <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: Spacing.xs }]} numberOfLines={1}>
+                  {formatDate(item.sourceRecordDate)}
                 </Text>
               )}
-              <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: Spacing.xs }]}>
-                {formatDate(item.sourceRecordDate)}
-              </Text>
             </View>
+            {onMarkDone && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onMarkDone();
+                }}
+                hitSlop={8}
+                style={{ padding: Spacing.xs }}
+                accessibilityLabel={isCompleted ? `Mark ${item.name} as not done` : `Mark ${item.name} as done`}
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name={isCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                  size={20}
+                  color={isCompleted ? Colors.success : Colors.textMuted}
+                />
+              </Pressable>
+            )}
             {onSetReminder && (
               <Pressable
                 onPress={(e) => {
@@ -180,7 +217,7 @@ export function LabValueCard({ item, index }: { item: LabValueItem; index: numbe
               <Ionicons name="flask" size={IconSize.md} color={Colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[Typography.cardTitle, { color: Colors.textHeading }]}>
+              <Text style={[Typography.cardTitle, { color: Colors.textHeading }]} numberOfLines={2}>
                 {item.name}
               </Text>
               {(item.value !== 0 || item.unit) ? (

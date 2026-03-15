@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DisclaimerBanner } from '@/components/ui/disclaimer-banner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurvedHeader } from '@/components/ui/curved-header';
@@ -258,8 +259,7 @@ export default function RecordChatScreen() {
       if (chatError) throw chatError;
       if (!mountedRef.current) return;
       if (chatData) setMessages(chatData as ChatMessage[]);
-    } catch (error) {
-      console.error('Error fetching chat data:', error);
+    } catch {
       if (mountedRef.current) setFetchError('Could not load chat. Please try again.');
     } finally {
       if (mountedRef.current) setIsLoading(false);
@@ -291,11 +291,11 @@ export default function RecordChatScreen() {
     }
 
     const messageText = input.trim();
-    setInput('');
+    const tempId = `temp-${Crypto.randomUUID()}`;
     setIsSending(true);
 
     const userMessage: ChatMessage = {
-      id: `temp-${Crypto.randomUUID()}`,
+      id: tempId,
       role: 'user',
       content: messageText,
       created_at: new Date().toISOString(),
@@ -303,7 +303,7 @@ export default function RecordChatScreen() {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const { data: savedUserMsg } = await supabase
+      const { data: savedUserMsg, error: userMsgError } = await supabase
         .from('pl_record_chats')
         .insert({
           health_record_id: id,
@@ -313,6 +313,10 @@ export default function RecordChatScreen() {
         })
         .select()
         .single();
+      if (userMsgError) throw userMsgError;
+
+      // Clear input only after successful insert
+      if (mountedRef.current) setInput('');
 
       const { data: { session } } = await supabase.auth.getSession();
       const MAX_CHAT_HISTORY = 20;
@@ -322,21 +326,30 @@ export default function RecordChatScreen() {
       }));
       const chatHistory = allHistory.slice(-MAX_CHAT_HISTORY);
 
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-health-chat`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            health_record_id: id,
-            message: messageText,
-            chat_history: chatHistory,
-          }),
-        }
-      );
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 30_000);
+
+      let response: Response;
+      try {
+        response = await fetch(
+          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/pl-health-chat`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}`,
+            },
+            body: JSON.stringify({
+              health_record_id: id,
+              message: messageText,
+              chat_history: chatHistory,
+            }),
+            signal: abortController.signal,
+          }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
@@ -345,7 +358,7 @@ export default function RecordChatScreen() {
       const data = await response.json();
 
       if (data.reply) {
-        const { data: savedAssistantMsg } = await supabase
+        const { data: savedAssistantMsg, error: assistantMsgError } = await supabase
           .from('pl_record_chats')
           .insert({
             health_record_id: id,
@@ -355,6 +368,7 @@ export default function RecordChatScreen() {
           })
           .select()
           .single();
+        if (assistantMsgError) throw assistantMsgError;
 
         const assistantMessage: ChatMessage = {
           id: savedAssistantMsg?.id ?? `assistant-${Crypto.randomUUID()}`,
@@ -365,11 +379,19 @@ export default function RecordChatScreen() {
         if (mountedRef.current) setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (error) {
-      console.error('Chat error:', error);
+      // Rollback optimistic user message
+      if (mountedRef.current) {
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        setInput(messageText);
+      }
+      const isTimeout = error instanceof DOMException && error.name === 'AbortError';
+      const errorContent = isTimeout
+        ? 'The request timed out. Please check your connection and try again.'
+        : "I'm having trouble responding right now. Please try again.";
       const errorMessage: ChatMessage = {
         id: `error-${Crypto.randomUUID()}`,
         role: 'assistant',
-        content: "I'm having trouble responding right now. Please try again.",
+        content: errorContent,
         created_at: new Date().toISOString(),
       };
       if (mountedRef.current) setMessages((prev) => [...prev, errorMessage]);
@@ -420,6 +442,19 @@ export default function RecordChatScreen() {
       </View>
     );
   };
+
+  if (!isLoading && !fetchError && !record) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background }}>
+        <EmptyState
+          illustration={require('@/assets/illustrations/mascot-tangled.png')}
+          title="Record not found"
+          actionLabel="Go Back"
+          onAction={() => router.back()}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.primary }}>

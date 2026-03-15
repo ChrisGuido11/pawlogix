@@ -1,17 +1,53 @@
-import Purchases, {
-  type PurchasesOfferings,
-  type PurchasesPackage,
-  type CustomerInfo,
-  type PurchasesError,
-  PURCHASES_ERROR_CODE,
+import type {
+  PurchasesOfferings,
+  PurchasesPackage,
+  CustomerInfo,
+  PurchasesError,
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
-const ENTITLEMENT_ID = 'plus';
+const ENTITLEMENT_ID = 'pro';
 
-/**
- * Initialize RevenueCat SDK. Call once after auth is ready.
- */
+// ---------- Dynamic module loading (Expo Go safety) ----------
+
+interface PurchasesSDK {
+  configure(config: { apiKey: string; appUserID?: string }): void;
+  getOfferings(): Promise<PurchasesOfferings>;
+  purchasePackage(pkg: PurchasesPackage): Promise<{ customerInfo: CustomerInfo }>;
+  restorePurchases(): Promise<CustomerInfo>;
+  getCustomerInfo(): Promise<CustomerInfo>;
+}
+
+interface PurchasesErrorCodes {
+  PURCHASE_CANCELLED_ERROR: number;
+  PRODUCT_ALREADY_PURCHASED_ERROR: number;
+  NETWORK_ERROR: number;
+  PAYMENT_PENDING_ERROR: number;
+  PURCHASE_NOT_ALLOWED_ERROR: number;
+}
+
+let _Purchases: PurchasesSDK | null = null;
+let _ERROR_CODE: PurchasesErrorCodes | null = null;
+
+function loadRevenueCat(): boolean {
+  if (_Purchases) return true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require('react-native-purchases');
+    _Purchases = mod.default as PurchasesSDK;
+    _ERROR_CODE = mod.PURCHASES_ERROR_CODE as PurchasesErrorCodes;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function isRevenueCatAvailable(): boolean {
+  return loadRevenueCat();
+}
+
+// ---------- Initialization ----------
+
 export async function initRevenueCat(userId?: string): Promise<void> {
   const apiKey = process.env.EXPO_PUBLIC_REVENUCAT_IOS_KEY;
   if (!apiKey) {
@@ -23,91 +59,105 @@ export async function initRevenueCat(userId?: string): Promise<void> {
   }
 
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
+  if (!isRevenueCatAvailable()) return;
 
   try {
-    Purchases.configure({ apiKey, appUserID: userId ?? undefined });
+    _Purchases!.configure({ apiKey, appUserID: userId ?? undefined });
   } catch {
     // Native module not available (e.g. Expo Go) — silently skip
   }
 }
 
-/**
- * Fetch all available offerings.
- */
+// ---------- Offerings ----------
+
 export async function getOfferings(): Promise<PurchasesOfferings | null> {
+  if (!isRevenueCatAvailable()) return null;
   try {
-    const offerings = await Purchases.getOfferings();
-    return offerings;
+    return await _Purchases!.getOfferings();
   } catch {
     return null;
   }
 }
 
-/**
- * Get available packages from the current offering.
- */
 export async function getPackages(): Promise<PurchasesPackage[]> {
   const offerings = await getOfferings();
   return offerings?.current?.availablePackages ?? [];
 }
 
-/**
- * Purchase a package. Returns customer info on success.
- * Throws on unrecoverable errors; returns null for user-cancelled.
- */
+// ---------- Purchases ----------
+
 export async function purchasePackage(
   pkg: PurchasesPackage
 ): Promise<CustomerInfo | null> {
+  if (!isRevenueCatAvailable()) return null;
   try {
-    const { customerInfo } = await Purchases.purchasePackage(pkg);
+    const { customerInfo } = await _Purchases!.purchasePackage(pkg);
     return customerInfo;
   } catch (e) {
     const error = e as PurchasesError;
-    if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+    const code = Number(error.code);
+    if (code === Number(_ERROR_CODE!.PURCHASE_CANCELLED_ERROR)) {
       return null; // user cancelled — not an error
     }
-    if (error.code === PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR) {
+    if (code === Number(_ERROR_CODE!.PRODUCT_ALREADY_PURCHASED_ERROR)) {
       // Already owns it — fetch latest info
       return getCustomerInfo();
     }
-    throw error;
+    if (code === Number(_ERROR_CODE!.NETWORK_ERROR)) {
+      throw new Error('Check your internet connection and try again.');
+    }
+    if (code === Number(_ERROR_CODE!.PAYMENT_PENDING_ERROR)) {
+      throw new Error('Your payment is being processed. This may take a few minutes.');
+    }
+    if (code === Number(_ERROR_CODE!.PURCHASE_NOT_ALLOWED_ERROR)) {
+      throw new Error('Purchases are not allowed on this device. Check your device settings.');
+    }
+    throw new Error('Something went wrong. Please try again or use Restore Purchases.');
   }
 }
 
-/**
- * Restore previous purchases (required by Apple).
- */
+// ---------- Restore ----------
+
 export async function restorePurchases(): Promise<CustomerInfo> {
-  return Purchases.restorePurchases();
+  if (!isRevenueCatAvailable()) {
+    throw new Error('Purchases are not available on this device.');
+  }
+  try {
+    return await _Purchases!.restorePurchases();
+  } catch {
+    throw new Error('Could not restore purchases. Please check your connection and try again.');
+  }
 }
 
-/**
- * Check if the user has the "plus" entitlement.
- */
+// ---------- Entitlement ----------
+
 export async function checkEntitlement(
   entitlementId: string = ENTITLEMENT_ID
 ): Promise<boolean> {
+  if (!isRevenueCatAvailable()) return false;
   try {
-    const info = await Purchases.getCustomerInfo();
+    const info = await _Purchases!.getCustomerInfo();
     return info.entitlements.active[entitlementId] !== undefined;
   } catch {
     return false;
   }
 }
 
-/**
- * Get full customer info.
- */
-export async function getCustomerInfo(): Promise<CustomerInfo> {
-  return Purchases.getCustomerInfo();
+// ---------- Customer Info ----------
+
+export async function getCustomerInfo(): Promise<CustomerInfo | null> {
+  if (!isRevenueCatAvailable()) return null;
+  try {
+    return await _Purchases!.getCustomerInfo();
+  } catch {
+    return null;
+  }
 }
 
-/**
- * Get the URL for Apple's subscription management page.
- */
 export async function getManageSubscriptionURL(): Promise<string | null> {
+  if (!isRevenueCatAvailable()) return null;
   try {
-    const info = await Purchases.getCustomerInfo();
+    const info = await _Purchases!.getCustomerInfo();
     return info.managementURL;
   } catch {
     return null;

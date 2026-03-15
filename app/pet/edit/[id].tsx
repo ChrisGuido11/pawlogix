@@ -20,13 +20,13 @@ import { Typography, Fonts } from '@/constants/typography';
 import type { PetProfile } from '@/types';
 
 const editPetSchema = z.object({
-  name: z.string().min(1, 'Pet name is required'),
+  name: z.string().min(1, 'Pet name is required').max(50, 'Name too long'),
   species: z.enum(['dog', 'cat']),
-  breed: z.string().optional(),
+  breed: z.string().max(50, 'Breed too long').optional(),
   sex: z.enum(['male', 'female', '']).optional(),
   date_of_birth: z.string().optional(),
   weight_kg: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().max(500, 'Notes too long').optional(),
 });
 
 type EditPetForm = z.infer<typeof editPetSchema>;
@@ -159,6 +159,7 @@ export default function PetEditScreen() {
                 onBlur={onBlur}
                 error={errors.name?.message}
                 autoCapitalize="words"
+                maxLength={50}
                 containerClassName="mb-4"
               />
             )}
@@ -277,6 +278,7 @@ export default function PetEditScreen() {
                 onChangeText={onChange}
                 onBlur={onBlur}
                 autoCapitalize="words"
+                maxLength={50}
                 containerClassName="mb-4"
               />
             )}
@@ -329,6 +331,7 @@ export default function PetEditScreen() {
                 onBlur={onBlur}
                 multiline
                 numberOfLines={3}
+                maxLength={500}
                 containerClassName="mb-6"
               />
             )}
