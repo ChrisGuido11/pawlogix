@@ -30,7 +30,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: authError?.message ?? 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -95,7 +95,11 @@ serve(async (req) => {
 4. For lab values, indicate if they are within normal range for the species and breed
 5. Flag any values outside normal range with severity: "info" (minor/FYI), "watch" (monitor this), or "urgent" (discuss with vet soon)
 6. Extract numeric values (weight in lbs â€” convert from kg if needed, lab values) into structured data for trend tracking
-7. Extract vaccination dates and medication schedules
+7. Extract vaccination dates and medication schedules. For medications:
+   - "frequency" = how often the pet takes the medication (e.g., "Twice daily", "Once monthly", "Every 30 days"). Always extract a recurring frequency when the medication is clearly ongoing/repeating.
+   - "next_due" = the next DATE the pet should receive a dose, in YYYY-MM-DD format. Only set this for periodic medications (monthly flea/tick, heartworm, etc.) where a specific next-dose date can be determined from the document.
+   - IMPORTANT: A prescription REFILL date is NOT the same as the next dose date. Refill dates (e.g., "Refill by August 16") indicate when to reorder from the pharmacy â€” ignore these for next_due. Only use dates that indicate when the pet should actually receive the next dose.
+   - For daily medications (e.g., "Twice daily", "Once daily"), set frequency but do NOT set next_due â€” daily meds don't need date-based reminders.
 8. Write a "Summary for Pet Parent" in warm, reassuring but honest language
 9. Suggest 2-4 specific questions the owner could ask their vet
 10. Detect the primary record type from the document content. Choose one of: "lab_results", "vet_visit", "vaccine", "prescription", "other"
@@ -143,7 +147,8 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
       { "name": "Rabies", "date_given": "2025-01-15", "next_due": "2026-01-15" }
     ],
     "medications": [
-      { "name": "Carprofen", "dosage": "25mg", "frequency": "Twice daily" }
+      { "name": "Carprofen", "dosage": "25mg", "frequency": "Twice daily" },
+      { "name": "Simparica TRIO", "dosage": "40mg", "frequency": "Once monthly", "next_due": "2026-03-15" }
     ],
     "preventive_care": [
       { "name": "Annual Physical Exam", "date_due": "2026-02-15", "date_last": "2025-02-15" }
@@ -219,6 +224,36 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
     const detectedType = interpretation.detected_record_type;
     delete interpretation.detected_record_type;
 
+    // --- Strip markdown formatting from AI-generated text ---
+    // The AI sometimes wraps names/text in **bold** or *italic* markers which
+    // render as raw asterisks in React Native <Text> components.
+    const stripMd = (s: string) => s.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
+
+    if (interpretation.summary) {
+      interpretation.summary = stripMd(interpretation.summary);
+    }
+    if (Array.isArray(interpretation.interpreted_sections)) {
+      for (const sec of interpretation.interpreted_sections) {
+        if (sec.title) sec.title = stripMd(sec.title);
+        if (sec.plain_english_content) sec.plain_english_content = stripMd(sec.plain_english_content);
+      }
+    }
+    if (Array.isArray(interpretation.flagged_items)) {
+      for (const flag of interpretation.flagged_items) {
+        if (flag.item) flag.item = stripMd(flag.item);
+        if (flag.explanation) flag.explanation = stripMd(flag.explanation);
+      }
+    }
+    const ev = interpretation.extracted_values;
+    if (ev) {
+      for (const arr of [ev.vaccines, ev.medications, ev.preventive_care]) {
+        if (!Array.isArray(arr)) continue;
+        for (const entry of arr) {
+          if (entry.name) entry.name = stripMd(entry.name);
+        }
+      }
+    }
+
     // --- Extract transient fields from extracted_values BEFORE storing ---
     // These are consumed here and removed so they don't persist in the interpretation JSON.
     const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -231,6 +266,39 @@ Respond ONLY with valid JSON matching this exact schema (example values shown â€
 
     const extractedDob = interpretation.extracted_values?.date_of_birth;
     if (interpretation.extracted_values) delete interpretation.extracted_values.date_of_birth;
+
+    // --- Post-process medications: validate next_due against frequency ---
+    // The AI sometimes confuses prescription refill dates with next-dose dates.
+    // For recurring medications, next_due should be within a reasonable window
+    // of the record date relative to the dosing frequency.
+    const meds = interpretation.extracted_values?.medications;
+    if (Array.isArray(meds)) {
+      const recordDate = extractedDate ? new Date(extractedDate) : new Date();
+      const DAILY_RE = /daily|every\s*\d+\s*hours?|twice|three times|bid|tid|qid/i;
+      const MONTHLY_RE = /monthly|every\s*(30|month)|once\s*a\s*month/i;
+      const MAX_MONTHLY_GAP_DAYS = 45;
+
+      for (const med of meds) {
+        if (!med.next_due) continue;
+
+        // Daily medications don't need date-based next_due
+        if (DAILY_RE.test(med.frequency ?? '')) {
+          console.log(`[pl-interpret] Removing next_due from daily med: ${med.name}`);
+          delete med.next_due;
+          continue;
+        }
+
+        // For monthly meds, next_due should be within ~45 days of record date
+        if (MONTHLY_RE.test(med.frequency ?? '') && ISO_DATE_RE.test(med.next_due)) {
+          const dueDate = new Date(med.next_due);
+          const gapDays = (dueDate.getTime() - recordDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (gapDays > MAX_MONTHLY_GAP_DAYS || gapDays < 0) {
+            console.log(`[pl-interpret] Removing suspect next_due from monthly med ${med.name}: ${med.next_due} is ${Math.round(gapDays)} days from record date`);
+            delete med.next_due;
+          }
+        }
+      }
+    }
 
     // --- Build the primary update payload (must always succeed) ---
     const updatePayload: Record<string, any> = {

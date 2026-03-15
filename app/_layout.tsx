@@ -31,6 +31,7 @@ import { PetProvider } from '@/lib/pet-context';
 import { ErrorBoundary as AppErrorBoundary } from '@/components/ui/error-boundary';
 import { setupNotificationChannel } from '@/lib/notifications';
 import { useNotificationSync } from '@/hooks/useNotificationSync';
+import { initRevenueCat } from '@/lib/revenucat';
 import { Colors } from '@/constants/Colors';
 import { Spacing } from '@/constants/spacing';
 
@@ -144,9 +145,16 @@ const ONBOARDING_KEY = 'pawlogix_onboarding_complete';
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  // Initialize RevenueCat after auth loads
+  useEffect(() => {
+    if (!isLoading && user?.id) {
+      initRevenueCat(user.id);
+    }
+  }, [isLoading, user?.id]);
 
   // Notification channel setup (Android)
   useEffect(() => {
@@ -211,6 +219,7 @@ function RootLayoutNav() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="pet" />
         <Stack.Screen name="record" />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal', gestureEnabled: true }} />
       </Stack>
       <StatusBar style="light" />
     </>

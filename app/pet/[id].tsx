@@ -20,6 +20,9 @@ import { supabase } from '@/lib/supabase';
 import { usePets } from '@/lib/pet-context';
 import { calculateAge, getRecordTypeLabel, formatDate } from '@/lib/utils';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
+import { usePaywall } from '@/hooks/usePaywall';
+import { canScan } from '@/lib/subscription';
+import { useAuth } from '@/lib/auth-context';
 import { getMedReminderSchedules, type MedReminderSchedule } from '@/lib/notifications';
 import { cancelNotificationsForPet } from '@/lib/notifications';
 import { MedicationReminderModal } from '@/components/medication-reminder-modal';
@@ -38,6 +41,8 @@ export default function PetDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { setActivePet, refreshPets } = usePets();
+  const { user } = useAuth();
+  const { isPremium, showPaywall } = usePaywall();
   const [pet, setPet] = useState<PetProfile | null>(null);
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -305,7 +310,13 @@ export default function PetDetailScreen() {
           {/* Quick Actions */}
           <StaggeredCard index={0}>
             <View className="flex-row gap-3 mb-5">
-              <Card onPress={() => router.push('/record/scan')} className="flex-1 items-center py-5">
+              <Card onPress={async () => {
+                if (!isPremium && user?.id) {
+                  const allowed = await canScan(user.id);
+                  if (!allowed) { showPaywall(); return; }
+                }
+                router.push('/record/scan');
+              }} className="flex-1 items-center py-5">
                 <View
                   style={{ width: 48, height: 48, borderRadius: BorderRadius.statTile, backgroundColor: Colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm }}
                 >
@@ -388,6 +399,11 @@ export default function PetDetailScreen() {
                         {(med.dosage || med.frequency) && (
                           <Text style={[Typography.secondary, { color: Colors.textBody }]}>
                             {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
+                          </Text>
+                        )}
+                        {med.next_due && (
+                          <Text style={[Typography.caption, { color: Colors.primary[600], marginTop: 2 }]}>
+                            Next due: {formatDate(med.next_due)}
                           </Text>
                         )}
                         <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: 2 }]}>

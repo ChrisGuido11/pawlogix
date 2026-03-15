@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
 import { useAuth } from '@/lib/auth-context';
+import { usePaywall } from '@/hooks/usePaywall';
+import { getManageSubscriptionURL } from '@/lib/revenucat';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import {
@@ -96,6 +98,7 @@ function SettingsRow({
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, isAnonymous, profile, signOut, refreshProfile } = useAuth();
+  const { isPremium, restorePurchases: rcRestore } = usePaywall();
   const [medReminders, setMedReminders] = useState(profile?.notification_med_reminders ?? true);
   const [vaxReminders, setVaxReminders] = useState(profile?.notification_vax_reminders ?? true);
   const [preventiveReminders, setPreventiveReminders] = useState(profile?.notification_preventive_reminders ?? true);
@@ -475,6 +478,58 @@ export default function ProfileScreen() {
             </Pressable>
           </Card>
         )}
+
+        {/* Subscription */}
+        <SectionLabel>Subscription</SectionLabel>
+        <Card className="mb-5">
+          <SettingsRow
+            icon={isPremium ? 'star' : 'star-outline'}
+            label={isPremium ? 'PawLogix Pro' : 'Free Plan'}
+            onPress={isPremium ? undefined : () => router.push('/paywall')}
+            trailing={
+              isPremium ? (
+                <View style={{ backgroundColor: Colors.successLight, borderRadius: BorderRadius.pill, paddingHorizontal: Spacing.sm, paddingVertical: 2 }}>
+                  <Text style={[Typography.caption, { color: Colors.success }]}>ACTIVE</Text>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                  <Text style={[Typography.secondary, { color: Colors.secondary }]}>Upgrade</Text>
+                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                </View>
+              )
+            }
+          />
+          <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+          <SettingsRow
+            icon="refresh-outline"
+            label="Restore Purchases"
+            onPress={async () => {
+              const restored = await rcRestore();
+              if (restored) {
+                toast({ title: 'Restored!', message: 'Your subscription has been restored.', preset: 'done' });
+              } else {
+                toast({ title: 'No subscription found', message: 'We could not find a previous subscription.', preset: 'error' });
+              }
+            }}
+          />
+          {isPremium && (
+            <>
+              <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
+              <SettingsRow
+                icon="settings-outline"
+                label="Manage Subscription"
+                onPress={async () => {
+                  const url = await getManageSubscriptionURL();
+                  if (url) {
+                    Linking.openURL(url);
+                  } else {
+                    Linking.openURL('https://apps.apple.com/account/subscriptions');
+                  }
+                }}
+              />
+            </>
+          )}
+        </Card>
 
         {/* Notifications — Medications */}
         <SectionLabel>Medication Reminders</SectionLabel>

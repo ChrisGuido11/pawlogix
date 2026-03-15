@@ -366,6 +366,11 @@ export default function RecordDetailScreen() {
                                 {[med.dosage, med.frequency].filter(Boolean).join(' · ')}
                               </Text>
                             )}
+                            {med.next_due && (
+                              <Text style={[Typography.caption, { color: Colors.primary[600], marginTop: 2 }]}>
+                                Next due: {formatDate(med.next_due)}
+                              </Text>
+                            )}
                           </View>
                         </View>
                       </Card>

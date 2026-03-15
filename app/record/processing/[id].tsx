@@ -282,7 +282,6 @@ export default function RecordProcessingScreen() {
             } catch {}
           }
         }
-        console.warn('[processing] Edge function error:', errorMsg);
 
         // Check if edge function already updated DB with a specific error
         const { data: current } = await supabase

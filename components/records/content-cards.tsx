@@ -111,6 +111,11 @@ export function MedicationCard({ item, index, onSetReminder }: { item: Medicatio
                   </Text>
                 ) : null}
               </View>
+              {item.nextDue && (
+                <Text style={[Typography.caption, { color: Colors.primary[600], marginTop: Spacing.xs }]}>
+                  Next due: {formatDate(item.nextDue)}
+                </Text>
+              )}
               <Text style={[Typography.caption, { color: Colors.textMuted, marginTop: Spacing.xs }]}>
                 {formatDate(item.sourceRecordDate)}
               </Text>

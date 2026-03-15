@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CurvedHeaderPage } from '@/components/ui/curved-header';
+import { MedicationReminderModal } from '@/components/medication-reminder-modal';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { useNotificationItems, type NotificationItem, type NotificationItemType } from '@/hooks/useNotificationItems';
 import { formatDate } from '@/lib/utils';
@@ -19,15 +21,18 @@ const TYPE_CONFIG: Record<NotificationItemType, { icon: keyof typeof Ionicons.gl
   vaccine_overdue: { icon: 'alert-circle', color: Colors.error, bg: Colors.errorLight },
   vaccine_upcoming: { icon: 'time', color: Colors.warning, bg: Colors.warningLight },
   med_reminder: { icon: 'medkit', color: Colors.success, bg: Colors.successLight },
+  med_due: { icon: 'medkit', color: Colors.warning, bg: Colors.warningLight },
+  med_overdue: { icon: 'medkit', color: Colors.error, bg: Colors.errorLight },
   urgent_flag: { icon: 'warning', color: Colors.error, bg: Colors.errorLight },
   preventive_care_overdue: { icon: 'calendar', color: Colors.warning, bg: Colors.warningLight },
   preventive_care_upcoming: { icon: 'calendar-outline', color: Colors.primary, bg: Colors.primaryLight },
 };
 
-function NotificationCard({ item, index }: { item: NotificationItem; index: number }) {
+function NotificationCard({ item, index, onSetReminder }: { item: NotificationItem; index: number; onSetReminder?: () => void }) {
   const router = useRouter();
   const animStyle = useStaggeredEntrance(index);
   const config = TYPE_CONFIG[item.type];
+  const hasReminder = item.reminderData && onSetReminder;
 
   const handlePress = () => {
     if (item.recordId) {
@@ -71,10 +76,22 @@ function NotificationCard({ item, index }: { item: NotificationItem; index: numb
               <Ionicons name="paw" size={12} color={Colors.textMuted} />
               <Text style={[Typography.caption, { color: Colors.textMuted }]}>
                 {item.petName}
-                {item.date ? ` · ${formatDate(item.date)}` : ''}
+                {item.date ? ` \u00B7 ${formatDate(item.date)}` : ''}
               </Text>
             </View>
           </View>
+          {hasReminder && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onSetReminder();
+              }}
+              hitSlop={8}
+              style={{ padding: Spacing.xs, alignSelf: 'center' }}
+            >
+              <Ionicons name="notifications-outline" size={20} color={Colors.textMuted} />
+            </Pressable>
+          )}
         </View>
       </Card>
     </Animated.View>
@@ -83,10 +100,17 @@ function NotificationCard({ item, index }: { item: NotificationItem; index: numb
 
 export default function NotificationsScreen() {
   const { items, isLoading, urgentCount } = useNotificationItems();
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<NotificationItem | null>(null);
 
   const urgentItems = items.filter((i) => i.severity === 'urgent');
   const warningItems = items.filter((i) => i.severity === 'warning');
   const infoItems = items.filter((i) => i.severity === 'info');
+
+  const handleSetReminder = (item: NotificationItem) => {
+    setSelectedItem(item);
+    setReminderModalVisible(true);
+  };
 
   if (isLoading) {
     return (
@@ -156,7 +180,11 @@ export default function NotificationsScreen() {
           }
           return (
             <View style={{ marginBottom: Spacing.md }}>
-              <NotificationCard item={listItem.item} index={listItem.globalIndex} />
+              <NotificationCard
+                item={listItem.item}
+                index={listItem.globalIndex}
+                onSetReminder={() => handleSetReminder(listItem.item)}
+              />
             </View>
           );
         }}
@@ -167,6 +195,18 @@ export default function NotificationsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: Spacing['3xl'] }}
       />
+
+      {selectedItem?.reminderData && (
+        <MedicationReminderModal
+          visible={reminderModalVisible}
+          onClose={() => setReminderModalVisible(false)}
+          petId={selectedItem.petId}
+          petName={selectedItem.petName}
+          medicationName={selectedItem.reminderData.name}
+          dosage={selectedItem.reminderData.dosage}
+          frequency={selectedItem.reminderData.frequency}
+        />
+      )}
     </CurvedHeaderPage>
   );
 }

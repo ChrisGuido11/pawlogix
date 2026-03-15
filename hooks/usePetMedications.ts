@@ -32,6 +32,7 @@ export function usePetMedications(petId: string | undefined) {
             name: med.name,
             dosage: med.dosage,
             frequency: med.frequency,
+            next_due: med.next_due,
             sourceRecordId: record.id,
             sourceRecordType: record.record_type,
             sourceRecordDate: record.record_date,

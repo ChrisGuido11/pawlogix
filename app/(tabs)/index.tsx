@@ -19,6 +19,8 @@ import { usePets } from '@/lib/pet-context';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
+import { usePaywall } from '@/hooks/usePaywall';
+import { FREE_LIMITS, canScan } from '@/lib/subscription';
 import { useNotificationItems } from '@/hooks/useNotificationItems';
 import { RecordCard } from '@/components/records/record-card';
 import { MedicationCard, LabValueCard, VaccineCard } from '@/components/records/content-cards';
@@ -173,6 +175,26 @@ export default function HomeScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const { urgentCount } = useNotificationItems();
+  const { isPremium, showPaywall, canUseFeature } = usePaywall();
+
+  const handleAddPet = useCallback(() => {
+    if (!isPremium && pets.length >= FREE_LIMITS.maxPets) {
+      showPaywall();
+      return;
+    }
+    router.push('/pet/create');
+  }, [isPremium, pets.length, showPaywall, router]);
+
+  const handleScan = useCallback(async () => {
+    if (!isPremium && user?.id) {
+      const allowed = await canScan(user.id);
+      if (!allowed) {
+        showPaywall();
+        return;
+      }
+    }
+    router.push('/record/scan');
+  }, [isPremium, user?.id, showPaywall, router]);
 
   // Medication reminder modal state
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
@@ -317,7 +339,7 @@ export default function HomeScreen() {
             activePet={activePet}
             onSelect={setActivePet}
             onViewDetail={(pet) => router.push(`/pet/${pet.id}` as any)}
-            onAdd={() => router.push('/pet/create')}
+            onAdd={handleAddPet}
           />
         </StaggeredCard>
       )}
@@ -346,7 +368,7 @@ export default function HomeScreen() {
           {/* B. Hero CTA Card — Scan a Record */}
           <StaggeredCard index={1}>
             <Pressable
-              onPress={() => router.push('/record/scan')}
+              onPress={handleScan}
               style={{ marginBottom: Spacing['2xl'] }}
             >
               <LinearGradient
@@ -471,7 +493,7 @@ export default function HomeScreen() {
           title="No records yet"
           subtitle={`Scan ${activePet?.name ?? 'your pet'}'s first vet record to get started.`}
           actionLabel="Scan a Record"
-          onAction={() => router.push('/record/scan')}
+          onAction={handleScan}
         />
       </View>
     );
@@ -495,7 +517,7 @@ export default function HomeScreen() {
             title="Welcome to PawLogix!"
             subtitle="Scan vet records, get AI-powered health insights, and keep track of your pet's care. Add a pet whenever you're ready!"
             actionLabel="Add a Pet"
-            onAction={() => router.push('/pet/create')}
+            onAction={handleAddPet}
           />
         </View>
       </CurvedHeaderPage>
@@ -520,7 +542,7 @@ export default function HomeScreen() {
               activePet={activePet}
               onSelect={setActivePet}
               onViewDetail={(pet) => router.push(`/pet/${pet.id}` as any)}
-              onAdd={() => router.push('/pet/create')}
+              onAdd={handleAddPet}
             />
           )}
           {[0, 1, 2].map((i) => (

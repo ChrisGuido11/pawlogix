@@ -4,7 +4,7 @@ import { usePets } from '@/lib/pet-context';
 import { getVaccineStatus, type VaccineStatus } from '@/lib/record-filters';
 import type { HealthRecord, RecordInterpretation, PetProfile } from '@/types';
 
-export type NotificationItemType = 'vaccine_overdue' | 'vaccine_upcoming' | 'med_reminder' | 'urgent_flag' | 'preventive_care_overdue' | 'preventive_care_upcoming';
+export type NotificationItemType = 'vaccine_overdue' | 'vaccine_upcoming' | 'med_reminder' | 'med_due' | 'med_overdue' | 'urgent_flag' | 'preventive_care_overdue' | 'preventive_care_upcoming';
 
 export interface NotificationItem {
   id: string;
@@ -16,6 +16,12 @@ export interface NotificationItem {
   recordId?: string;
   severity: 'urgent' | 'warning' | 'info';
   date?: string;
+  /** Data for the reminder modal (medications, vaccines, preventive care) */
+  reminderData?: {
+    name: string;
+    dosage: string;
+    frequency: string;
+  };
 }
 
 const SEVERITY_ORDER: Record<string, number> = { urgent: 0, warning: 1, info: 2 };
@@ -55,6 +61,7 @@ export function useNotificationItems() {
             for (const vax of vaccines) {
               if (!vax.name || !vax.next_due) continue;
               const status = getVaccineStatus(vax.next_due);
+              const vaxReminder = { name: vax.name, dosage: '', frequency: 'As scheduled' };
               if (status === 'overdue') {
                 const dueDate = new Date(vax.next_due);
                 const daysPast = Math.round((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -68,6 +75,7 @@ export function useNotificationItems() {
                   recordId: record.id,
                   severity: 'urgent',
                   date: vax.next_due,
+                  reminderData: vaxReminder,
                 });
               } else if (status === 'upcoming') {
                 const dueDate = new Date(vax.next_due);
@@ -82,6 +90,7 @@ export function useNotificationItems() {
                   recordId: record.id,
                   severity: 'warning',
                   date: vax.next_due,
+                  reminderData: vaxReminder,
                 });
               }
             }
@@ -113,6 +122,7 @@ export function useNotificationItems() {
             for (const item of preventiveCare) {
               if (!item.name || !item.date_due) continue;
               const status = getVaccineStatus(item.date_due);
+              const pcReminder = { name: item.name, dosage: '', frequency: 'As scheduled' };
               if (status === 'overdue') {
                 const dueDate = new Date(item.date_due);
                 const daysPast = Math.round((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -126,6 +136,7 @@ export function useNotificationItems() {
                   recordId: record.id,
                   severity: 'warning',
                   date: item.date_due,
+                  reminderData: pcReminder,
                 });
               } else if (status === 'upcoming') {
                 const dueDate = new Date(item.date_due);
@@ -140,16 +151,61 @@ export function useNotificationItems() {
                   recordId: record.id,
                   severity: 'info',
                   date: item.date_due,
+                  reminderData: pcReminder,
                 });
               }
             }
           }
 
-          // Active medications (info-level reminder)
+          // Medication alerts — check next_due for due/overdue, else info-level
           const meds = interp.extracted_values?.medications;
           if (Array.isArray(meds)) {
             for (const med of meds) {
               if (!med.name) continue;
+              const medData = { name: med.name, dosage: med.dosage ?? '', frequency: med.frequency ?? '' };
+
+              if (med.next_due) {
+                const status = getVaccineStatus(med.next_due);
+                if (status === 'overdue') {
+                  const dueDate = new Date(med.next_due);
+                  const daysPast = Math.round((Date.now() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                  allItems.push({
+                    id: `med_overdue_${pet.id}_${med.name}`,
+                    type: 'med_overdue',
+                    title: `${med.name} Overdue`,
+                    body: daysPast === 0
+                      ? `${pet.name}'s ${med.name} is due today!`
+                      : `${pet.name}'s ${med.name} is ${daysPast} day${daysPast !== 1 ? 's' : ''} overdue.`,
+                    petId: pet.id,
+                    petName: pet.name,
+                    recordId: record.id,
+                    severity: 'urgent',
+                    date: med.next_due,
+                    reminderData: medData,
+                  });
+                  continue;
+                } else if (status === 'upcoming') {
+                  const dueDate = new Date(med.next_due);
+                  const daysUntil = Math.round((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  allItems.push({
+                    id: `med_due_${pet.id}_${med.name}`,
+                    type: 'med_due',
+                    title: `${med.name} Due Soon`,
+                    body: daysUntil === 0
+                      ? `${pet.name}'s ${med.name} is due today!`
+                      : `${pet.name}'s ${med.name} is due in ${daysUntil} day${daysUntil !== 1 ? 's' : ''}.`,
+                    petId: pet.id,
+                    petName: pet.name,
+                    recordId: record.id,
+                    severity: 'warning',
+                    date: med.next_due,
+                    reminderData: medData,
+                  });
+                  continue;
+                }
+              }
+
+              // No next_due or current — show as info-level reminder
               allItems.push({
                 id: `med_${pet.id}_${med.name}`,
                 type: 'med_reminder',
@@ -159,6 +215,7 @@ export function useNotificationItems() {
                 petName: pet.name,
                 recordId: record.id,
                 severity: 'info',
+                reminderData: medData,
               });
             }
           }

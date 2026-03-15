@@ -72,6 +72,7 @@ export interface ExtractedValues {
     name: string;
     dosage: string;
     frequency: string;
+    next_due?: string;
   }>;
   preventive_care?: Array<{
     name: string;
@@ -84,6 +85,7 @@ export interface AggregatedMedication {
   name: string;
   dosage: string;
   frequency: string;
+  next_due?: string;
   sourceRecordId: string;
   sourceRecordType: HealthRecord['record_type'];
   sourceRecordDate: string;

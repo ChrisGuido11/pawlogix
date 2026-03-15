@@ -6,8 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
 import { Tabs, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { usePaywall } from '@/hooks/usePaywall';
+import { useAuth } from '@/lib/auth-context';
+import { canScan } from '@/lib/subscription';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -125,6 +128,20 @@ function ScanButton({ onPress }: { onPress: () => void }) {
 function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useAuth();
+  const { isPremium, showPaywall } = usePaywall();
+
+  const handleScan = useCallback(async () => {
+    if (!isPremium && user?.id) {
+      const allowed = await canScan(user.id);
+      if (!allowed) {
+        showPaywall();
+        return;
+      }
+    }
+    router.push('/record/scan');
+  }, [isPremium, user?.id, showPaywall, router]);
+
   return (
     <View
       style={[
@@ -145,7 +162,7 @@ function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         if (tab.name === 'scan') {
           return (
             <View key="scan" style={{ flex: 1, alignItems: 'center' }}>
-              <ScanButton onPress={() => router.push('/record/scan')} />
+              <ScanButton onPress={handleScan} />
               <Text
                 style={{
                   ...Typography.tabLabel,

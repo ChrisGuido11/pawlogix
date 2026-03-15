@@ -16,6 +16,7 @@ export type MedicationItem = ContentItemBase & {
   name: string;
   dosage: string;
   frequency: string;
+  nextDue?: string;
 };
 
 export type LabValueItem = ContentItemBase & {
@@ -199,7 +200,7 @@ export function flattenContentItems(records: HealthRecord[], filter: string): Co
     if (filter === 'Prescriptions' && ev?.medications) {
       for (const med of ev.medications) {
         if (!med.name) continue;
-        items.push({ kind: 'medication', name: med.name, dosage: med.dosage ?? '', frequency: med.frequency ?? '', relatedFlags: matchFlags(flags, med.name), relatedSections: matchSections(sections, med.name), ...base });
+        items.push({ kind: 'medication', name: med.name, dosage: med.dosage ?? '', frequency: med.frequency ?? '', nextDue: med.next_due, relatedFlags: matchFlags(flags, med.name), relatedSections: matchSections(sections, med.name), ...base });
         addedItems = true;
       }
     } else if (filter === 'Lab Results' && ev?.lab_values) {

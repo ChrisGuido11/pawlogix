@@ -24,6 +24,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStaggeredEntrance } from '@/hooks/useStaggeredEntrance';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
+import { usePaywall } from '@/hooks/usePaywall';
+import { FREE_LIMITS } from '@/lib/subscription';
 import { Colors } from '@/constants/Colors';
 import { Typography, Fonts } from '@/constants/typography';
 import { Shadows, Spacing, BorderRadius } from '@/constants/spacing';
@@ -218,6 +220,7 @@ export default function RecordChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { isPremium, showPaywall } = usePaywall();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [record, setRecord] = useState<HealthRecord | null>(null);
@@ -277,6 +280,16 @@ export default function RecordChatScreen() {
 
   const sendMessage = async () => {
     if (!input.trim() || !id || !user || isSending) return;
+
+    // Gate: free users limited to N messages per record
+    if (!isPremium) {
+      const userMessageCount = messages.filter((m) => m.role === 'user').length;
+      if (userMessageCount >= FREE_LIMITS.chatMessagesPerRecord) {
+        showPaywall();
+        return;
+      }
+    }
+
     const messageText = input.trim();
     setInput('');
     setIsSending(true);
