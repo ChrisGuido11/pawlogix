@@ -44,7 +44,7 @@ export function usePaywall(): UsePaywallResult {
   const refreshEntitlement = useCallback(async () => {
     setIsLoading(true);
     try {
-      const entitled = await checkEntitlement('pro');
+      const entitled = await checkEntitlement('Pawlogix pro');
       setIsPremium(entitled);
     } catch {
       setIsPremium(false);
@@ -168,7 +168,7 @@ export function usePaywall(): UsePaywallResult {
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     try {
       const info = await rcRestorePurchases();
-      const entitled = info.entitlements.active['pro'] !== undefined;
+      const entitled = info.entitlements.active['Pawlogix pro'] !== undefined;
       setIsPremium(entitled);
       return entitled;
     } catch {

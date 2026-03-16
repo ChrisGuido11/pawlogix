@@ -274,7 +274,7 @@ export default function PaywallScreen() {
       const info = await purchasePackage(pkg);
       if (info) {
         // Verify entitlement is active before closing
-        const entitled = await checkEntitlement('pro');
+        const entitled = await checkEntitlement('Pawlogix pro');
         if (entitled) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.back();
@@ -300,7 +300,7 @@ export default function PaywallScreen() {
     setIsRestoring(true);
     try {
       const info = await restorePurchases();
-      const hasPro = info.entitlements.active['pro'] !== undefined;
+      const hasPro = info.entitlements.active['Pawlogix pro'] !== undefined;
       if (hasPro) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert('Restored!', 'Your PawLogix Pro subscription has been restored.', [

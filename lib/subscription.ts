@@ -40,7 +40,7 @@ export async function getUsageInfo(userId: string): Promise<UsageInfo> {
   // Check subscription tier from RevenueCat
   let tier: SubscriptionTier = 'free';
   try {
-    const isPremium = await checkEntitlement('pro');
+    const isPremium = await checkEntitlement('Pawlogix pro');
     if (isPremium) tier = 'pro';
   } catch {
     // Fall back to free tier on error

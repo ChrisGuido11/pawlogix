@@ -6,7 +6,7 @@ import type {
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 
-const ENTITLEMENT_ID = 'pro';
+const ENTITLEMENT_ID = 'Pawlogix pro';
 
 // ---------- Dynamic module loading (Expo Go safety) ----------
 
@@ -34,8 +34,9 @@ function loadRevenueCat(): boolean {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const mod = require('react-native-purchases');
-    _Purchases = mod.default as PurchasesSDK;
-    _ERROR_CODE = mod.PURCHASES_ERROR_CODE as PurchasesErrorCodes;
+    // Metro may place default export at mod.default or directly on mod
+    _Purchases = (mod.default ?? mod) as PurchasesSDK;
+    _ERROR_CODE = (mod.PURCHASES_ERROR_CODE ?? mod.default?.PURCHASES_ERROR_CODE) as PurchasesErrorCodes;
     return true;
   } catch {
     return false;
