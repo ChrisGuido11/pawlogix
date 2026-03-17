@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@/lib/auth-context';
 import {
   checkEntitlement,
@@ -53,9 +54,12 @@ export function usePaywall(): UsePaywallResult {
     }
   }, []);
 
-  useEffect(() => {
-    refreshEntitlement();
-  }, [refreshEntitlement]);
+  // Re-check entitlement on mount AND when screen regains focus (e.g. after paywall dismisses)
+  useFocusEffect(
+    useCallback(() => {
+      refreshEntitlement();
+    }, [refreshEntitlement])
+  );
 
   const getOrCreateUsage = useCallback(
     async (feature: string): Promise<UsageRecord | null> => {

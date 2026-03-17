@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { useDeleteRecord } from '@/hooks/useDeleteRecord';
 import { usePaywall } from '@/hooks/usePaywall';
 import { FREE_LIMITS, canScan } from '@/lib/subscription';
+import { checkEntitlement } from '@/lib/revenucat';
 import { useNotificationItems } from '@/hooks/useNotificationItems';
 import { RecordCard } from '@/components/records/record-card';
 import { MedicationCard, LabValueCard, VaccineCard } from '@/components/records/content-cards';
@@ -179,13 +180,17 @@ export default function HomeScreen() {
   const { isPremium, showPaywall, canUseFeature } = usePaywall();
   const { markDone, markUndone, isCompleted, getLastCompletedAt } = useMedicationCompletions();
 
-  const handleAddPet = useCallback(() => {
-    if (!isPremium && pets.length >= FREE_LIMITS.maxPets) {
-      showPaywall();
-      return;
+  const handleAddPet = useCallback(async () => {
+    if (pets.length >= FREE_LIMITS.maxPets) {
+      // Fresh entitlement check — don't rely on stale isPremium state
+      const entitled = await checkEntitlement();
+      if (!entitled) {
+        showPaywall();
+        return;
+      }
     }
     router.push('/pet/create');
-  }, [isPremium, pets.length, showPaywall, router]);
+  }, [pets.length, showPaywall, router]);
 
   const handleScan = useCallback(async () => {
     if (!isPremium && user?.id) {

@@ -241,35 +241,173 @@ export default function ProfileScreen() {
       const { data: records } = await supabase
         .from('pl_health_records')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .order('record_date', { ascending: false });
 
-      const { data: chats } = await supabase
-        .from('pl_record_chats')
-        .select('*')
-        .eq('user_id', user.id);
-
-      const exportPayload = {
-        exported_at: new Date().toISOString(),
-        profile: profile,
-        pets: pets ?? [],
-        health_records: records ?? [],
-        chats: chats ?? [],
+      const formatDate = (d: string | null) => {
+        if (!d) return '—';
+        return new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       };
 
-      const fileName = `pawlogix-export-${Date.now()}.json`;
+      const recordTypeLabel = (t: string) => {
+        const map: Record<string, string> = { lab_results: 'Lab Results', vet_visit: 'Vet Visit', vaccine: 'Vaccine', prescription: 'Prescription', other: 'Other' };
+        return map[t] ?? t;
+      };
+
+      const severityColor = (s: string) => {
+        if (s === 'urgent') return '#EF4444';
+        if (s === 'watch') return '#F59E0B';
+        return '#6B7280';
+      };
+
+      const petsHtml = (pets ?? []).map((pet) => `
+        <div class="pet-card">
+          <h2>${pet.name}</h2>
+          <div class="meta-grid">
+            <div><span class="label">Species</span><span class="value">${pet.species === 'dog' ? 'Dog' : 'Cat'}</span></div>
+            ${pet.breed ? `<div><span class="label">Breed</span><span class="value">${pet.breed}</span></div>` : ''}
+            ${pet.sex ? `<div><span class="label">Sex</span><span class="value">${pet.sex === 'male' ? 'Male' : 'Female'}</span></div>` : ''}
+            ${pet.date_of_birth ? `<div><span class="label">Date of Birth</span><span class="value">${formatDate(pet.date_of_birth)}</span></div>` : ''}
+            ${pet.weight_kg ? `<div><span class="label">Weight</span><span class="value">${Math.round(pet.weight_kg * 2.205)} lbs</span></div>` : ''}
+          </div>
+
+          ${(records ?? []).filter((r: Record<string, unknown>) => r.pet_id === pet.id).length > 0 ? `
+            <h3>Health Records</h3>
+            ${(records ?? []).filter((r: Record<string, unknown>) => r.pet_id === pet.id).map((rec: Record<string, unknown>) => {
+              const interp = rec.interpretation as Record<string, unknown> | null;
+              const flagged = (interp?.flagged_items ?? []) as Array<Record<string, string>>;
+              const sections = (interp?.interpreted_sections ?? []) as Array<Record<string, string>>;
+              const extracted = (interp?.extracted_values ?? {}) as Record<string, unknown>;
+              const vaccines = (extracted.vaccines ?? []) as Array<Record<string, string>>;
+              const medications = (extracted.medications ?? []) as Array<Record<string, string>>;
+
+              return `
+              <div class="record">
+                <div class="record-header">
+                  <span class="record-type">${recordTypeLabel(rec.record_type as string)}</span>
+                  <span class="record-date">${formatDate(rec.record_date as string)}</span>
+                </div>
+
+                ${interp?.summary ? `<p class="summary">${interp.summary}</p>` : ''}
+
+                ${flagged.length > 0 ? `
+                  <div class="flagged">
+                    <h4>Flagged Items</h4>
+                    ${flagged.map((f) => `
+                      <div class="flag-item">
+                        <span class="flag-dot" style="background:${severityColor(f.severity)}"></span>
+                        <div>
+                          <strong>${f.item}</strong>: ${f.value} <span class="normal-range">(normal: ${f.normal_range})</span>
+                          <p class="flag-explanation">${f.explanation}</p>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+
+                ${sections.length > 0 ? `
+                  ${sections.map((s) => `
+                    <div class="section">
+                      <h4>${s.title}</h4>
+                      <p>${s.plain_english_content}</p>
+                    </div>
+                  `).join('')}
+                ` : ''}
+
+                ${vaccines.length > 0 ? `
+                  <div class="section">
+                    <h4>Vaccines</h4>
+                    <table>
+                      <tr><th>Vaccine</th><th>Date Given</th><th>Next Due</th></tr>
+                      ${vaccines.map((v) => `<tr><td>${v.name}</td><td>${formatDate(v.date_given)}</td><td>${formatDate(v.next_due)}</td></tr>`).join('')}
+                    </table>
+                  </div>
+                ` : ''}
+
+                ${medications.length > 0 ? `
+                  <div class="section">
+                    <h4>Medications</h4>
+                    <table>
+                      <tr><th>Medication</th><th>Dosage</th><th>Frequency</th></tr>
+                      ${medications.map((m) => `<tr><td>${m.name}</td><td>${m.dosage}</td><td>${m.frequency}</td></tr>`).join('')}
+                    </table>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+            }).join('')}
+          ` : '<p class="empty">No health records yet.</p>'}
+        </div>
+      `).join('');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: -apple-system, Helvetica Neue, sans-serif; color: #1A1A2E; padding: 40px; background: #fff; line-height: 1.5; }
+            .header { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #0D7377; }
+            .header h1 { font-size: 28px; color: #0D7377; margin-bottom: 4px; }
+            .header p { color: #64748B; font-size: 13px; }
+            .pet-card { margin-bottom: 40px; }
+            .pet-card h2 { font-size: 22px; color: #0D7377; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0; }
+            .pet-card h3 { font-size: 16px; color: #1A1A2E; margin: 20px 0 12px; }
+            .meta-grid { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
+            .meta-grid > div { min-width: 120px; }
+            .label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #94A3B8; }
+            .value { font-size: 15px; font-weight: 600; }
+            .record { background: #F8F7F4; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+            .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+            .record-type { font-weight: 700; font-size: 14px; color: #0D7377; }
+            .record-date { font-size: 13px; color: #64748B; }
+            .summary { font-size: 14px; color: #334155; margin-bottom: 12px; }
+            .flagged { margin: 12px 0; }
+            .flagged h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 8px; }
+            .flag-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+            .flag-dot { width: 8px; height: 8px; border-radius: 4px; margin-top: 6px; flex-shrink: 0; }
+            .flag-explanation { font-size: 13px; color: #64748B; margin-top: 2px; }
+            .normal-range { font-size: 12px; color: #94A3B8; }
+            .section { margin: 12px 0; }
+            .section h4 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B; margin-bottom: 6px; }
+            .section p { font-size: 14px; color: #334155; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+            th { text-align: left; padding: 6px 8px; background: #E2E8F0; font-weight: 600; font-size: 12px; }
+            td { padding: 6px 8px; border-bottom: 1px solid #E2E8F0; }
+            .empty { font-size: 14px; color: #94A3B8; font-style: italic; margin: 8px 0; }
+            .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #E2E8F0; text-align: center; font-size: 11px; color: #94A3B8; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>PawLogix Health Report</h1>
+            <p>Exported ${formatDate(new Date().toISOString())}</p>
+          </div>
+          ${(pets ?? []).length > 0 ? petsHtml : '<p class="empty">No pets added yet.</p>'}
+          <div class="footer">
+            <p>Generated by PawLogix &mdash; Your pet's health, simplified</p>
+            <p>This report is not a substitute for professional veterinary advice.</p>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const fileName = `PawLogix-Health-Report-${new Date().toISOString().slice(0, 10)}.html`;
       const filePath = `${documentDirectory}${fileName}`;
-      await writeAsStringAsync(filePath, JSON.stringify(exportPayload, null, 2));
+      await writeAsStringAsync(filePath, html);
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(filePath, {
-          mimeType: 'application/json',
-          dialogTitle: 'Export PawLogix Data',
+          mimeType: 'text/html',
+          dialogTitle: 'Export PawLogix Health Report',
         });
       }
 
-      toast({ title: 'Data exported!', preset: 'done' });
-    } catch (error: any) {
-      toast({ title: 'Export failed', message: error.message, preset: 'error' });
+      toast({ title: 'Report exported!', preset: 'done' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to export';
+      toast({ title: 'Export failed', message, preset: 'error' });
     } finally {
       setIsExporting(false);
     }
