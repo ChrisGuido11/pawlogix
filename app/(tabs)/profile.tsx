@@ -773,19 +773,19 @@ export default function ProfileScreen() {
           <SettingsRow
             icon="shield-outline"
             label="Privacy Policy"
-            onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/privacy')}
+            onPress={() => Linking.openURL('https://pawlogix.lovable.app/privacy')}
           />
           <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="document-text-outline"
             label="Terms of Service"
-            onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/terms')}
+            onPress={() => Linking.openURL('https://pawlogix.lovable.app/terms')}
           />
           <View style={{ height: 1, backgroundColor: Colors.border, marginLeft: IconTile.standard + Spacing.sm }} />
           <SettingsRow
             icon="help-circle-outline"
             label="Support & FAQ"
-            onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/support')}
+            onPress={() => Linking.openURL('https://pawlogix.lovable.app/support')}
           />
         </Card>
 

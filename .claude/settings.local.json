@@ -83,7 +83,9 @@
       "Bash(find /c/Users/cguid/pawlogix-1/app -type f -name \"*.tsx\" 2>/dev/null | head -30)",
       "Bash(find:*)",
       "Bash(convert:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "WebFetch(domain:pawlogix.lovable.app)",
+      "WebFetch(domain:pawlogix-ai.lovable.app)"
     ]
   }
 }

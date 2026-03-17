@@ -631,10 +631,10 @@ export default function PaywallScreen() {
                   marginTop: Spacing.md,
                 }}
               >
-                <Pressable onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/privacy')}>
+                <Pressable onPress={() => Linking.openURL('https://pawlogix.lovable.app/privacy')}>
                   <Text style={[Typography.caption, { color: Colors.primary }]}>Privacy Policy</Text>
                 </Pressable>
-                <Pressable onPress={() => Linking.openURL('https://pawlogix-ai.lovable.app/terms')}>
+                <Pressable onPress={() => Linking.openURL('https://pawlogix.lovable.app/terms')}>
                   <Text style={[Typography.caption, { color: Colors.primary }]}>Terms of Service</Text>
                 </Pressable>
               </View>
