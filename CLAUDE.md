@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PawLogix is a React Native (Expo) mobile app that helps pet owners understand their pet's health by scanning vet records and lab results, then using AI to translate complex medical jargon into plain English with actionable insights.
 
-**Current Phase:** FREE BETA (v1.0) — all features free, no paywalls, anonymous-first (no login required), account creation optional from Settings tab.
+**Current Phase:** LIVE (v1.0) — PawLogix Pro is live. Free to download. Monthly Pro $4.99. Yearly Pro $39.99. Anonymous-first (no login required), account creation optional from Settings tab. Paywall and RevenueCat wiring are in production — do not remove them.
 
 ## Build & Dev Commands
 

@@ -28,7 +28,7 @@
 (none yet — needs testing)
 
 ## NOTES:
-- This is a FREE BETA. No paywalls or payment logic.
+- PawLogix Pro is LIVE (confirmed 2026-08-23). Free to download. Monthly Pro $4.99. Yearly Pro $39.99. RevenueCat paywall is in production — do not remove payment logic.
 - Killer feature: AI Record Interpreter (scan vet records → plain English interpretation)
 - All tables use pl_ prefix (multi-tenant Supabase project)
 - .env needs real SUPABASE_ANON_KEY before running
