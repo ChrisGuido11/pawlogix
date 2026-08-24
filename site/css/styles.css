@@ -240,6 +240,10 @@ a:hover {
   display: none;
 }
 
+.nav-cta {
+  margin-top: 8px;
+}
+
 /* Hero */
 .hero {
   background: linear-gradient(180deg, #5bc5f2 0%, #4ab8e8 72%, #3ba8d8 100%);
@@ -732,6 +736,10 @@ a:hover {
 
   .header-cta {
     display: inline-flex;
+  }
+
+  .nav-cta {
+    display: none;
   }
 
   .hero {
