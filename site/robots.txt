@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# This site is the public marketing and legal home for the PawLogix iOS app.
+# Canonical legal URLs: /terms and /privacy
