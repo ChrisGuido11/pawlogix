@@ -264,9 +264,11 @@ ONE step at a time. Test each step before moving to the next.
 
 ---
 
-## POST-BETA (Future — DO NOT BUILD NOW)
-- Paywall with RevenueCat (Pro: $12.99/mo mobile)
-- Usage limit enforcement (5 free interpretations/month)
+## LIVE (shipped — do not remove)
+- Paywall with RevenueCat — PawLogix Pro is LIVE. Free to download. Monthly Pro $4.99. Yearly Pro $39.99.
+- Usage limit enforcement (free-tier limits via RevenueCat + `lib/subscription.ts`)
+
+## FUTURE
 - Push notification campaigns
 - Pet sharing (share pet profile with family members / dog sitter)
 - PDF export of record interpretations

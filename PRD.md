@@ -25,7 +25,7 @@ Pet owners receive vet records and lab results they cannot fully interpret. Medi
 ## ONE Killer Feature (MVP)
 **AI Record Interpreter**: Scan or photograph any vet document → AI translates it into plain English with flagged concerns and suggested vet questions.
 
-## In Scope (Beta v1.0)
+## In Scope (v1.0 — LIVE)
 - Anonymous-first experience (no login required to use app)
 - Optional email/password account creation (from Settings, for data backup)
 - Supabase anonymous auth → optional account linking
@@ -38,10 +38,10 @@ Pet owners receive vet records and lab results they cannot fully interpret. Medi
 - Medication and vaccine reminders via local notifications
 - Data export (JSON)
 - Account deletion
-- Usage tracking infrastructure (NOT enforced)
+- Usage tracking + free-tier limits (enforced)
+- Payment / subscription / paywalls — PawLogix Pro is LIVE. Free to download. Monthly Pro $4.99. Yearly Pro $39.99.
 
-## Explicitly OUT of Scope (Beta)
-- Payment / subscription / paywalls (free beta)
+## Explicitly OUT of Scope
 - Social features (sharing with other users)
 - Direct vet communication or telemedicine
 - Wearable device integration
